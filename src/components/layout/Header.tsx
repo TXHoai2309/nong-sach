@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Menu, X, Leaf } from "lucide-react";
 import Container from "./Container";
 import CartBadge from "./CartBadge";
+import { useAuthStore } from "@/store/auth-store";
 
 const navLinks = [
   { href: "/", label: "Trang chủ" },
@@ -14,6 +15,12 @@ const navLinks = [
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const { currentUser, logout } = useAuthStore();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-emerald-100 shadow-sm">
@@ -55,13 +62,27 @@ export default function Header() {
             <CartBadge />
 
             {/* Auth */}
-            <Link
-              href="/login"
-              id="login-button"
-              className="hidden md:inline-flex items-center px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-xl hover:bg-emerald-700 transition-all duration-200 shadow-sm hover:shadow-md"
-            >
-              Đăng nhập
-            </Link>
+            {mounted && currentUser ? (
+              <div className="hidden md:flex items-center gap-3">
+                <span className="text-sm text-slate-600">
+                  Chào, <strong className="text-emerald-700 font-semibold">{currentUser.name}</strong>
+                </span>
+                <button
+                  onClick={logout}
+                  className="px-3.5 py-1.5 border border-slate-200 text-slate-600 text-xs font-semibold rounded-xl hover:bg-slate-50 hover:text-slate-800 transition-all duration-200 cursor-pointer"
+                >
+                  Đăng xuất
+                </button>
+              </div>
+            ) : (
+              <Link
+                href="/login"
+                id="login-button"
+                className="hidden md:inline-flex items-center px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-xl hover:bg-emerald-700 transition-all duration-200 shadow-sm hover:shadow-md"
+              >
+                Đăng nhập
+              </Link>
+            )}
 
             {/* Mobile menu toggle */}
             <button
@@ -94,13 +115,31 @@ export default function Header() {
                   {link.label}
                 </Link>
               ))}
-              <Link
-                href="/login"
-                onClick={() => setMobileOpen(false)}
-                className="mx-0 mt-2 px-4 py-2.5 bg-emerald-600 text-white text-sm font-semibold rounded-xl hover:bg-emerald-700 transition-colors text-center"
-              >
-                Đăng nhập
-              </Link>
+              
+              {mounted && currentUser ? (
+                <div className="flex flex-col gap-2 px-4 py-2.5 border-t border-slate-100 mt-2">
+                  <span className="text-xs text-slate-500">
+                    Chào, <strong className="text-emerald-700">{currentUser.name}</strong>
+                  </span>
+                  <button
+                    onClick={() => {
+                      logout();
+                      setMobileOpen(false);
+                    }}
+                    className="w-full py-2 bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl hover:bg-slate-200 transition-colors text-center cursor-pointer"
+                  >
+                    Đăng xuất
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  href="/login"
+                  onClick={() => setMobileOpen(false)}
+                  className="mx-0 mt-2 px-4 py-2.5 bg-emerald-600 text-white text-sm font-semibold rounded-xl hover:bg-emerald-700 transition-colors text-center"
+                >
+                  Đăng nhập
+                </Link>
+              )}
             </nav>
           </div>
         )}
