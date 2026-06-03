@@ -187,13 +187,13 @@ export default function CartPage() {
               </div>
 
               {/* Nút "Đặt hàng" */}
-              <button
+              <Link
+                href="/checkout"
                 id="proceed-to-checkout"
-                onClick={() => alert("Chức năng đặt hàng chưa được tích hợp thực tế.")}
                 className="block w-full text-center py-3.5 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-colors shadow-sm hover:shadow-md active:scale-95"
               >
                 Đặt hàng
-              </button>
+              </Link>
 
               {/* Nút "Tiếp tục mua hàng" */}
               <Link
