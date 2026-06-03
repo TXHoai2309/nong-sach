@@ -4,14 +4,13 @@
 
 | Layer | Công nghệ | Lý do chọn |
 |-------|-----------|------------|
-| Framework | Next.js 15 (App Router) | SSR/SSG, routing, image optimization |
-| Language | TypeScript (strict) | Type safety, DX tốt |
-| Styling | Tailwind CSS v4 | Utility-first, nhanh |
-| Auth | Firebase Auth | Dễ tích hợp, Google/Email login |
-| Database | Firestore | NoSQL, real-time, scalable |
-| State | Zustand + persist | Lightweight, giỏ hàng local |
-| Font | Be Vietnam Pro | Tiếng Việt đẹp, hiện đại |
-| Deploy | Vercel | Zero-config cho Next.js |
+| Framework | Next.js 16 (App Router) | SSR/SSG, routing, image optimization |
+| Language | TypeScript (strict mode) | Type safety, strict compile checks, DX tốt |
+| Styling | Tailwind CSS v4 | Utility-first, hiệu năng biên dịch cực nhanh |
+| State | Zustand | Quản lý state gọn nhẹ (Giỏ hàng, Đăng nhập cục bộ) |
+| Persistent State | Zustand Persist | Tự động đồng bộ giỏ hàng / tài khoản vào `localStorage` |
+| Icons | Lucide React | Thư viện icon đa dạng, tối ưu bundle size |
+| Deploy | Vercel | Tối ưu hóa tuyệt đối cho Next.js |
 
 ---
 
@@ -20,37 +19,49 @@
 ```
 src/
 ├── app/                    # Next.js App Router pages
-│   ├── layout.tsx          # Root layout (Header, Footer, Font)
-│   ├── globals.css         # Global styles
-│   ├── page.tsx            # Home page
+│   ├── layout.tsx          # Root layout (Header, Footer, Font, Providers)
+│   ├── globals.css         # Global styles & Tailwind directives
+│   ├── page.tsx            # Home page (Hero, Features, Categories, CTA)
 │   ├── products/
-│   │   ├── page.tsx        # Products listing
-│   │   └── [slug]/
-│   │       └── page.tsx    # Product detail (Phase 2)
+│   │   ├── page.tsx        # Products list (Search, Filter, Sort)
+│   │   └── [id]/
+│   │       └── page.tsx    # Product detail page (Dynamic ID routing)
 │   ├── cart/
-│   │   └── page.tsx        # Cart page
+│   │   └── page.tsx        # Local cart display, quantity management
 │   ├── checkout/
-│   │   └── page.tsx        # Order form (Phase 2)
-│   └── login/
-│       └── page.tsx        # Auth page (Phase 2)
+│   │   └── page.tsx        # Checkout page (Order form validation, local success state)
+│   ├── login/
+│   │   └── page.tsx        # Login page (Local authentication mock)
+│   ├── register/
+│   │   └── page.tsx        # Register page (Local user storage mock)
+│   └── about/
+│       └── page.tsx        # About Us page (Static information, brand story)
 ├── components/
 │   ├── layout/
-│   │   ├── Header.tsx      # Sticky nav + cart badge
-│   │   ├── Footer.tsx      # Footer với links
-│   │   └── Container.tsx   # Max-width wrapper
+│   │   ├── Header.tsx      # Sticky navigation, auth state toggle, cart badge
+│   │   ├── Footer.tsx      # Contact, brand links
+│   │   └── Container.tsx   # Responsive container wrapper
 │   ├── product/
-│   │   ├── ProductCard.tsx  # Card với ảnh, giá, rating
-│   │   └── ProductGrid.tsx  # Responsive grid + empty state
+│   │   ├── ProductCard.tsx  # Product card preview with actions
+│   │   ├── ProductDetail.tsx# Product detail component
+│   │   ├── ProductGrid.tsx  # Grid wrapper for lists
+│   │   └── AddToCartButton.tsx # Client component managing quantity limits
 │   └── ui/
-│       └── Badge.tsx        # Category & status badges
+│       └── Badge.tsx        # Shared Badges
 ├── data/
-│   └── mockProducts.ts      # 12 sản phẩm mock
+│   └── products.ts         # Static product inventory data source
 ├── lib/
-│   └── firebase.ts          # Firebase singleton init
+│   ├── format.ts           # Currency formatter utility
+│   └── products.ts         # Utility functions to query products
 ├── store/
-│   └── cartStore.ts         # Zustand cart + persist
+│   ├── cart-store.ts       # Zustand store for items, quantities, and stock bounds
+│   └── auth-store.ts       # Zustand store for mock users and session persistence
 └── types/
-    └── index.ts             # Shared TypeScript types
+    ├── cart.ts             # CartItem type specifications
+    ├── user.ts             # User and RegisteredUser models
+    ├── order.ts            # Order schema
+    ├── product.ts          # ProductCategory & Product model interfaces
+    └── index.ts            # Entry point exporting shared types
 ```
 
 ---
@@ -58,67 +69,37 @@ src/
 ## Data Flow
 
 ```
-Mock Data (Phase 1)          Firestore (Phase 2)
-      │                             │
-      ▼                             ▼
-  mockProducts.ts    ──────►   lib/firebase.ts
-      │                             │
-      ▼                             ▼
-  app/page.tsx                Server Components
-  app/products/page.tsx             │
-      │                             ▼
-      ▼                      Client Components
-  ProductGrid                       │
-      │                             ▼
-      ▼                        cartStore.ts (Zustand)
-  ProductCard  ──addItem──►   localStorage (persist)
+   Products Catalog (data/products.ts)
+                 │
+                 ▼
+     [Server Component Wrapper]
+                 │
+                 ▼
+       [ProductDetail Component]
+                 │
+           (addToCart)
+                 ▼
+        useCartStore (Zustand)  ◄───►  [Cart / Checkout Page]
+                 │
+      (checkout confirmation)
+                 ▼
+      [Clear Cart & Show Order ID]
 ```
 
 ---
 
 ## State Management
 
-Chỉ Zustand, không Redux. Giỏ hàng được persist vào localStorage.
+Chúng tôi sử dụng Zustand để quản lý local state sạch và hiệu quả:
 
-```typescript
-// cartStore.ts — chỉ chứa cart state
-{
-  items: CartItem[];
-  addItem, removeItem, updateQuantity, clearCart,
-  totalItems(), totalAmount()
-}
-```
+### 1. Cart Store (`src/store/cart-store.ts`)
+- Quản lý danh sách sản phẩm trong giỏ hàng.
+- Ràng buộc nghiêm ngặt số lượng sản phẩm không vượt quá `stock` tồn kho.
+- Tự động xóa sản phẩm nếu số lượng giảm về `0`.
 
-Auth state (Phase 2) sẽ dùng Firebase `onAuthStateChanged` + React Context.
-
----
-
-## Firebase Architecture (Phase 2)
-
-### Collections
-
-```
-/products/{productId}        # Catalog sản phẩm
-/users/{uid}                 # User profiles
-/orders/{orderId}            # Đơn hàng
-```
-
-### Security Rules (template)
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /products/{id} {
-      allow read: if true;
-      allow write: if false; // chỉ admin
-    }
-    match /orders/{id} {
-      allow create: if request.auth != null;
-      allow read: if request.auth.uid == resource.data.userId;
-    }
-  }
-}
-```
+### 2. Auth Store (`src/store/auth-store.ts`)
+- Lưu trữ tài khoản người dùng đã đăng ký và phiên đăng nhập hiện tại (`currentUser`).
+- Sử dụng middleware `persist` của Zustand để lưu trạng thái đăng nhập vào `localStorage`, giúp thông tin tài khoản không bị mất khi F5/tải lại trang.
 
 ---
 
@@ -127,21 +108,8 @@ service cloud.firestore {
 | Loại | Quy tắc | Ví dụ |
 |------|---------|-------|
 | Component | PascalCase | `ProductCard.tsx` |
-| Hook | camelCase + use | `useCartStore` |
+| Hook / Store | camelCase + use | `useCartStore` |
 | Type/Interface | PascalCase | `CartItem` |
 | Constant | SCREAMING_SNAKE | `CATEGORY_LABELS` |
-| File | kebab-case (pages) | `products/page.tsx` |
-| CSS class | Tailwind utilities | Không custom class |
-
----
-
-## Deployment
-
-```
-GitHub repo ──► Vercel (auto-deploy on push to main)
-                  │
-                  ├── Preview deployments (PR branches)
-                  └── Production (main branch)
-```
-
-Environment variables cấu hình trên Vercel Dashboard từ `.env.example`.
+| File Page | kebab-case / Folder Routing | `checkout/page.tsx` |
+| Utility File | camelCase / kebab-case | `format.ts` |
