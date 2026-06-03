@@ -6,18 +6,18 @@ import { MapPin, ArrowRight, ShoppingCart } from "lucide-react";
 import { Product } from "@/types/product";
 import { CATEGORY_LABELS } from "@/types/product";
 import { formatCurrency } from "@/lib/format";
-import { useCartStore } from "@/store/cartStore";
+import { useCartStore } from "@/store/cart-store";
 
 interface ProductCardProps {
   product: Product;
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  const addItem = useCartStore((state) => state.addItem);
+  const addToCart = useCartStore((state) => state.addToCart);
 
   const handleAddToCart = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    addItem(product, 1);
+    addToCart(product);
   };
 
   const isOutOfStock = product.stock === 0;
