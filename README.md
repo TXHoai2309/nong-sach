@@ -1,36 +1,150 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🌿 NôngSạch — Nền tảng giao dịch nông sản sạch
 
-## Getting Started
+> Kết nối trực tiếp nông dân Việt Nam với người tiêu dùng. Tươi ngon — An toàn — Tin cậy.
 
-First, run the development server:
+## Tech Stack
+
+- **Framework**: Next.js 15 (App Router)
+- **Language**: TypeScript (strict mode)
+- **Styling**: Tailwind CSS v4
+- **Auth**: Firebase Authentication
+- **Database**: Cloud Firestore
+- **State**: Zustand (cart với localStorage persist)
+- **Font**: Be Vietnam Pro (Google Fonts)
+- **Deploy**: Vercel
+
+---
+
+## Yêu cầu hệ thống
+
+- Node.js ≥ 18.18.0
+- npm ≥ 9.x
+
+---
+
+## Cài đặt & Chạy project
+
+### 1. Clone / mở thư mục project
+
+```bash
+cd nong-sach
+```
+
+### 2. Cài dependencies
+
+```bash
+npm install
+```
+
+### 3. Cấu hình Firebase
+
+Copy file `.env.example` thành `.env.local` và điền thông tin Firebase:
+
+```bash
+cp .env.example .env.local
+```
+
+Mở `.env.local` và điền giá trị từ [Firebase Console](https://console.firebase.google.com):
+
+```env
+NEXT_PUBLIC_FIREBASE_API_KEY=...
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=...
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
+NEXT_PUBLIC_FIREBASE_APP_ID=...
+```
+
+> **Lưu ý**: Giai đoạn MVP dùng mock data, Firebase chỉ cần thiết cho Auth (đăng nhập).
+
+### 4. Chạy development server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Mở trình duyệt tại [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 5. Build production
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm start
+```
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## Cấu trúc thư mục
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+nong-sach/
+├── docs/
+│   ├── SPEC.md           # Product specification
+│   ├── ARCHITECTURE.md   # Kiến trúc hệ thống
+│   └── CHANGELOG.md      # Lịch sử thay đổi
+├── src/
+│   ├── app/              # Next.js App Router pages
+│   │   ├── layout.tsx    # Root layout
+│   │   ├── page.tsx      # Home page
+│   │   ├── products/     # Danh sách sản phẩm
+│   │   └── cart/         # Giỏ hàng
+│   ├── components/
+│   │   ├── layout/       # Header, Footer, Container
+│   │   ├── product/      # ProductCard, ProductGrid
+│   │   └── ui/           # Badge, etc.
+│   ├── data/
+│   │   └── mockProducts.ts
+│   ├── lib/
+│   │   └── firebase.ts
+│   ├── store/
+│   │   └── cartStore.ts  # Zustand
+│   └── types/
+│       └── index.ts
+├── .env.example
+└── README.md
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## Tính năng MVP hiện tại
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- [x] Trang chủ với Hero, Featured Products, Categories
+- [x] Danh sách sản phẩm với tìm kiếm, lọc danh mục, sắp xếp
+- [x] Giỏ hàng (thêm/xóa/sửa số lượng, persist localStorage)
+- [ ] Trang chi tiết sản phẩm _(Task 2)_
+- [ ] Đăng nhập / Đăng ký Firebase _(Task 2)_
+- [ ] Form đặt hàng _(Task 2)_
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## Scripts
+
+| Script | Mô tả |
+|--------|-------|
+| `npm run dev` | Khởi động dev server |
+| `npm run build` | Build production |
+| `npm start` | Chạy production server |
+| `npm run lint` | Kiểm tra ESLint |
+
+---
+
+## Deploy lên Vercel
+
+1. Push code lên GitHub
+2. Vào [vercel.com](https://vercel.com) → Import repository
+3. Thêm Environment Variables từ `.env.example`
+4. Deploy!
+
+---
+
+## Tài liệu
+
+- [SPEC.md](./docs/SPEC.md) — Đặc tả tính năng
+- [ARCHITECTURE.md](./docs/ARCHITECTURE.md) — Kiến trúc hệ thống
+- [CHANGELOG.md](./docs/CHANGELOG.md) — Lịch sử thay đổi
+
+---
+
+## License
+
+MIT © 2026 NôngSạch Team
