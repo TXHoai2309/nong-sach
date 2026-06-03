@@ -78,11 +78,11 @@ export default function ProductsPage() {
       {/* Page header */}
       <div className="bg-white border-b border-slate-100">
         <Container className="py-8">
-          <h1 className="text-3xl font-bold text-slate-800 mb-1">
-            Tất cả sản phẩm
+          <h1 className="text-3xl font-bold text-slate-800 mb-2">
+            Nông sản sạch
           </h1>
           <p className="text-slate-500 text-sm">
-            {filtered.length} sản phẩm tươi sạch, an toàn
+            Khám phá các sản phẩm nông sản sạch, rõ nguồn gốc.
           </p>
         </Container>
       </div>
@@ -171,7 +171,7 @@ export default function ProductsPage() {
         {/* Product Grid */}
         <ProductGrid
           products={filtered}
-          emptyMessage="Không tìm thấy sản phẩm phù hợp. Thử thay đổi bộ lọc nhé!"
+          emptyMessage="Chưa có sản phẩm nào."
         />
       </Container>
     </div>
