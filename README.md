@@ -262,7 +262,8 @@ nong-sach/
 ├── docs/                 # Tài liệu đặc tả và thiết kế hệ thống
 │   ├── SPEC.md           # Tài liệu đặc tả sản phẩm (Product Spec)
 │   ├── ARCHITECTURE.md   # Tài liệu kiến trúc hệ thống (System Architecture)
-│   └── CHANGELOG.md      # Nhật ký thay đổi chi tiết qua các phiên bản
+│   ├── CHANGELOG.md      # Nhật ký thay đổi chi tiết qua các phiên bản
+│   └── VIBE_PROCESS_VERIFICATION.md # Chứng minh quy trình phát triển và kiểm định
 ├── public/               # Các tài nguyên tĩnh (Hình ảnh, Logos, SVG)
 ├── src/
 │   ├── app/              # Next.js App Router Pages
@@ -296,6 +297,7 @@ nong-sach/
 - [Tài liệu Đặc tả sản phẩm (SPEC.md)](./docs/SPEC.md) — Chi tiết tính năng MVP và Backlog tương lai.
 - [Tài liệu Kiến trúc hệ thống (ARCHITECTURE.md)](./docs/ARCHITECTURE.md) — Chi tiết luồng dữ liệu, cấu trúc các State Store của Zustand.
 - [Lịch sử thay đổi (CHANGELOG.md)](./docs/CHANGELOG.md) — Theo dõi tiến độ cập nhật của các Sprint phát triển.
+- [Quy trình Vibe Verification (VIBE_PROCESS_VERIFICATION.md)](./docs/VIBE_PROCESS_VERIFICATION.md) — Chứng minh quy trình lập kế hoạch, tài liệu, biên dịch và kiểm thử sản phẩm.
 
 ---
 ☘️ **NôngSạch Team — Chúc bạn có những trải nghiệm mua sắm nông sản tuyệt vời!**
