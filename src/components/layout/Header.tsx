@@ -1,149 +1,215 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
-import { Menu, X, Leaf } from "lucide-react";
-import Container from "./Container";
+import { useState, useEffect, useRef } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import CartBadge from "./CartBadge";
 import { useAuthStore } from "@/store/auth-store";
 
 const navLinks = [
-  { href: "/", label: "Trang chủ" },
   { href: "/products", label: "Sản phẩm" },
-  { href: "/about", label: "Về chúng tôi" },
+  { href: "/about",    label: "Về chúng tôi" },
+  { href: "/",         label: "Cửa hàng" },
+  { href: "/",         label: "Liên hệ" },
 ];
 
 export default function Header() {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const { currentUser, logout } = useAuthStore();
+  const [mobileOpen, setMobileOpen]   = useState(false);
+  const [searchOpen, setSearchOpen]   = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [mounted, setMounted]         = useState(false);
+  const pathname                       = usePathname();
+  const router                         = useRouter();
+  const searchRef                      = useRef<HTMLInputElement>(null);
+  const { currentUser, logout }        = useAuthStore();
 
+  useEffect(() => { setMounted(true); }, []);
+
+  // Focus search input when opened
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    if (searchOpen) searchRef.current?.focus();
+  }, [searchOpen]);
+
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/products?q=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchOpen(false);
+      setSearchQuery("");
+    }
+  }
 
   return (
-    <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-emerald-100 shadow-sm">
-      <Container>
-        <div className="flex items-center justify-between h-16">
+    <header className="sticky top-0 z-50 bg-[#f9f9ff]/80 backdrop-blur-md shadow-sm">
+      <nav className="flex justify-between items-center px-6 py-4 max-w-[1280px] mx-auto w-full">
+
+        {/* ── Left: logo + desktop nav ── */}
+        <div className="flex items-center gap-16">
           {/* Logo */}
           <Link
             href="/"
-            className="flex items-center gap-2 group"
             aria-label="NôngSạch - Trang chủ"
+            className="text-[30px] leading-[38px] font-bold text-[#006c49]"
           >
-            <span className="flex items-center justify-center w-9 h-9 bg-emerald-600 rounded-xl shadow-md group-hover:bg-emerald-700 transition-colors">
-              <Leaf className="w-5 h-5 text-white" />
-            </span>
-            <span className="text-xl font-bold text-slate-800 tracking-tight">
-              Nông<span className="text-emerald-600">Sạch</span>
-            </span>
+            NôngSạch
           </Link>
 
-          {/* Desktop nav */}
-          <nav
-            className="hidden md:flex items-center gap-1"
-            aria-label="Menu chính"
-          >
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="px-4 py-2 text-sm font-medium text-slate-600 rounded-lg hover:text-emerald-700 hover:bg-emerald-50 transition-all duration-200"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
+          {/* Desktop nav links */}
+          <div className="hidden md:flex items-center gap-6">
+            {navLinks.map((link) => {
+              const isActive = pathname === link.href && link.href !== "/";
+              return (
+                <Link
+                  key={link.href + link.label}
+                  href={link.href}
+                  className={[
+                    "text-[14px] leading-[20px] font-medium transition-colors",
+                    isActive
+                      ? "text-[#006c49] border-b-2 border-[#006c49] pb-1 font-bold"
+                      : "text-[#3c4a42] hover:text-[#006c49]",
+                  ].join(" ")}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
 
-          {/* Right actions */}
-          <div className="flex items-center gap-2">
-            {/* Cart badge (isolated client component) */}
-            <CartBadge />
+        {/* ── Right: search + cart + account ── */}
+        <div className="flex items-center gap-6">
+          {/* Search bar (desktop) */}
+          <div className="relative hidden sm:block">
+            <form onSubmit={handleSearch}>
+              <input
+                ref={searchRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Tìm kiếm..."
+                className="bg-[#e7eeff] border-none rounded-full py-2 px-10 pl-10 focus:ring-2 focus:ring-[#006c49] text-[16px] w-64 transition-all outline-none"
+              />
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#3c4a42] text-xl pointer-events-none select-none">
+                search
+              </span>
+            </form>
+          </div>
 
-            {/* Auth */}
-            {mounted && currentUser ? (
+          {/* Cart */}
+          <CartBadge />
+
+          {/* Account / Auth */}
+          {mounted && currentUser ? (
+            <>
+              {/* Desktop: show name + logout */}
               <div className="hidden md:flex items-center gap-3">
-                <span className="text-sm text-slate-600">
-                  Chào, <strong className="text-emerald-700 font-semibold">{currentUser.name}</strong>
-                </span>
+                <button
+                  className="flex items-center gap-2 text-[#3c4a42] hover:bg-[#10b981]/10 px-2 py-2 rounded-full transition-all"
+                >
+                  <span className="material-symbols-outlined text-[24px]">account_circle</span>
+                  <span className="hidden lg:inline text-[14px] leading-[20px]">
+                    {currentUser.name}
+                  </span>
+                </button>
                 <button
                   onClick={logout}
-                  className="px-3.5 py-1.5 border border-slate-200 text-slate-600 text-xs font-semibold rounded-xl hover:bg-slate-50 hover:text-slate-800 transition-all duration-200 cursor-pointer"
+                  className="text-[12px] font-semibold border border-[#bbcabf] text-[#3c4a42] px-3 py-1.5 rounded-full hover:bg-[#f0f3ff] transition-all cursor-pointer"
                 >
                   Đăng xuất
                 </button>
               </div>
-            ) : (
+              {/* Mobile: icon only */}
+              <button className="md:hidden flex items-center gap-2 text-[#3c4a42] hover:bg-[#10b981]/10 px-2 py-2 rounded-full transition-all">
+                <span className="material-symbols-outlined text-[24px]">account_circle</span>
+              </button>
+            </>
+          ) : (
+            <>
+              {/* Desktop: icon + Tài khoản text */}
               <Link
                 href="/login"
                 id="login-button"
-                className="hidden md:inline-flex items-center px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-xl hover:bg-emerald-700 transition-all duration-200 shadow-sm hover:shadow-md"
+                className="hidden md:flex items-center gap-2 text-[#3c4a42] hover:bg-[#10b981]/10 px-2 py-2 rounded-full transition-all"
+              >
+                <span className="material-symbols-outlined text-[24px]">account_circle</span>
+                <span className="hidden lg:inline text-[14px] leading-[20px]">Tài khoản</span>
+              </Link>
+              {/* Mobile: icon only */}
+              <Link
+                href="/login"
+                className="md:hidden flex items-center gap-2 text-[#3c4a42] hover:bg-[#10b981]/10 px-2 py-2 rounded-full transition-all"
+              >
+                <span className="material-symbols-outlined text-[24px]">account_circle</span>
+              </Link>
+            </>
+          )}
+
+          {/* Mobile menu toggle */}
+          <button
+            id="mobile-menu-toggle"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label="Mở menu di động"
+            aria-expanded={mobileOpen}
+            className="md:hidden flex items-center justify-center w-10 h-10 rounded-full text-[#3c4a42] hover:bg-[#10b981]/10 transition-colors"
+          >
+            <span className="material-symbols-outlined">
+              {mobileOpen ? "close" : "menu"}
+            </span>
+          </button>
+        </div>
+      </nav>
+
+      {/* ── Mobile nav dropdown ── */}
+      {mobileOpen && (
+        <div className="md:hidden border-t border-[#bbcabf]/30 bg-[#f9f9ff]">
+          {/* Mobile search */}
+          <div className="px-6 py-4">
+            <form onSubmit={handleSearch} className="relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Tìm kiếm sản phẩm..."
+                className="w-full bg-[#e7eeff] border-none rounded-full py-2 px-10 pl-10 text-[16px] focus:ring-2 focus:ring-[#006c49] outline-none"
+              />
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#3c4a42] text-xl pointer-events-none select-none">
+                search
+              </span>
+            </form>
+          </div>
+
+          {/* Mobile links */}
+          <nav className="flex flex-col px-6 pb-4 gap-1" aria-label="Menu di động">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href + link.label}
+                href={link.href}
+                onClick={() => setMobileOpen(false)}
+                className="py-3 text-[14px] font-medium text-[#3c4a42] hover:text-[#006c49] border-b border-[#bbcabf]/20 transition-colors"
+              >
+                {link.label}
+              </Link>
+            ))}
+
+            {mounted && currentUser ? (
+              <button
+                onClick={() => { logout(); setMobileOpen(false); }}
+                className="mt-3 w-full py-2.5 bg-[#f0f3ff] text-[#3c4a42] text-[14px] font-semibold rounded-2xl hover:bg-[#e7eeff] transition-colors text-center cursor-pointer"
+              >
+                Đăng xuất ({currentUser.name})
+              </button>
+            ) : (
+              <Link
+                href="/login"
+                onClick={() => setMobileOpen(false)}
+                className="mt-3 py-2.5 bg-[#006c49] text-white text-[14px] font-bold rounded-2xl hover:opacity-90 transition-all text-center"
               >
                 Đăng nhập
               </Link>
             )}
-
-            {/* Mobile menu toggle */}
-            <button
-              id="mobile-menu-toggle"
-              onClick={() => setMobileOpen(!mobileOpen)}
-              aria-label="Mở menu di động"
-              aria-expanded={mobileOpen}
-              className="md:hidden flex items-center justify-center w-10 h-10 rounded-xl text-slate-600 hover:bg-slate-100 transition-colors"
-            >
-              {mobileOpen ? (
-                <X className="w-5 h-5" />
-              ) : (
-                <Menu className="w-5 h-5" />
-              )}
-            </button>
-          </div>
+          </nav>
         </div>
-
-        {/* Mobile nav */}
-        {mobileOpen && (
-          <div className="md:hidden pb-4 pt-2 border-t border-emerald-50">
-            <nav className="flex flex-col gap-1" aria-label="Menu di động">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMobileOpen(false)}
-                  className="px-4 py-2.5 text-sm font-medium text-slate-600 rounded-lg hover:text-emerald-700 hover:bg-emerald-50 transition-all"
-                >
-                  {link.label}
-                </Link>
-              ))}
-              
-              {mounted && currentUser ? (
-                <div className="flex flex-col gap-2 px-4 py-2.5 border-t border-slate-100 mt-2">
-                  <span className="text-xs text-slate-500">
-                    Chào, <strong className="text-emerald-700">{currentUser.name}</strong>
-                  </span>
-                  <button
-                    onClick={() => {
-                      logout();
-                      setMobileOpen(false);
-                    }}
-                    className="w-full py-2 bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl hover:bg-slate-200 transition-colors text-center cursor-pointer"
-                  >
-                    Đăng xuất
-                  </button>
-                </div>
-              ) : (
-                <Link
-                  href="/login"
-                  onClick={() => setMobileOpen(false)}
-                  className="mx-0 mt-2 px-4 py-2.5 bg-emerald-600 text-white text-sm font-semibold rounded-xl hover:bg-emerald-700 transition-colors text-center"
-                >
-                  Đăng nhập
-                </Link>
-              )}
-            </nav>
-          </div>
-        )}
-      </Container>
+      )}
     </header>
   );
 }

@@ -1,237 +1,236 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, ShieldCheck, Truck, Leaf, Star } from "lucide-react";
-import Container from "@/components/layout/Container";
 import ProductGrid from "@/components/product/ProductGrid";
 import { getAllProducts } from "@/lib/products";
 import { CATEGORY_LABELS, ProductCategory } from "@/types/product";
 
 export const metadata: Metadata = {
-  title: "NôngSạch — Nông sản sạch tươi ngon mỗi ngày",
+  title: "NôngSạch — Tươi ngon từ ruộng đồng",
   description:
-    "Khám phá hàng trăm nông sản sạch, hữu cơ từ khắp Việt Nam. Tươi ngon, an toàn, giao hàng tận nơi.",
+    "Mang giá trị nông sản thuần khiết và an toàn tuyệt đối từ đôi bàn tay người nông dân Việt đến tận bếp gia đình bạn.",
 };
 
+// ── Feature strip data ─────────────────────────────────────────────────────────
 const features = [
   {
-    icon: Leaf,
+    icon: "eco",
     title: "100% Sạch & An toàn",
-    description: "Trồng theo tiêu chuẩn VietGAP, không thuốc trừ sâu",
-    color: "text-emerald-600 bg-emerald-100",
+    description: "Quy trình canh tác hữu cơ chuẩn quốc tế.",
   },
   {
-    icon: ShieldCheck,
+    icon: "verified_user",
     title: "Kiểm định chất lượng",
-    description: "Mỗi lô hàng đều được kiểm tra trước khi giao",
-    color: "text-blue-600 bg-blue-100",
+    description: "Mỗi sản phẩm đều có mã truy xuất nguồn gốc.",
   },
   {
-    icon: Truck,
+    icon: "local_shipping",
     title: "Giao hàng nhanh",
-    description: "Giao tận nơi trong ngày, đảm bảo độ tươi",
-    color: "text-orange-600 bg-orange-100",
+    description: "Sản phẩm đến tay khách hàng trong 2–4h.",
   },
   {
-    icon: Star,
+    icon: "star",
     title: "Nông dân uy tín",
-    description: "Kết nối trực tiếp hàng trăm nông dân đã được xét duyệt",
-    color: "text-purple-600 bg-purple-100",
+    description: "Hợp tác trực tiếp với các HTX địa phương.",
   },
 ];
 
-const categories: { key: ProductCategory; emoji: string; color: string }[] = [
-  { key: "vegetables", emoji: "🥬", color: "from-emerald-400 to-green-500" },
-  { key: "fruits", emoji: "🍊", color: "from-orange-400 to-red-400" },
-  { key: "grains", emoji: "🌾", color: "from-lime-400 to-green-500" },
-  { key: "roots", emoji: "🥕", color: "from-yellow-400 to-amber-500" },
-  { key: "herbs", emoji: "🌿", color: "from-teal-400 to-emerald-500" },
-  { key: "other", emoji: "🛒", color: "from-slate-400 to-slate-500" },
+// ── Category data ──────────────────────────────────────────────────────────────
+const categories: { key: ProductCategory; emoji: string }[] = [
+  { key: "vegetables", emoji: "🥬" },
+  { key: "fruits",     emoji: "🍊" },
+  { key: "grains",     emoji: "🌾" },
+  { key: "roots",      emoji: "🥕" },
+  { key: "herbs",      emoji: "🌿" },
+  { key: "other",      emoji: "🛒" },
 ];
 
+// ── Page ───────────────────────────────────────────────────────────────────────
 export default function HomePage() {
-  const allProducts = getAllProducts();
-  // Lấy 8 sản phẩm đầu làm featured
-  const featuredProducts = allProducts.slice(0, 8);
+  const featuredProducts = getAllProducts().slice(0, 8);
 
   return (
-    <>
+    <main>
       {/* ── Hero Section ── */}
-      <section
-        aria-label="Hero"
-        className="relative overflow-hidden bg-gradient-to-br from-emerald-700 via-emerald-600 to-teal-600 text-white"
-      >
-        <div
-          aria-hidden
-          className="absolute -top-20 -right-20 w-80 h-80 bg-white/10 rounded-full blur-3xl"
-        />
-        <div
-          aria-hidden
-          className="absolute -bottom-10 -left-10 w-60 h-60 bg-white/10 rounded-full blur-2xl"
-        />
+      <section className="relative min-h-[600px] flex items-center overflow-hidden">
+        {/* Background image with hero-gradient overlay */}
+        <div className="absolute inset-0 z-0">
+          <Image
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBuKdJ5TAaBCrjgqV7YJBdGgprSy0oNFoWBRsg8N-TdLyQcaMRBu6WhaFllKKMnZ2BJxZmEfWao-o8NnwPao0ov_h0-SLcEu0VBVokGNojqfA7EpegCv3uV-rHpvbBeBSC1-JwBcWa1kOmKPfqdRCRp_lH3-Dz-BCvYlWqN81ASROnT7S6J985z4L0EYT-xEvGs-H_P5uMEsNB1q09K7tvax_Vxv31FAULGttJ-A1sLxZnkevKq5eUsbeReqXsEGxl2FTC2y6-vMA"
+            alt="Cánh đồng nông sản hữu cơ xanh tươi lúc bình minh"
+            fill
+            className="object-cover"
+            priority
+            unoptimized
+          />
+          <div className="absolute inset-0 hero-gradient" />
+        </div>
 
-        <Container className="relative py-20 md:py-28">
+        {/* Hero content */}
+        <div className="relative z-10 max-w-[1280px] mx-auto px-6 w-full py-16 text-white">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white text-sm font-medium px-4 py-2 rounded-full mb-6">
-              <span className="w-2 h-2 bg-emerald-300 rounded-full animate-pulse" />
-              Nông sản sạch từ vùng cao Việt Nam
-            </div>
-
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-6 tracking-tight">
-              Tươi ngon từ
-              <span className="block text-emerald-200">ruộng đồng đến</span>
-              bàn ăn của bạn
+            <h1 className="text-[48px] leading-[56px] tracking-[-0.02em] font-bold mb-6 leading-tight">
+              Tươi ngon từ ruộng đồng đến bàn ăn
             </h1>
-
-            <p className="text-emerald-100 text-lg md:text-xl leading-relaxed mb-10 max-w-xl">
-              Kết nối trực tiếp nông dân và người tiêu dùng. Cam kết{" "}
-              <strong className="text-white">sạch — tươi — an toàn</strong>,
-              không qua trung gian.
+            <p className="text-[18px] leading-[28px] mb-6 opacity-90">
+              Mang giá trị nông sản thuần khiết và an toàn tuyệt đối từ đôi bàn
+              tay người nông dân Việt đến tận bếp gia đình bạn.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="flex flex-wrap gap-6 mb-8">
               <Link
                 href="/products"
                 id="hero-shop-now"
-                className="inline-flex items-center gap-2 px-7 py-3.5 bg-white text-emerald-700 font-bold rounded-2xl hover:bg-emerald-50 hover:shadow-lg transition-all duration-200 text-base"
+                className="bg-white text-[#006c49] px-8 py-3.5 rounded-2xl font-bold hover:bg-[#e7eeff] transition-all active:opacity-80"
               >
-                Mua ngay hôm nay
-                <ArrowRight className="w-4 h-4" />
+                Mua ngay
               </Link>
               <Link
                 href="/about"
-                className="inline-flex items-center gap-2 text-emerald-100 hover:text-white font-medium transition-colors text-sm"
+                className="border-2 border-white/50 text-white px-8 py-3.5 rounded-2xl font-bold hover:bg-white/10 transition-all"
               >
-                Tìm hiểu thêm <ArrowRight className="w-4 h-4" />
+                Tìm hiểu thêm
               </Link>
             </div>
 
-            <div className="flex items-center gap-8 mt-14 pt-8 border-t border-white/20">
+            {/* Stats */}
+            <div className="flex gap-16 border-t border-white/20 pt-10">
               {[
                 { value: "500+", label: "Nông dân" },
-                { value: `${allProducts.length}+`, label: "Sản phẩm" },
+                { value: "20+",  label: "Sản phẩm" },
                 { value: "10K+", label: "Khách hàng" },
               ].map((stat) => (
                 <div key={stat.label}>
-                  <p className="text-2xl font-extrabold text-white">
-                    {stat.value}
+                  <p className="text-[30px] leading-[38px] font-bold">{stat.value}</p>
+                  <p className="text-[14px] leading-[20px] opacity-80 uppercase tracking-wider">
+                    {stat.label}
                   </p>
-                  <p className="text-emerald-200 text-sm">{stat.label}</p>
                 </div>
               ))}
             </div>
           </div>
-        </Container>
+        </div>
       </section>
 
-      {/* ── Features ── */}
-      <section aria-label="Cam kết chất lượng" className="py-16 bg-white">
-        <Container>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map((f) => (
-              <div
-                key={f.title}
-                className="flex flex-col items-start gap-3 p-6 rounded-2xl border border-slate-100 hover:border-emerald-100 hover:shadow-md transition-all duration-200 group"
-              >
-                <span
-                  className={`flex items-center justify-center w-12 h-12 rounded-xl ${f.color} group-hover:scale-110 transition-transform duration-200`}
-                >
-                  <f.icon className="w-6 h-6" />
-                </span>
-                <h3 className="font-semibold text-slate-800 text-sm">
-                  {f.title}
-                </h3>
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  {f.description}
-                </p>
+      {/* ── Features Strip ── */}
+      <section
+        aria-label="Cam kết chất lượng"
+        className="max-w-[1280px] mx-auto px-6 -mt-16 relative z-20"
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {features.map((f) => (
+            <div
+              key={f.title}
+              className="bg-white p-10 rounded-2xl shadow-lg flex flex-col items-center text-center bento-hover transition-all duration-300"
+            >
+              <div className="w-12 h-12 bg-[#10b981]/20 text-[#006c49] rounded-full flex items-center justify-center mb-6">
+                <span className="material-symbols-outlined text-3xl">{f.icon}</span>
               </div>
-            ))}
-          </div>
-        </Container>
-      </section>
-
-      {/* ── Categories ── */}
-      <section aria-label="Danh mục sản phẩm" className="py-14 bg-slate-50">
-        <Container>
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-bold text-slate-800">
-              Danh mục sản phẩm
-            </h2>
-            <Link
-              href="/products"
-              className="text-sm font-medium text-emerald-600 hover:text-emerald-700 flex items-center gap-1 transition-colors"
-            >
-              Xem tất cả <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-            {categories.map((cat) => (
-              <Link
-                key={cat.key}
-                href={`/products?category=${cat.key}`}
-                id={`category-${cat.key}`}
-                className={`flex flex-col items-center justify-center gap-2 p-5 bg-gradient-to-br ${cat.color} rounded-2xl text-white hover:opacity-90 hover:scale-105 hover:shadow-lg transition-all duration-200 group`}
-              >
-                <span className="text-3xl group-hover:scale-110 transition-transform duration-200">
-                  {cat.emoji}
-                </span>
-                <span className="text-xs font-semibold text-center leading-tight">
-                  {CATEGORY_LABELS[cat.key]}
-                </span>
-              </Link>
-            ))}
-          </div>
-        </Container>
-      </section>
-
-      {/* ── Featured Products ── */}
-      <section aria-label="Sản phẩm nổi bật" className="py-14 bg-white">
-        <Container>
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2 className="text-2xl font-bold text-slate-800">
-                Sản phẩm nổi bật
-              </h2>
-              <p className="text-slate-500 text-sm mt-1">
-                Được lựa chọn và yêu thích nhất
-              </p>
+              <h3 className="text-[24px] leading-[32px] font-semibold text-[#006c49] mb-2">
+                {f.title}
+              </h3>
+              <p className="text-[#3c4a42]">{f.description}</p>
             </div>
-            <Link
-              href="/products"
-              id="view-all-products"
-              className="hidden sm:flex items-center gap-1 text-sm font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
-            >
-              Xem tất cả <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
+          ))}
+        </div>
+      </section>
 
-          <ProductGrid products={featuredProducts} />
-        </Container>
+      {/* ── Category Grid ── */}
+      <section
+        aria-label="Danh mục sản phẩm"
+        className="max-w-[1280px] mx-auto px-6 py-16"
+      >
+        <h2 className="text-[36px] leading-[44px] tracking-[-0.02em] font-bold text-[#111c2d] mb-8 text-center">
+          Danh mục nổi bật
+        </h2>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+          {categories.map((cat) => (
+            <Link
+              key={cat.key}
+              href={`/products?category=${cat.key}`}
+              id={`category-${cat.key}`}
+              className="group relative overflow-hidden bg-[#f0f3ff] rounded-2xl p-10 flex flex-col items-center justify-center border border-[#bbcabf]/30 hover:border-[#006c49]/50 transition-all aspect-square text-center"
+            >
+              <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity bg-[url('https://www.transparenttextures.com/patterns/leaves.png')]" />
+              <span className="text-5xl mb-3 group-hover:scale-110 transition-transform duration-200 relative z-10">
+                {cat.emoji}
+              </span>
+              <span className="text-sm font-semibold text-[#111c2d] relative z-10">
+                {CATEGORY_LABELS[cat.key]}
+              </span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Featured Products Grid ── */}
+      <section
+        aria-label="Sản phẩm nổi bật"
+        className="max-w-[1280px] mx-auto px-6 py-16 bg-white rounded-[3rem]"
+      >
+        <div className="flex flex-col md:flex-row justify-between items-end mb-6 gap-6">
+          <div>
+            <h2 className="text-[36px] leading-[44px] tracking-[-0.02em] font-bold text-[#111c2d] mb-2">
+              Sản phẩm nổi bật
+            </h2>
+            <p className="text-[#3c4a42] text-[18px] leading-[28px]">
+              Những mặt hàng tươi ngon nhất vừa được thu hoạch
+            </p>
+          </div>
+          <Link
+            href="/products"
+            id="view-all-products"
+            className="text-[#006c49] font-bold flex items-center gap-2 hover:gap-3 transition-all"
+          >
+            Xem tất cả{" "}
+            <span className="material-symbols-outlined">arrow_forward</span>
+          </Link>
+        </div>
+
+        <ProductGrid products={featuredProducts} />
       </section>
 
       {/* ── CTA Banner ── */}
       <section
         aria-label="Call to action"
-        className="py-16 bg-gradient-to-r from-emerald-600 to-teal-600 text-white"
+        className="max-w-[1280px] mx-auto px-6 py-16"
       >
-        <Container>
-          <div className="text-center max-w-2xl mx-auto">
-            <h2 className="text-3xl font-extrabold mb-4">
-              Bắt đầu ăn sạch ngay hôm nay!
+        <div className="relative bg-[#10b981] rounded-[2rem] overflow-hidden p-16 flex flex-col md:flex-row items-center justify-between gap-16">
+          {/* Texture overlay */}
+          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')] opacity-20 pointer-events-none" />
+
+          {/* Text */}
+          <div className="relative z-10 max-w-[36rem]">
+            <h2 className="text-[36px] leading-[44px] tracking-[-0.02em] font-bold text-[#00422b] mb-6">
+              Sản phẩm tươi sạch nhất trong ngày
             </h2>
-            <p className="text-emerald-100 text-base mb-8">
-              Đặt hàng online — giao tận nơi — tươi ngon đảm bảo.
+            <p className="text-[18px] leading-[28px] text-[#00422b]/80 mb-8">
+              Tham gia chương trình khách hàng thân thiết để nhận ưu đãi lên
+              đến 20% mỗi tuần và miễn phí giao hàng cho đơn đầu tiên.
             </p>
             <Link
               href="/products"
               id="cta-browse"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-white text-emerald-700 font-bold rounded-2xl hover:bg-emerald-50 hover:shadow-lg transition-all duration-200 text-base"
+              className="inline-flex items-center gap-2 bg-[#00422b] text-white px-8 py-3 rounded-2xl font-bold hover:opacity-90 transition-all shadow-lg active:opacity-80"
             >
-              Xem tất cả sản phẩm <ArrowRight className="w-4 h-4" />
+              Khám phá ngay
             </Link>
           </div>
-        </Container>
+
+          {/* Decorative image */}
+          <div className="relative z-10 hidden lg:block">
+            <Image
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuABHtn6jLnZcxCGXI9tieZw4x7dHwFSxWTxAogH6qjiC7esMkBp6YNiqQXAmQVLZo4bUTv-aLRPP94B5Y1rowUS_O-SrP1UvD2yxP8AKllTBUpyMinw51NVLigiZM5vzKRePu5e8yrf_cZ3p9GKMQN2vzHGcd66FNuaThqLyuxuxvEMFg8DWd___sAhBXqC8dtGKc_Tx4MTi2fWkqnrM7bdAhuGHdOo-z6NYcpuJlKzq4zaPuXVkKdcWAL7s_cmjjjcBiJz385R8A"
+              alt="Rổ rau củ hữu cơ đa dạng màu sắc trên cánh đồng"
+              width={320}
+              height={320}
+              className="w-80 h-80 object-cover rounded-3xl shadow-2xl rotate-3"
+              unoptimized
+            />
+          </div>
+        </div>
       </section>
-    </>
+    </main>
   );
 }
