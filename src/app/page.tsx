@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import Breadcrumb from "@/components/layout/Breadcrumb";
 import ProductGrid from "@/components/product/ProductGrid";
 import { getAllProducts } from "@/lib/products";
 import { CATEGORY_LABELS, ProductCategory } from "@/types/product";
@@ -52,26 +51,23 @@ export default function HomePage() {
 
   return (
     <main>
-      <div className="mx-auto max-w-[1280px] px-6 py-4">
-        <Breadcrumb items={[{ label: "Trang chủ" }]} />
-      </div>
       {/* ── Hero Section ── */}
-      <section className="relative min-h-[600px] flex items-center overflow-hidden">
+      <section className="relative flex min-h-[520px] items-center overflow-hidden">
         {/* Background image with hero-gradient overlay */}
         <div className="absolute inset-0 z-0">
           <Image
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBuKdJ5TAaBCrjgqV7YJBdGgprSy0oNFoWBRsg8N-TdLyQcaMRBu6WhaFllKKMnZ2BJxZmEfWao-o8NnwPao0ov_h0-SLcEu0VBVokGNojqfA7EpegCv3uV-rHpvbBeBSC1-JwBcWa1kOmKPfqdRCRp_lH3-Dz-BCvYlWqN81ASROnT7S6J985z4L0EYT-xEvGs-H_P5uMEsNB1q09K7tvax_Vxv31FAULGttJ-A1sLxZnkevKq5eUsbeReqXsEGxl2FTC2y6-vMA"
+            src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=2400&h=1200&fit=crop&crop=center&auto=format&q=95"
             alt="Cánh đồng nông sản hữu cơ xanh tươi lúc bình minh"
             fill
             className="object-cover"
             priority
-            unoptimized
+            quality={95}
           />
           <div className="absolute inset-0 hero-gradient" />
         </div>
 
         {/* Hero content */}
-        <div className="relative z-10 max-w-[1280px] mx-auto px-6 w-full py-16 text-white">
+        <div className="site-container relative z-10 w-full py-14 text-white">
           <div className="max-w-2xl">
             <h1 className="text-[48px] leading-[56px] tracking-[-0.02em] font-bold mb-6 leading-tight">
               Tươi ngon từ ruộng đồng đến bàn ăn
@@ -119,7 +115,7 @@ export default function HomePage() {
       {/* ── Features Strip ── */}
       <section
         aria-label="Cam kết chất lượng"
-        className="max-w-[1280px] mx-auto px-6 -mt-16 relative z-20"
+        className="site-container -mt-14 relative z-20"
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {features.map((f) => (
@@ -142,7 +138,7 @@ export default function HomePage() {
       {/* ── Category Grid ── */}
       <section
         aria-label="Danh mục sản phẩm"
-        className="max-w-[1280px] mx-auto px-6 py-16"
+        className="site-container py-14"
       >
         <h2 className="text-[36px] leading-[44px] tracking-[-0.02em] font-bold text-[#111c2d] mb-8 text-center">
           Danh mục nổi bật
@@ -171,7 +167,7 @@ export default function HomePage() {
       {/* ── Featured Products Grid ── */}
       <section
         aria-label="Sản phẩm nổi bật"
-        className="max-w-[1280px] mx-auto px-6 py-16 bg-white rounded-[3rem]"
+        className="site-container rounded-[3rem] bg-white py-14"
       >
         <div className="flex flex-col md:flex-row justify-between items-end mb-6 gap-6">
           <div>
@@ -198,7 +194,7 @@ export default function HomePage() {
       {/* ── CTA Banner ── */}
       <section
         aria-label="Call to action"
-        className="max-w-[1280px] mx-auto px-6 py-16"
+        className="site-container py-14"
       >
         <div className="relative bg-[#10b981] rounded-[2rem] overflow-hidden p-16 flex flex-col md:flex-row items-center justify-between gap-16">
           {/* Texture overlay */}

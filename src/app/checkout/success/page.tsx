@@ -379,25 +379,27 @@ function SuccessContent() {
 
 export default function CheckoutSuccessPage() {
   return (
-    <main className="max-w-container-max mx-auto px-margin-mobile md:px-gutter py-lg">
-      <Breadcrumb
-        className="mb-8"
-        items={[
-          { label: "Trang chủ", href: "/" },
-          { label: "Giỏ hàng", href: "/cart" },
-          { label: "Thanh toán", href: "/checkout" },
-          { label: "Hoàn tất" },
-        ]}
-      />
-      <Suspense
-        fallback={
-          <div className="min-h-[400px] flex items-center justify-center">
-            <div className="text-on-surface-variant font-medium">Đang tải thông tin đơn hàng...</div>
-          </div>
-        }
-      >
-        <SuccessContent />
-      </Suspense>
+    <main className="page-surface py-8">
+      <div className="site-container page-enter">
+        <Breadcrumb
+          className="mb-8"
+          items={[
+            { label: "Trang chủ", href: "/" },
+            { label: "Giỏ hàng", href: "/cart" },
+            { label: "Thanh toán", href: "/checkout" },
+            { label: "Hoàn tất" },
+          ]}
+        />
+        <Suspense
+          fallback={
+            <div className="min-h-[400px] flex items-center justify-center">
+              <div className="text-on-surface-variant font-medium">Đang tải thông tin đơn hàng...</div>
+            </div>
+          }
+        >
+          <SuccessContent />
+        </Suspense>
+      </div>
     </main>
   );
 }

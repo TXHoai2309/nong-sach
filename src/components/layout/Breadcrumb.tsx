@@ -14,7 +14,7 @@ export default function Breadcrumb({ items, className = "" }: BreadcrumbProps) {
   return (
     <nav
       aria-label="Breadcrumb"
-      className={["flex flex-wrap items-center gap-2 text-xs font-semibold leading-4 text-on-surface-variant", className].join(" ")}
+      className={["breadcrumb-bar", className].join(" ")}
     >
       {items.map((item, index) => {
         const isLast = index === items.length - 1;
@@ -28,7 +28,7 @@ export default function Breadcrumb({ items, className = "" }: BreadcrumbProps) {
             ) : (
               <span className={isLast ? "font-bold text-on-surface" : ""}>{item.label}</span>
             )}
-            {!isLast && <span className="material-symbols-outlined text-[16px]">chevron_right</span>}
+            {!isLast && <span className="material-symbols-outlined text-[16px] text-primary">chevron_right</span>}
           </span>
         );
       })}

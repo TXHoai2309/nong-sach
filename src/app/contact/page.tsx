@@ -37,27 +37,27 @@ const contactItems = [
 
 export default function ContactPage() {
   return (
-    <main className="min-h-screen bg-[#f9f9ff] bg-[radial-gradient(at_0%_0%,rgba(16,185,129,0.05)_0px,transparent_50%),radial-gradient(at_100%_0%,rgba(0,108,73,0.03)_0px,transparent_50%)] text-on-surface">
-      <section className="mx-auto max-w-[960px] px-6 pb-4 pt-8">
+    <main className="page-surface text-on-surface">
+      <section className="site-container page-enter pb-4 pt-6 sm:pt-8">
         <Breadcrumb
-          className="mb-2 text-xs font-medium leading-5"
+          className="mb-5"
           items={[
             { label: "Trang chủ", href: "/" },
             { label: "Liên hệ" },
           ]}
         />
-        <h1 className="mb-1 text-3xl font-bold leading-9 tracking-[-0.02em] text-[#006c49]">
+        <h1 className="mb-2 text-3xl font-bold leading-9 tracking-[-0.03em] text-[#006c49] sm:text-4xl sm:leading-10">
           Liên hệ với chúng tôi
         </h1>
-        <p className="max-w-2xl text-xs leading-5 text-on-surface-variant">
+        <p className="max-w-2xl text-sm leading-6 text-on-surface-variant">
           Chúng tôi luôn sẵn sàng lắng nghe ý kiến và hỗ trợ bạn. Hãy gửi tin nhắn cho
           NôngSạch để được phục vụ tốt nhất.
         </p>
       </section>
 
-      <section className="mx-auto max-w-[960px] px-6 pb-10">
+      <section className="site-container pb-10">
         <div className="flex flex-col gap-6 md:grid md:grid-cols-10">
-          <div className="rounded-2xl border border-outline-variant/10 bg-white p-6 shadow-sm md:col-span-6 md:p-8">
+          <div className="page-card reveal-up rounded-3xl p-6 md:col-span-6 md:p-8">
             <h2 className="mb-6 text-xl font-bold leading-7 text-[#006c49]">
               Gửi tin nhắn cho chúng tôi
             </h2>
@@ -68,7 +68,7 @@ export default function ContactPage() {
                     Họ tên
                   </label>
                   <input
-                    className="w-full rounded-2xl border-none bg-surface-container-low px-4.5 py-3 text-sm text-on-surface outline-none transition-all focus:ring-2 focus:ring-primary-container"
+                    className="w-full rounded-2xl border border-transparent bg-surface-container-low px-4 py-3 text-sm text-on-surface outline-none transition-all focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10"
                     id="name"
                     placeholder="Nguyễn Văn A"
                     type="text"
@@ -79,7 +79,7 @@ export default function ContactPage() {
                     Email
                   </label>
                   <input
-                    className="w-full rounded-2xl border-none bg-surface-container-low px-4.5 py-3 text-sm text-on-surface outline-none transition-all focus:ring-2 focus:ring-primary-container"
+                    className="w-full rounded-2xl border border-transparent bg-surface-container-low px-4 py-3 text-sm text-on-surface outline-none transition-all focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10"
                     id="email"
                     placeholder="email@example.com"
                     type="email"
@@ -93,7 +93,7 @@ export default function ContactPage() {
                     Số điện thoại
                   </label>
                   <input
-                    className="w-full rounded-2xl border-none bg-surface-container-low px-4.5 py-3 text-sm text-on-surface outline-none transition-all focus:ring-2 focus:ring-primary-container"
+                    className="w-full rounded-2xl border border-transparent bg-surface-container-low px-4 py-3 text-sm text-on-surface outline-none transition-all focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10"
                     id="phone"
                     placeholder="0901 234 567"
                     type="tel"
@@ -105,7 +105,7 @@ export default function ContactPage() {
                   </label>
                   <div className="relative">
                     <select
-                      className="w-full appearance-none rounded-2xl border-none bg-surface-container-low px-4.5 py-3 text-sm text-on-surface outline-none transition-all focus:ring-2 focus:ring-primary-container"
+                      className="w-full appearance-none rounded-2xl border border-transparent bg-surface-container-low px-4 py-3 text-sm text-on-surface outline-none transition-all focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10"
                       id="subject"
                     >
                       <option value="order">Đặt hàng</option>
@@ -125,7 +125,7 @@ export default function ContactPage() {
                   Nội dung
                 </label>
                 <textarea
-                  className="min-h-24 w-full resize-none rounded-2xl border-none bg-surface-container-low px-4.5 py-3 text-sm text-on-surface outline-none transition-all focus:ring-2 focus:ring-primary-container"
+                  className="min-h-24 w-full resize-none rounded-2xl border border-transparent bg-surface-container-low px-4 py-3 text-sm text-on-surface outline-none transition-all focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10"
                   id="content"
                   placeholder="Nhập nội dung bạn muốn gửi cho chúng tôi..."
                   rows={4}
@@ -133,7 +133,7 @@ export default function ContactPage() {
               </div>
 
               <button
-                className="mt-2 w-full rounded-full bg-[#006c49] py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-opacity-95 hover:shadow-md active:scale-[0.98] cursor-pointer"
+                className="mt-2 w-full rounded-full bg-[#006c49] py-3 text-sm font-bold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-opacity-95 hover:shadow-lg active:scale-[0.98] cursor-pointer"
                 type="submit"
               >
                 Gửi tin nhắn
@@ -142,7 +142,7 @@ export default function ContactPage() {
           </div>
 
           <div className="flex flex-col gap-6 md:col-span-4">
-            <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#006c49] to-[#10b981] p-6 text-white shadow-md md:p-8">
+            <div className="group reveal-up relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#006c49] to-[#10b981] p-6 text-white shadow-md lift-hover md:p-8">
               <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-3xl transition-all group-hover:bg-white/20" />
               <h3 className="relative z-10 mb-6 text-xl font-bold leading-7">Thông tin liên hệ</h3>
               <div className="relative z-10 space-y-5">
@@ -172,7 +172,7 @@ export default function ContactPage() {
               </div>
             </div>
 
-            <div className="relative flex min-h-[200px] flex-1 flex-col items-center justify-center overflow-hidden rounded-2xl border border-outline-variant/30 bg-surface-container p-5">
+            <div className="relative flex min-h-[200px] flex-1 flex-col items-center justify-center overflow-hidden rounded-3xl border border-outline-variant/30 bg-surface-container p-5 lift-hover">
               <Image
                 src={mapImage}
                 alt="Bản đồ vị trí cửa hàng NôngSạch"
@@ -198,7 +198,7 @@ export default function ContactPage() {
       </section>
 
       <section className="mt-6 bg-[#006c49]/5 py-8">
-        <div className="mx-auto flex max-w-[960px] flex-col items-center justify-between gap-6 px-6 md:flex-row">
+        <div className="site-container flex flex-col items-center justify-between gap-6 md:flex-row">
           <div className="w-full md:w-[420px] md:flex-none">
             <h2 className="mb-1 text-xl font-bold leading-7 text-on-surface">Đăng ký nhận bản tin</h2>
             <p className="text-xs leading-5 text-on-surface-variant">
@@ -207,11 +207,11 @@ export default function ContactPage() {
           </div>
           <form className="flex w-full gap-2 md:w-auto">
             <input
-              className="flex-1 rounded-2xl border-none bg-white px-4.5 py-3 shadow-sm outline-none focus:ring-2 focus:ring-[#006c49] md:w-72 text-sm"
+              className="flex-1 rounded-2xl border border-transparent bg-white px-4 py-3 text-sm shadow-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 md:w-72"
               placeholder="Email của bạn"
               type="email"
             />
-            <button className="whitespace-nowrap rounded-2xl bg-[#006c49] px-6 py-3 font-bold text-white transition-all hover:shadow-md cursor-pointer text-sm" type="submit">
+            <button className="whitespace-nowrap rounded-2xl bg-[#006c49] px-6 py-3 text-sm font-bold text-white transition-all hover:-translate-y-0.5 hover:shadow-lg cursor-pointer" type="submit">
               Đăng ký
             </button>
           </form>

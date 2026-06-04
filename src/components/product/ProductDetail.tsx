@@ -76,7 +76,7 @@ export default function ProductDetail({ product, relatedProducts }: ProductDetai
   }
 
   return (
-    <main className="mx-auto max-w-[1040px] px-6 py-5">
+    <main className="site-container page-enter py-6">
       <Breadcrumb
         className="mb-6"
         items={[
@@ -89,7 +89,7 @@ export default function ProductDetail({ product, relatedProducts }: ProductDetai
 
       <div className="mb-10 grid grid-cols-1 gap-8 lg:grid-cols-[0.95fr_1.05fr]">
         <div className="space-y-4">
-          <div className="group relative aspect-[4/3] overflow-hidden rounded-2xl border border-outline-variant/20 bg-surface-container shadow-sm">
+          <div className="page-card group relative aspect-[4/3] overflow-hidden rounded-3xl bg-surface-container">
             <Image
               src={selectedImage}
               alt={product.name}
@@ -290,7 +290,7 @@ export default function ProductDetail({ product, relatedProducts }: ProductDetai
                 ["NH", "Nguyễn Hạnh", `${product.name} rất tươi, đóng gói cẩn thận và giao nhanh. Gia đình mình rất hài lòng.`],
                 ["TM", "Trần Minh", "Hàng rất tốt, sản phẩm có mùi thơm tự nhiên rất khác so với mua ở chợ. Giao hàng nhanh."],
               ].map(([initials, name, content]) => (
-                <article key={name} className="rounded-2xl border border-outline-variant/30 bg-white p-5">
+                <article key={name} className="page-card rounded-3xl p-5 lift-hover">
                   <div className="mb-4 flex items-center gap-4">
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary-container font-bold text-on-secondary-container">
                       {initials}
@@ -322,7 +322,7 @@ export default function ProductDetail({ product, relatedProducts }: ProductDetai
             <Link
               key={item.id}
               href={`/products/${item.id}`}
-              className="group overflow-hidden rounded-2xl border border-outline-variant/20 bg-white shadow-sm transition-all hover:shadow-md"
+              className="page-card lift-hover group overflow-hidden rounded-3xl bg-white"
             >
               <div className="relative aspect-square overflow-hidden bg-surface-container">
                 <Image

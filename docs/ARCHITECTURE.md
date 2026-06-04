@@ -169,6 +169,11 @@ nong-sach/
   * `/login`
   * `/register`
   * `/profile`
+* Shared layout utilities live in `src/app/globals.css`:
+  * `.site-container` controls the standard 1120px page width.
+  * `.breadcrumb-bar` controls consistent breadcrumb position and visual style.
+  * `.page-surface`, `.page-card`, `.lift-hover`, `.page-enter`, `.reveal-up` keep page backgrounds, cards and motion consistent.
+* `src/components/layout/Container.tsx` delegates width to `.site-container` to avoid mismatched `max-w` values across pages.
 
 ---
 

@@ -75,21 +75,21 @@ export default function ProductsPage() {
     search !== "" || selectedCategory !== "all" || sort !== "default";
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="page-surface min-h-screen">
       {/* Page header */}
-      <div className="bg-white border-b border-slate-100">
+      <div>
         <Container className="py-8">
           <Breadcrumb
-            className="mb-4"
+            className="mb-5"
             items={[
               { label: "Trang chủ", href: "/" },
               { label: "Cửa hàng" },
             ]}
           />
-          <h1 className="text-3xl font-bold text-slate-800 mb-2">
+          <h1 className="mb-2 text-3xl font-bold tracking-[-0.03em] text-primary sm:text-4xl">
             Nông sản sạch
           </h1>
-          <p className="text-slate-500 text-sm">
+          <p className="max-w-2xl text-sm leading-6 text-on-surface-variant">
             Khám phá các sản phẩm nông sản sạch, rõ nguồn gốc.
           </p>
         </Container>
@@ -97,7 +97,7 @@ export default function ProductsPage() {
 
       <Container className="py-8">
         {/* Filters bar */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 mb-8 flex flex-col gap-4">
+        <div className="page-card reveal-up mb-8 flex flex-col gap-4 rounded-3xl p-4">
           {/* Row 1: Search + Sort */}
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
@@ -109,7 +109,7 @@ export default function ProductsPage() {
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Tìm theo tên, nguồn gốc..."
                 aria-label="Tìm kiếm sản phẩm"
-                className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition-all bg-slate-50"
+                className="w-full rounded-2xl border border-outline-variant/40 bg-white/80 py-3 pl-10 pr-4 text-sm outline-none transition-all focus:border-primary focus:ring-4 focus:ring-primary/10"
               />
             </div>
 
@@ -120,7 +120,7 @@ export default function ProductsPage() {
                 value={sort}
                 onChange={(e) => setSort(e.target.value as SortOption)}
                 aria-label="Sắp xếp sản phẩm"
-                className="border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-600 outline-none focus:border-emerald-400 bg-slate-50 cursor-pointer"
+                className="cursor-pointer rounded-2xl border border-outline-variant/40 bg-white/80 px-3 py-3 text-sm text-on-surface-variant outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
               >
                 {(Object.keys(SORT_LABELS) as SortOption[]).map((key) => (
                   <option key={key} value={key}>
@@ -138,8 +138,8 @@ export default function ProductsPage() {
               onClick={() => setSelectedCategory("all")}
               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
                 selectedCategory === "all"
-                  ? "bg-emerald-600 text-white shadow-sm"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  ? "bg-primary text-white shadow-sm"
+                  : "bg-white/80 text-on-surface-variant hover:bg-surface-container-high"
               }`}
             >
               Tất cả
@@ -154,8 +154,8 @@ export default function ProductsPage() {
                 }
                 className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
                   selectedCategory === cat
-                    ? "bg-emerald-600 text-white shadow-sm"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    ? "bg-primary text-white shadow-sm"
+                    : "bg-white/80 text-on-surface-variant hover:bg-surface-container-high"
                 }`}
               >
                 {CATEGORY_LABELS[cat]}

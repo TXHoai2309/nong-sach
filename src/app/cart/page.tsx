@@ -46,7 +46,7 @@ export default function CartPage() {
 
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-background py-10 flex items-center justify-center">
+      <div className="page-surface flex min-h-screen items-center justify-center py-10">
         <div className="text-on-surface-variant">Đang tải...</div>
       </div>
     );
@@ -54,7 +54,7 @@ export default function CartPage() {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-background py-10 flex items-center justify-center">
+      <div className="page-surface flex min-h-screen items-center justify-center py-10">
         <Container>
           <Breadcrumb
             className="mb-8"
@@ -63,7 +63,7 @@ export default function CartPage() {
               { label: "Giỏ hàng" },
             ]}
           />
-          <div className="max-w-[448px] mx-auto bg-surface-container-lowest rounded-2xl shadow-[0_10px_15px_-3px_rgba(30,41,59,0.05)] border border-outline-variant/20 p-8 text-center mt-10">
+          <div className="page-card lift-hover mx-auto mt-10 max-w-[448px] rounded-3xl p-8 text-center">
             <span className="material-symbols-outlined text-[64px] text-primary mb-4">
               shopping_cart
             </span>
@@ -111,10 +111,10 @@ export default function CartPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background py-10">
+    <div className="page-surface min-h-screen py-8">
       <Container>
         <Breadcrumb
-          className="mb-8"
+          className="mb-6"
           items={[
             { label: "Trang chủ", href: "/" },
             { label: "Giỏ hàng" },
@@ -122,7 +122,7 @@ export default function CartPage() {
         />
 
         {/* Heading Left with total items count badge */}
-        <div className="flex items-center gap-xs sm:gap-sm mb-8">
+        <div className="mb-6 flex items-center gap-3">
           <h1 className="text-headline-lg font-bold text-primary">
             Giỏ hàng của bạn
           </h1>
@@ -131,9 +131,9 @@ export default function CartPage() {
           </span>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-xl">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
           {/* Left Column: Cart Items List */}
-          <div className="lg:col-span-8 space-y-md">
+          <div className="space-y-4 lg:col-span-8">
             {items.map((item) => {
               const productData = products.find((p) => p.id === item.productId);
               const origin = productData?.origin || "Đà Lạt";
@@ -143,7 +143,7 @@ export default function CartPage() {
               return (
                 <div
                   key={item.productId}
-                  className="relative flex gap-4 bg-white rounded-3xl border border-outline-variant/20 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.03)] p-5 items-center"
+                  className="page-card lift-hover relative flex items-center gap-4 rounded-3xl p-5"
                 >
                   {/* Remove Button (X) at Top Right */}
                   <button
@@ -257,7 +257,7 @@ export default function CartPage() {
 
           {/* Right Column: Order Summary (Sidebar) */}
           <div className="lg:col-span-4">
-            <div className="bg-[#f0f3ff] rounded-[2rem] border border-outline-variant/15 p-6 space-y-6 sticky top-24 shadow-[0_10px_20px_-5px_rgba(0,108,73,0.02)]">
+            <div className="page-card sticky top-24 space-y-6 rounded-3xl bg-[#f0f3ff]/80 p-6">
               <h2 className="font-bold text-on-surface text-lg">
                 Tóm tắt đơn hàng
               </h2>

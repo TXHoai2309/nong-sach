@@ -132,6 +132,40 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
 
 ---
 
+## [0.3.6] - 2026-06-04
+
+### Sprint 3.6 — UI Consistency, Breadcrumb Alignment & Motion Polish
+
+### Added
+
+#### `src/components/layout/PageShell.tsx`
+
+* Thêm layout shell dùng chung cho các page cần breadcrumb, title, subtitle và content wrapper thống nhất.
+
+#### `src/app/globals.css`
+
+* Thêm các utility dùng chung:
+  * `.site-container` — chuẩn width toàn site `1120px`
+  * `.page-surface` — background surface thống nhất
+  * `.breadcrumb-bar` — style breadcrumb dạng pill/glass đồng bộ
+  * `.page-card` — card glass nhẹ dùng chung
+  * `.lift-hover`, `.page-enter`, `.reveal-up` — hiệu ứng hover/reveal nhẹ
+* Thêm `prefers-reduced-motion` để tắt animation cho người dùng không muốn motion.
+
+### Changed
+
+* Đồng bộ vị trí breadcrumb và content width trên các trang chính: Home, About, Contact, Products, Product Detail, Cart, Checkout, Checkout Success, Login, Register.
+* Giảm kích thước/phần phình trên About hero, story image, value cards, team section và các section Home.
+* Đồng bộ ProductCard và ProductDetail related cards theo hệ card/radius/shadow mới.
+* Chuyển `Container` dùng chung sang `.site-container` để tránh mỗi page tự đặt `max-w` khác nhau.
+
+### Verified
+
+* `npm.cmd run build` — pass
+* `npx.cmd tsc --noEmit --incremental false` — pass
+
+---
+
 ## [0.3.5] - 2026-06-04
 
 ### Sprint 3.5 — Checkout Compact Layout & Province API

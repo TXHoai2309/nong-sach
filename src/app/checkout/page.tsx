@@ -268,7 +268,7 @@ export default function CheckoutPage() {
 
   if (!mounted) {
     return (
-      <main className="flex min-h-[420px] items-center justify-center bg-background px-6">
+      <main className="page-surface flex min-h-[420px] items-center justify-center px-6">
         <p className="font-medium text-on-surface-variant">Đang tải...</p>
       </main>
     );
@@ -276,8 +276,8 @@ export default function CheckoutPage() {
 
   if (items.length === 0) {
     return (
-      <main className="bg-background px-6 py-8">
-        <div className="mx-auto max-w-[1040px]">
+      <main className="page-surface py-8">
+        <div className="site-container">
           <Breadcrumb
             className="mb-6"
             items={[
@@ -286,7 +286,7 @@ export default function CheckoutPage() {
               { label: "Thanh toán" },
             ]}
           />
-          <section className="mx-auto mt-8 max-w-[420px] rounded-3xl border border-outline-variant/30 bg-white p-8 text-center shadow-sm">
+          <section className="page-card lift-hover mx-auto mt-8 max-w-[420px] rounded-3xl p-8 text-center">
             <span className="material-symbols-outlined mb-4 text-[60px] text-primary">shopping_cart</span>
             <h1 className="mb-2 text-2xl font-bold text-on-surface">Giỏ hàng đang trống</h1>
             <p className="mb-6 text-sm leading-6 text-on-surface-variant">
@@ -305,8 +305,8 @@ export default function CheckoutPage() {
   }
 
   return (
-    <main className="bg-background px-5 py-6 sm:px-6">
-      <div className="mx-auto max-w-[1040px]">
+    <main className="page-surface py-6">
+      <div className="site-container page-enter">
         <Breadcrumb
           className="mb-5"
           items={[
@@ -328,7 +328,7 @@ export default function CheckoutPage() {
 
         <form onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-[1fr_360px]">
           <div className="space-y-5">
-            <section className="rounded-3xl border border-outline-variant/25 bg-white p-5 shadow-sm sm:p-6">
+            <section className="page-card rounded-3xl p-5 sm:p-6">
               <h1 className="mb-5 flex items-center gap-2 text-xl font-bold text-on-surface">
                 <span className="material-symbols-outlined text-primary">local_shipping</span>
                 Thông tin giao hàng
@@ -455,7 +455,7 @@ export default function CheckoutPage() {
               )}
             </section>
 
-            <section className="rounded-3xl border border-outline-variant/25 bg-white p-5 shadow-sm sm:p-6">
+            <section className="page-card rounded-3xl p-5 sm:p-6">
               <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-on-surface">
                 <span className="material-symbols-outlined text-primary">package_2</span>
                 Phương thức giao hàng
@@ -493,7 +493,7 @@ export default function CheckoutPage() {
               </div>
             </section>
 
-            <section className="rounded-3xl border border-outline-variant/25 bg-white p-5 shadow-sm sm:p-6">
+            <section className="page-card rounded-3xl p-5 sm:p-6">
               <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-on-surface">
                 <span className="material-symbols-outlined text-primary">payments</span>
                 Phương thức thanh toán
@@ -549,7 +549,7 @@ export default function CheckoutPage() {
           </div>
 
           <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
-            <section className="rounded-3xl border border-outline-variant/25 bg-white p-5 shadow-sm">
+            <section className="page-card rounded-3xl p-5">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-xl font-bold text-on-surface">Tóm tắt đơn hàng</h2>
                 <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-primary">
@@ -590,7 +590,7 @@ export default function CheckoutPage() {
               </div>
             </section>
 
-            <section className="rounded-3xl border border-outline-variant/25 bg-white p-4 shadow-sm">
+            <section className="page-card rounded-3xl p-4">
               <label htmlFor="promo" className="mb-2 block text-sm font-semibold text-on-surface-variant">
                 Mã giảm giá / Quà tặng
               </label>

@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import Breadcrumb from "@/components/layout/Breadcrumb";
 import { useAuthStore } from "@/store/auth-store";
 
 // ── Validation ─────────────────────────────────────────────────────────────────
@@ -97,8 +96,8 @@ export default function RegisterPage() {
   // ── Success state ───────────────────────────────────────────────────────────
   if (success) {
     return (
-      <main className="min-h-screen bg-[#f0f3ff] flex items-center justify-center px-4 py-12">
-        <div className="bg-white rounded-3xl shadow-lg p-10 max-w-[400px] w-full text-center">
+      <main className="page-surface flex min-h-screen items-center justify-center px-4 py-12">
+        <div className="page-card w-full max-w-[400px] rounded-3xl p-10 text-center">
           <div className="w-16 h-16 bg-[#006c49]/10 text-[#006c49] rounded-full flex items-center justify-center mx-auto mb-6">
             <span className="material-symbols-outlined text-4xl">check_circle</span>
           </div>
@@ -115,19 +114,12 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="w-full min-h-[calc(100vh-64px)] bg-[#f9f9ff]">
-      <div className="mx-auto max-w-[1280px] px-6 py-6">
-        <Breadcrumb
-          items={[
-            { label: "Trang chủ", href: "/" },
-            { label: "Đăng ký" },
-          ]}
-        />
-      </div>
-      <div className="flex flex-col md:flex-row">
+    <main className="page-surface min-h-[calc(100vh-64px)] w-full">
+      <div className="site-container page-enter py-8">
+        <div className="page-card grid overflow-hidden rounded-[2rem] md:grid-cols-2">
 
       {/* ── Left: Visual panel ── */}
-      <section className="hidden md:flex relative w-1/2 min-h-full overflow-hidden">
+      <section className="relative hidden min-h-[720px] overflow-hidden md:flex">
         {/* Background image */}
         <Image
           src="https://lh3.googleusercontent.com/aida-public/AB6AXuAamNEouDQQeqyCNOQCjqC07gcgTBp6MM9OdSxz31vwpgj8bT_kh4n0fscu5UuidxwStuHKPeErZ74ANetNIgGkE_IdDZXRaxzXaL7OnraD-zo-ZpWpdwxtWi-9EzXn5kap_r03pyya67vEcEHfdZWXBkQO0X79f4ct0iZDTBzHSPujrckROliLUeRlO16y_T8WqP5vg5264xXls-4ZWhga5jhDKP3Ce3XE5IxlAceNSBTx1NEuGjJO5JrXesGJcIJ3cIWBUQ4mGQ"
@@ -161,8 +153,8 @@ export default function RegisterPage() {
       </section>
 
       {/* ── Right: Form panel ── */}
-      <section className="w-full md:w-1/2 flex items-center justify-center p-6 md:p-16 bg-[#f0f3ff]">
-        <div className="w-full max-w-[480px] bg-white rounded-2xl p-8 md:p-10 shadow-[0_10px_15px_-3px_rgba(30,41,59,0.05),0_4px_6px_-2px_rgba(30,41,59,0.02)]">
+      <section className="flex w-full items-center justify-center bg-[#f0f3ff]/90 p-6 md:p-12">
+        <div className="page-card w-full max-w-[480px] rounded-3xl p-8 md:p-10">
 
           {/* Heading */}
           <div className="mb-8">
@@ -334,6 +326,7 @@ export default function RegisterPage() {
         </div>
       </section>
 
+        </div>
       </div>
     </main>
   );

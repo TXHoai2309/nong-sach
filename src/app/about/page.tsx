@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { HandHeart, ShieldCheck, Sprout } from "lucide-react";
-import Breadcrumb from "@/components/layout/Breadcrumb";
 
 export const metadata: Metadata = {
   title: "Về chúng tôi",
@@ -11,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 const heroImage =
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuDNe2wF5FDSeway6t_8CIq6myFUn9iqkWFJ5_yerZ7PdXuq1bo7gq9hkO3XqGdXA4wSfK5wKVCbw473Yz-hRMTXrqR3sbR6I9080CvlquFgxUw-yyf1ROBaTySwaYSqTT_Zildn5wCQAqTRCx3Td6IO27zY3oJwysEb_nTO-8T14sgoC6Iv9dFDM6sVZdm75xmmv0VWtyAtXNTUWRNAHz_F4sMWy4b9cjzyqnFsH-w-8k6e_cB4rBeUsKDcUowV70PxJYSWUHuINg";
+  "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=2400&h=1200&fit=crop&crop=center&auto=format&q=95";
 
 const farmerImage =
   "https://lh3.googleusercontent.com/aida-public/AB6AXuA_KUKBdKXB4KAxDlnPG9QrWyy6TK3MXYFfAlUNRsGEFCupHqP1eI6k_Yna0Xjknx_ORdHWrnZrMrMwVIX6kX7-NigrkSKp_ZisXQsoXF4Qk9E8bJgdt1JeGBfr-FqOCiLQ2XPVomNngvFZhd5pZS8-USHtVseWHYVbGI5W-cTl9hCmL9Ob9ZWqcbN1jhrTp6TO-jg_Nns1SaikHvIpfNB3-Ji9iHzjRUK1wzoDiqCSrKvOK_0JbvDfROHkGSrWp7GNsbHibg6RtQ";
@@ -67,16 +66,8 @@ const team = [
 
 export default function AboutPage() {
   return (
-    <main className="bg-background text-on-background">
-      <div className="mx-auto max-w-[1280px] px-6 py-6">
-        <Breadcrumb
-          items={[
-            { label: "Trang chủ", href: "/" },
-            { label: "Về chúng tôi" },
-          ]}
-        />
-      </div>
-      <section className="relative flex h-[614px] items-center justify-center overflow-hidden md:h-[716px]">
+    <main className="page-surface text-on-background">
+      <section className="relative flex h-[420px] items-center justify-center overflow-hidden md:h-[520px]">
         <Image
           src={heroImage}
           alt="Ruộng bậc thang xanh trong buổi sớm"
@@ -84,22 +75,23 @@ export default function AboutPage() {
           priority
           sizes="100vw"
           className="object-cover"
+          quality={95}
         />
         <div className="absolute inset-0 bg-black/40" />
-        <div className="relative z-10 max-w-3xl px-6 text-center">
-          <h1 className="mb-6 text-4xl font-bold leading-tight tracking-[-0.02em] text-white md:text-5xl md:leading-[56px]">
+        <div className="relative z-10 max-w-[760px] px-6 text-center reveal-up">
+          <h1 className="mb-5 text-3xl font-bold leading-tight tracking-[-0.03em] text-white md:text-5xl md:leading-[56px]">
             Chúng tôi tin vào một bữa ăn sạch cho mọi gia đình Việt
           </h1>
-          <p className="text-lg leading-8 text-white/90">
+          <p className="text-base leading-7 text-white/90 md:text-lg">
             NôngSạch ra đời năm 2024 với sứ mệnh kết nối nông dân và người tiêu dùng, loại bỏ
             hoàn toàn trung gian để mang lại giá trị thực chất nhất.
           </p>
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-[1280px] items-center gap-16 px-6 py-16 md:grid-cols-2">
-        <div className="space-y-6">
-          <h2 className="text-4xl font-bold leading-[44px] tracking-[-0.02em] text-primary">
+      <section className="site-container grid items-center gap-10 py-12 md:grid-cols-2 md:py-14">
+        <div className="space-y-5 reveal-up">
+          <h2 className="text-3xl font-bold leading-10 tracking-[-0.02em] text-primary">
             Câu chuyện của chúng tôi
           </h2>
           <div className="space-y-4 text-base leading-7 text-on-surface-variant">
@@ -122,28 +114,29 @@ export default function AboutPage() {
           </div>
         </div>
 
-        <div className="relative">
+        <div className="relative reveal-up">
           <Image
             src={farmerImage}
             alt="Người nông dân Việt Nam"
             width={640}
             height={500}
             sizes="(min-width: 768px) 50vw, 100vw"
-            className="h-[500px] w-full rounded-2xl object-cover shadow-xl"
+            className="h-[420px] w-full rounded-3xl object-cover shadow-xl"
+            quality={95}
           />
-          <div className="absolute -bottom-6 -left-6 hidden rounded-2xl bg-secondary-container p-6 shadow-lg lg:block">
-            <p className="text-2xl font-semibold italic leading-8 text-on-secondary-container">
+          <div className="absolute -bottom-5 -left-5 hidden rounded-2xl bg-secondary-container p-5 shadow-lg lg:block">
+            <p className="text-xl font-semibold italic leading-7 text-on-secondary-container">
               &ldquo;Tâm huyết từ đất mẹ&rdquo;
             </p>
           </div>
         </div>
       </section>
 
-      <section className="bg-surface-container-low py-16">
-        <div className="mx-auto grid max-w-[1280px] grid-cols-2 gap-6 px-6 text-center md:grid-cols-4">
+      <section className="bg-surface-container-low/80 py-10">
+        <div className="site-container grid grid-cols-2 gap-4 text-center md:grid-cols-4">
           {stats.map((stat) => (
-            <div key={stat.label} className="space-y-1">
-              <p className="text-4xl font-bold leading-[44px] tracking-[-0.02em] text-primary-container">
+            <div key={stat.label} className="rounded-3xl bg-white/60 p-5 shadow-sm lift-hover">
+              <p className="text-3xl font-bold leading-10 tracking-[-0.02em] text-primary-container">
                 {stat.value}
               </p>
               <p className="text-sm font-medium uppercase tracking-wider text-on-surface-variant">
@@ -154,9 +147,9 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-[1280px] px-6 py-16">
-        <div className="mb-16 text-center">
-          <h2 className="mb-2 text-4xl font-bold leading-[44px] tracking-[-0.02em] text-on-surface">
+      <section className="site-container py-12 md:py-14">
+        <div className="mb-10 text-center">
+          <h2 className="mb-2 text-3xl font-bold leading-10 tracking-[-0.02em] text-on-surface">
             Giá trị cốt lõi
           </h2>
           <div className="mx-auto h-1 w-20 rounded-full bg-primary" />
@@ -168,12 +161,12 @@ export default function AboutPage() {
             return (
               <article
                 key={value.title}
-                className="group rounded-2xl border border-outline-variant/30 bg-surface-container-lowest p-16 shadow-sm transition-shadow hover:shadow-md"
+                className="page-card lift-hover group rounded-3xl p-8"
               >
-                <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-primary-container/10 text-primary-container transition-transform group-hover:scale-110">
-                  <Icon className="h-8 w-8" />
+                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-primary-container/10 text-primary-container transition-transform group-hover:scale-110">
+                  <Icon className="h-7 w-7" />
                 </div>
-                <h3 className="mb-4 text-2xl font-semibold leading-8 text-on-surface">{value.title}</h3>
+                <h3 className="mb-3 text-xl font-semibold leading-7 text-on-surface">{value.title}</h3>
                 <p className="text-base leading-7 text-on-surface-variant">{value.description}</p>
               </article>
             );
@@ -181,15 +174,15 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="bg-surface py-16">
-        <div className="mx-auto max-w-[1280px] px-6 text-center">
-          <h2 className="mb-16 text-4xl font-bold leading-[44px] tracking-[-0.02em] text-on-surface">
+      <section className="bg-surface/70 py-12">
+        <div className="site-container text-center">
+          <h2 className="mb-10 text-3xl font-bold leading-10 tracking-[-0.02em] text-on-surface">
             Đội ngũ sáng lập
           </h2>
-          <div className="grid gap-16 md:grid-cols-3">
+          <div className="grid gap-8 md:grid-cols-3">
             {team.map((member) => (
-              <article key={member.name} className="flex flex-col items-center">
-                <div className="mb-6 h-48 w-48 overflow-hidden rounded-full border-4 border-primary/10">
+              <article key={member.name} className="flex flex-col items-center rounded-3xl p-5 lift-hover">
+                <div className="mb-5 h-36 w-36 overflow-hidden rounded-full border-4 border-primary/10 shadow-md">
                   <Image
                     src={member.image}
                     alt={member.name}
@@ -199,7 +192,7 @@ export default function AboutPage() {
                     className="h-full w-full object-cover"
                   />
                 </div>
-                <h3 className="text-2xl font-semibold leading-8 text-on-surface">{member.name}</h3>
+                <h3 className="text-xl font-semibold leading-7 text-on-surface">{member.name}</h3>
                 <p className="mt-1 text-sm font-medium uppercase tracking-widest text-primary-container">
                   {member.role}
                 </p>
@@ -209,8 +202,8 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="mx-auto my-16 max-w-[1040px] px-6">
-        <div className="relative overflow-hidden rounded-3xl p-12 text-center md:py-16 md:px-12 shadow-lg">
+      <section className="site-container py-12">
+        <div className="relative overflow-hidden rounded-3xl p-10 text-center shadow-lg md:px-12 md:py-14">
           <Image
             src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=1280&h=400&fit=crop"
             alt="Nông trại rau sạch tươi mát"

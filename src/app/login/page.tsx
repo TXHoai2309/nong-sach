@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import Breadcrumb from "@/components/layout/Breadcrumb";
 import { useAuthStore } from "@/store/auth-store";
 
 export default function LoginPage() {
@@ -77,19 +76,12 @@ export default function LoginPage() {
   const inputErr = "border-[#ba1a1a] focus:ring-[#ba1a1a]/20";
 
   return (
-    <main className="min-h-[calc(100vh-64px)]">
-      <div className="mx-auto max-w-[1280px] px-6 py-6">
-        <Breadcrumb
-          items={[
-            { label: "Trang chủ", href: "/" },
-            { label: "Đăng nhập" },
-          ]}
-        />
-      </div>
-      <div className="flex items-stretch">
+    <main className="page-surface min-h-[calc(100vh-64px)]">
+      <div className="site-container page-enter py-8">
+        <div className="page-card grid min-h-[640px] overflow-hidden rounded-[2rem] lg:grid-cols-2">
 
       {/* ── Left panel: hero image ── */}
-      <section className="hidden lg:flex w-1/2 relative items-center justify-center p-16 overflow-hidden">
+      <section className="relative hidden min-h-[640px] items-center justify-center overflow-hidden p-12 lg:flex">
         <Image
           src="https://lh3.googleusercontent.com/aida-public/AB6AXuAamNEouDQQeqyCNOQCjqC07gcgTBp6MM9OdSxz31vwpgj8bT_kh4n0fscu5UuidxwStuHKPeErZ74ANetNIgGkE_IdDZXRaxzXaL7OnraD-zo-ZpWpdwxtWi-9EzXn5kap_r03pyya67vEcEHfdZWXBkQO0X79f4ct0iZDTBzHSPujrckROliLUeRlO16y_T8WqP5vg5264xXls-4ZWhga5jhDKP3Ce3XE5IxlAceNSBTx1NEuGjJO5JrXesGJcIJ3cIWBUQ4mGQ"
           alt="Cánh đồng lúa bậc thang Việt Nam lúc hoàng hôn"
@@ -109,8 +101,8 @@ export default function LoginPage() {
       </section>
 
       {/* ── Right panel: form ── */}
-      <section className="w-full lg:w-1/2 flex items-center justify-center p-6 md:p-16 bg-[#f9f9ff]">
-        <div className="w-full max-w-[448px] bg-white p-8 md:p-10 rounded-2xl shadow-sm border border-[#bbcabf]/30">
+      <section className="flex w-full items-center justify-center bg-[#f9f9ff]/80 p-6 md:p-12">
+        <div className="page-card w-full max-w-[448px] rounded-3xl p-8 md:p-10">
 
           {/* Heading */}
           <div className="mb-8">
@@ -260,6 +252,7 @@ export default function LoginPage() {
         </div>
       </section>
 
+        </div>
       </div>
     </main>
   );

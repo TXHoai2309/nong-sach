@@ -5,7 +5,7 @@
 | Thông tin         | Chi tiết                                    |
 | ----------------- | ------------------------------------------- |
 | Tên dự án         | NôngSạch — Nền tảng giao dịch nông sản sạch |
-| Phiên bản         | MVP v0.3.5                                  |
+| Phiên bản         | MVP v0.3.6                                  |
 | Ngày tạo          | 03/06/2026                                  |
 | Cập nhật lần cuối | 04/06/2026                                  |
 | Nhóm              | NôngSạch Team                               |
@@ -221,6 +221,9 @@ Người tiêu dùng ngày càng lo ngại về an toàn thực phẩm, đặc b
   * `/login`
   * `/register`
 * Breadcrumb item cuối là text hiện tại, không phải link
+* Breadcrumb sử dụng style chung `.breadcrumb-bar` và nằm trong `.site-container` để không bị lệch ngang giữa các trang.
+* Các page chính dùng chuẩn content width `1120px`; không tự đặt nhiều `max-w` khác nhau trừ khi là card/form nhỏ bên trong.
+* UI có hiệu ứng nhẹ: page enter, reveal up và card hover; phải tôn trọng `prefers-reduced-motion`.
 
 ## 3.3. Thông tin thương hiệu & hỗ trợ khách hàng
 

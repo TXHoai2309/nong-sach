@@ -18,7 +18,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
   if (!product) {
     return (
-      <div className="min-h-screen bg-background px-4 py-12">
+      <div className="page-surface min-h-screen py-12">
         <Container className="max-w-[448px]">
           <Breadcrumb
             className="mb-8"
@@ -49,7 +49,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="page-surface min-h-screen">
       <ProductDetail product={product} relatedProducts={relatedProducts} />
     </div>
   );
