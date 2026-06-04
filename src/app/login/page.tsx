@@ -23,7 +23,11 @@ export default function LoginPage() {
 
   useEffect(() => {
     setMounted(true);
-    if (currentUser) router.push("/");
+    if (currentUser) {
+      const params = new URLSearchParams(window.location.search);
+      const redirectTo = params.get("redirect") || "/";
+      router.push(redirectTo);
+    }
   }, [currentUser, router]);
 
   if (!mounted) return null;
@@ -63,7 +67,9 @@ export default function LoginPage() {
     setLoading(false);
 
     if (res.success) {
-      router.push("/");
+      const params = new URLSearchParams(window.location.search);
+      const redirectTo = params.get("redirect") || "/";
+      router.push(redirectTo);
     } else {
       setFormError(res.message);
     }

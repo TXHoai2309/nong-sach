@@ -112,6 +112,12 @@ export default function CheckoutPage() {
   }, []);
 
   useEffect(() => {
+    if (mounted && !currentUser) {
+      router.push("/login?redirect=/checkout");
+    }
+  }, [mounted, currentUser, router]);
+
+  useEffect(() => {
     if (!currentUser) return;
     setFullName((prev) => prev || currentUser.name || "");
     setEmail((prev) => prev || currentUser.email || "");

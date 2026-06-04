@@ -126,6 +126,8 @@ Các ảnh chụp màn hình và video kiểm thử được lưu trữ trực t
 | **TC-05: Chức năng Mua lại** | Vào `/profile` -> Tab Đơn hàng -> Click nút "Mua lại" ở đơn hàng mẫu `#NS92831`. | Giỏ hàng cũ được xóa sạch, thêm toàn bộ các sản phẩm của đơn `#NS92831` vào giỏ và chuyển hướng tới `/cart`. | ✅ Pass |
 | **TC-06: Đổi mật khẩu & Đo độ mạnh** | Vào Tab Đổi mật khẩu; Gõ mật khẩu mới ngắn; Gõ mật khẩu mới dài và phức tạp hơn. | Thanh đo độ mạnh hiển thị màu Đỏ (Yếu), chuyển sang màu Vàng (Trung bình) và Xanh lá (Mạnh) khi độ phức tạp tăng lên. | ✅ Pass |
 | **TC-07: Sửa lỗi vỡ giao diện** | Kiểm tra màn hình máy tính trung bình khi đăng nhập tài khoản. | Tất cả liên kết, nút bấm trên Header được căn chỉnh thẳng hàng trên một dòng duy nhất mà không bị vỡ thành 2 hàng. | ✅ Pass |
+| **TC-08: Ràng buộc giỏ hàng & thanh toán khi chưa đăng nhập** | Thử click "Thêm giỏ" ở Trang chủ/Cửa hàng hoặc "Thêm vào giỏ" / "Mua ngay" ở trang Chi tiết khi chưa đăng nhập. | Hiển thị thông báo yêu cầu đăng nhập và chuyển hướng sang `/login?redirect=...` lưu lại đường dẫn gốc. | ✅ Pass |
+| **TC-09: Tự động chuyển hướng sau đăng nhập** | Đăng nhập tài khoản kiểm thử sau khi bị chuyển hướng từ trang Giỏ hàng `/cart` hoặc Thanh toán `/checkout`. | Đăng nhập thành công và tự động chuyển hướng đúng về trang đích ban đầu thay vì trang chủ `/`. | ✅ Pass |
 
 ---
 

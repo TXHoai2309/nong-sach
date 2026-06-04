@@ -4,17 +4,27 @@ import { useState } from "react";
 import { ShoppingCart, Check } from "lucide-react";
 import { Product } from "@/types/product";
 import { useCartStore } from "@/store/cart-store";
+import { useAuthStore } from "@/store/auth-store";
+import { useRouter } from "next/navigation";
 
 interface AddToCartButtonProps {
   product: Product;
 }
 
 export function AddToCartButton({ product }: AddToCartButtonProps) {
+  const router = useRouter();
+  const { currentUser } = useAuthStore();
   const addToCart = useCartStore((state) => state.addToCart);
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
 
   const handleAdd = () => {
+    if (!currentUser) {
+      alert("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!");
+      const currentPath = typeof window !== "undefined" ? window.location.pathname + window.location.search : "/products";
+      router.push(`/login?redirect=${encodeURIComponent(currentPath)}`);
+      return;
+    }
     for (let i = 0; i < quantity; i++) {
       addToCart(product);
     }

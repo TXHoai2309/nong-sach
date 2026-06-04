@@ -7,16 +7,26 @@ import { Product } from "@/types/product";
 import { CATEGORY_LABELS } from "@/types/product";
 import { formatCurrency } from "@/lib/format";
 import { useCartStore } from "@/store/cart-store";
+import { useAuthStore } from "@/store/auth-store";
+import { useRouter } from "next/navigation";
 
 interface ProductCardProps {
   product: Product;
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
+  const router = useRouter();
+  const { currentUser } = useAuthStore();
   const addToCart = useCartStore((state) => state.addToCart);
 
   const handleAddToCart = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
+    if (!currentUser) {
+      alert("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!");
+      const currentPath = typeof window !== "undefined" ? window.location.pathname + window.location.search : "/products";
+      router.push(`/login?redirect=${encodeURIComponent(currentPath)}`);
+      return;
+    }
     addToCart(product);
   };
 

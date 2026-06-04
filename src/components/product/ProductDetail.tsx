@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import { useCartStore } from "@/store/cart-store";
+import { useAuthStore } from "@/store/auth-store";
 import { formatCurrency } from "@/lib/format";
 import { CATEGORY_LABELS, Product } from "@/types/product";
 
@@ -52,6 +53,7 @@ const fallbackGalleryImages = [
 
 export default function ProductDetail({ product, relatedProducts }: ProductDetailProps) {
   const router = useRouter();
+  const { currentUser } = useAuthStore();
   const addToCart = useCartStore((state) => state.addToCart);
   const galleryImages = [
     product.image,
@@ -67,11 +69,22 @@ export default function ProductDetail({ product, relatedProducts }: ProductDetai
 
   function addSelectedQuantity() {
     if (isOutOfStock) return;
+    if (!currentUser) {
+      alert("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!");
+      router.push(`/login?redirect=${encodeURIComponent(`/products/${product.id}`)}`);
+      return;
+    }
     Array.from({ length: quantity }).forEach(() => addToCart(product));
   }
 
   function buyNow() {
-    addSelectedQuantity();
+    if (isOutOfStock) return;
+    if (!currentUser) {
+      alert("Vui lòng đăng nhập để mua sản phẩm!");
+      router.push(`/login?redirect=${encodeURIComponent(`/products/${product.id}`)}`);
+      return;
+    }
+    Array.from({ length: quantity }).forEach(() => addToCart(product));
     router.push("/checkout");
   }
 

@@ -4,12 +4,16 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useCartStore } from "@/store/cart-store";
+import { useAuthStore } from "@/store/auth-store";
+import { useRouter } from "next/navigation";
 import { formatCurrency } from "@/lib/format";
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import Container from "@/components/layout/Container";
 import { products } from "@/data/products";
 
 export default function CartPage() {
+  const router = useRouter();
+  const { currentUser } = useAuthStore();
   const [mounted, setMounted] = useState(false);
   const [promoCode, setPromoCode] = useState("");
   const [discount, setDiscount] = useState(0);
@@ -19,6 +23,12 @@ export default function CartPage() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (mounted && !currentUser) {
+      router.push("/login?redirect=/cart");
+    }
+  }, [mounted, currentUser, router]);
 
   const {
     items,

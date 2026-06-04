@@ -8,9 +8,17 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
 
 ## [0.3.9] - 2026-06-04
 
-### Sprint 3.9 — Thiết kế Trang Quản Lý Tài Khoản (Profile Page)
+### Sprint 3.9 — Thiết kế Trang Quản Lý Tài Khoản (Profile Page) & Ràng Buộc Đăng Nhập (Authorization)
 
 ### Added
+
+#### Ràng buộc đăng nhập (Authorization Constraints)
+* Thiết lập bắt buộc đăng nhập đối với các tính năng:
+  * **Thêm sản phẩm**: Ngăn chặn người dùng chưa đăng nhập thêm sản phẩm vào giỏ hàng từ `ProductCard`, `ProductDetail` và `AddToCartButton`. Hiển thị hộp thoại cảnh báo và tự động chuyển hướng về trang `/login` kèm đường dẫn hiện tại làm tham số `redirect`.
+  * **Trang Giỏ hàng (`/cart`)**: Bảo vệ route bằng cách tự động chuyển hướng người dùng chưa đăng nhập về trang `/login?redirect=/cart`.
+  * **Trang Thanh toán (`/checkout`)**: Bảo vệ route bằng cách tự động chuyển hướng người dùng chưa đăng nhập về trang `/login?redirect=/checkout`.
+* Nâng cấp trang **Đăng nhập (`/login`)**:
+  * Đọc tham số `redirect` từ URL để sau khi người dùng đăng nhập thành công, hệ thống tự động đưa họ quay trở lại tính năng/trang mà họ đang thao tác dở dang thay vì luôn chuyển về trang chủ `/`.
 
 #### `src/app/profile/page.tsx`
 * Tạo mới trang quản lý tài khoản cá nhân của người dùng, tích hợp thiết kế giao diện Material Design chi tiết:
