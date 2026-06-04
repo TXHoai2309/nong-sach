@@ -1,153 +1,127 @@
+"use client";
+
 import Link from "next/link";
-import { Leaf, Phone, Mail, MapPin } from "lucide-react";
-import Container from "./Container";
 
-const productLinks = [
-  { href: "/products?category=vegetables", label: "Rau củ" },
-  { href: "/products?category=fruits", label: "Trái cây" },
-  { href: "/products?category=herbs", label: "Rau thơm" },
-  { href: "/products?category=mushrooms", label: "Nấm" },
+// ── Data ───────────────────────────────────────────────────────────────────────
+const NAV_COLUMNS = [
+  {
+    title: "Mua sắm",
+    links: [
+      { href: "/products", label: "Tất cả sản phẩm" },
+      { href: "/products?tag=combo", label: "Combo tiết kiệm" },
+      { href: "/products?category=organic", label: "Sản phẩm Organic" },
+    ],
+  },
+  {
+    title: "Hỗ trợ",
+    links: [
+      { href: "/shipping", label: "Vận chuyển" },
+      { href: "/returns", label: "Hoàn trả" },
+      { href: "/contact", label: "Liên hệ" },
+    ],
+  },
+  {
+    title: "Pháp lý",
+    links: [
+      { href: "/privacy", label: "Chính sách bảo mật" },
+      { href: "/terms", label: "Điều khoản sử dụng" },
+    ],
+  },
 ];
 
-const infoLinks = [
-  { href: "/about", label: "Về chúng tôi" },
-  { href: "/blog", label: "Tin tức & Blog" },
-  { href: "/faq", label: "Câu hỏi thường gặp" },
-  { href: "/contact", label: "Liên hệ" },
+const SOCIAL_ICONS = [
+  { icon: "face_nod",     label: "Facebook" },
+  { icon: "photo_camera", label: "Instagram" },
+  { icon: "smart_display",label: "YouTube" },
 ];
 
-// SVG icons for social media (inline to avoid lucide-react version issues)
-function FacebookIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
-    </svg>
-  );
-}
-
-function InstagramIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
-      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-      <circle cx="12" cy="12" r="5" />
-      <circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" strokeWidth="0" />
-    </svg>
-  );
-}
-
+// ── Component ──────────────────────────────────────────────────────────────────
 export default function Footer() {
   return (
-    <footer className="bg-slate-900 text-slate-300">
-      <Container className="py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {/* Brand */}
-          <div className="lg:col-span-1">
-            <Link href="/" className="flex items-center gap-2 mb-4">
-              <span className="flex items-center justify-center w-9 h-9 bg-emerald-600 rounded-xl">
-                <Leaf className="w-5 h-5 text-white" />
-              </span>
-              <span className="text-xl font-bold text-white">
-                Nông<span className="text-emerald-400">Sạch</span>
-              </span>
-            </Link>
-            <p className="text-sm text-slate-400 leading-relaxed mb-4">
-              Nền tảng giao dịch nông sản sạch, kết nối trực tiếp nông dân với
-              người tiêu dùng. Tươi ngon — An toàn — Tin cậy.
+    <footer className="w-full">
+
+      {/* ── Newsletter section ── */}
+      <div className="bg-[#86f2e4]/30 py-12">
+        <div className="max-w-[1280px] mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="max-w-[28rem]">
+            <h2 className="text-[24px] leading-[32px] font-semibold text-[#111c2d] mb-2">
+              Đăng ký nhận bản tin
+            </h2>
+            <p className="text-[16px] text-[#3c4a42]">
+              Cập nhật ngay các mẹo nấu ăn hữu ích và ưu đãi đặc biệt hàng tuần
+              từ trang trại của chúng tôi.
             </p>
-            <div className="flex items-center gap-3">
-              <a
-                href="https://facebook.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Facebook NôngSạch"
-                className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-800 hover:bg-emerald-600 transition-colors"
-              >
-                <FacebookIcon />
-              </a>
-              <a
-                href="https://instagram.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Instagram NôngSạch"
-                className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-800 hover:bg-emerald-600 transition-colors"
-              >
-                <InstagramIcon />
-              </a>
+          </div>
+          <form
+            onSubmit={(e) => e.preventDefault()}
+            className="flex w-full md:w-auto gap-3"
+          >
+            <input
+              type="email"
+              placeholder="Email của bạn"
+              aria-label="Email đăng ký nhận bản tin"
+              className="flex-1 md:w-72 bg-white border-none rounded-2xl px-5 py-3 text-[16px] text-[#111c2d] placeholder:text-[#3c4a42]/50 focus:ring-2 focus:ring-[#006c49]/30 outline-none shadow-sm"
+            />
+            <button
+              type="submit"
+              className="bg-[#006c49] hover:opacity-90 text-white font-bold px-7 py-3 rounded-2xl hover:shadow-lg transition-all whitespace-nowrap text-[15px]"
+            >
+              Đăng ký
+            </button>
+          </form>
+        </div>
+      </div>
+
+      {/* ── Main footer ── */}
+      <div className="bg-[#e7eeff] border-t border-[#bbcabf]/30">
+        <div className="max-w-[1280px] mx-auto px-6 py-12 flex flex-col md:flex-row justify-between items-start gap-10">
+
+          {/* Brand */}
+          <div className="max-w-[280px]">
+            <Link href="/" className="block mb-3">
+              <span className="text-[24px] font-bold text-[#006c49]">NôngSạch</span>
+            </Link>
+            <p className="text-[14px] text-[#3c4a42] mb-5 leading-relaxed">
+              © 2024 NôngSạch. Tươi ngon từ ruộng đồng đến bàn ăn.
+            </p>
+            {/* Social icons */}
+            <div className="flex gap-3">
+              {SOCIAL_ICONS.map(({ icon, label }) => (
+                <a
+                  key={label}
+                  href="#"
+                  aria-label={label}
+                  className="w-8 h-8 rounded-full bg-[#006c49]/10 flex items-center justify-center text-[#006c49] hover:bg-[#006c49] hover:text-white transition-all"
+                >
+                  <span className="material-symbols-outlined text-[18px]">{icon}</span>
+                </a>
+              ))}
             </div>
           </div>
 
-          {/* Products */}
-          <div>
-            <h3 className="text-white font-semibold mb-4">Danh mục sản phẩm</h3>
-            <ul className="space-y-2">
-              {productLinks.map((link) => (
-                <li key={link.href}>
+          {/* Nav columns */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-10 w-full md:w-auto">
+            {NAV_COLUMNS.map((col) => (
+              <div key={col.title} className="flex flex-col gap-3">
+                <span className="text-[14px] font-bold text-[#111c2d] uppercase tracking-wide">
+                  {col.title}
+                </span>
+                {col.links.map((link) => (
                   <Link
+                    key={link.href}
                     href={link.href}
-                    className="text-sm text-slate-400 hover:text-emerald-400 transition-colors"
+                    className="text-[13px] text-[#3c4a42] hover:text-[#006c49] transition-colors"
                   >
                     {link.label}
                   </Link>
-                </li>
-              ))}
-            </ul>
+                ))}
+              </div>
+            ))}
           </div>
 
-          {/* Info */}
-          <div>
-            <h3 className="text-white font-semibold mb-4">Thông tin</h3>
-            <ul className="space-y-2">
-              {infoLinks.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-slate-400 hover:text-emerald-400 transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Contact */}
-          <div>
-            <h3 className="text-white font-semibold mb-4">Liên hệ</h3>
-            <ul className="space-y-3">
-              <li className="flex items-start gap-3 text-sm text-slate-400">
-                <MapPin className="w-4 h-4 mt-0.5 text-emerald-400 shrink-0" />
-                123 Đường Nông Nghiệp, Quận 12, TP.HCM
-              </li>
-              <li className="flex items-center gap-3 text-sm text-slate-400">
-                <Phone className="w-4 h-4 text-emerald-400 shrink-0" />
-                <a href="tel:+84901234567" className="hover:text-emerald-400 transition-colors">
-                  0901 234 567
-                </a>
-              </li>
-              <li className="flex items-center gap-3 text-sm text-slate-400">
-                <Mail className="w-4 h-4 text-emerald-400 shrink-0" />
-                <a href="mailto:hello@nongsach.vn" className="hover:text-emerald-400 transition-colors">
-                  hello@nongsach.vn
-                </a>
-              </li>
-            </ul>
-          </div>
         </div>
+      </div>
 
-        <div className="mt-10 pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-slate-500">
-            © {new Date().getFullYear()} NôngSạch. Tất cả quyền được bảo lưu.
-          </p>
-          <div className="flex items-center gap-4">
-            <Link href="/privacy" className="text-xs text-slate-500 hover:text-slate-300 transition-colors">
-              Chính sách bảo mật
-            </Link>
-            <Link href="/terms" className="text-xs text-slate-500 hover:text-slate-300 transition-colors">
-              Điều khoản sử dụng
-            </Link>
-          </div>
-        </div>
-      </Container>
     </footer>
   );
 }
