@@ -236,6 +236,22 @@ export default function CheckoutPage() {
     };
     localStorage.setItem("nong-sach-last-order", JSON.stringify(orderDetails));
 
+    // Save to global orders list in localStorage
+    try {
+      const existingOrdersStr = localStorage.getItem("nong-sach-orders");
+      const existingOrders = existingOrdersStr ? JSON.parse(existingOrdersStr) : [];
+      const newOrder = {
+        ...orderDetails,
+        id: orderId,
+        date: new Date().toLocaleDateString("vi-VN"),
+        status: "processing", // initial state
+        userId: currentUser?.id || "guest",
+      };
+      localStorage.setItem("nong-sach-orders", JSON.stringify([newOrder, ...existingOrders]));
+    } catch (e) {
+      console.error("Error saving order to list", e);
+    }
+
     clearCart();
 
     const queryParams = new URLSearchParams({

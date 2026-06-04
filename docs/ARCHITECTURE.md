@@ -1,7 +1,7 @@
 # 🌿 NôngSạch Architecture
 
 > Architecture Document
-> Version: v1.1.1
+> Version: v1.1.2
 > Project: NôngSạch — Nền tảng giao dịch nông sản sạch
 
 ---
@@ -151,6 +151,7 @@ nong-sach/
 | /register      | Register        |
 | /about         | About           |
 | /contact       | Contact         |
+| /profile       | Trang cá nhân   |
 
 ## Navigation Rules
 
@@ -167,6 +168,7 @@ nong-sach/
   * `/checkout`
   * `/login`
   * `/register`
+  * `/profile`
 
 ---
 
@@ -277,6 +279,12 @@ currentUser: User | null
 register()
 login()
 logout()
+updateProfile()
+changePassword()
+addAddress()
+updateAddress()
+deleteAddress()
+setDefaultAddress()
 ```
 
 ### Business Rules
@@ -439,6 +447,7 @@ Clear Session
 | checkout/page.tsx          | Client | Form Handling     |
 | login/page.tsx             | Client | Auth State        |
 | register/page.tsx          | Client | Auth State        |
+| profile/page.tsx           | Client | Tab navigation, Profile & Address updates |
 
 ---
 

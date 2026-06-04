@@ -172,6 +172,33 @@ Người tiêu dùng ngày càng lo ngại về an toàn thực phẩm, đặc b
 * Header hiển thị tên user + nút Đăng xuất
 * Phiên đăng nhập persist sau F5
 
+### US-07B: Quản lý tài khoản (Trang cá nhân)
+
+**Là** người dùng đã đăng nhập, **tôi muốn** có một trang cá nhân quản lý thông tin tài khoản, **để** cập nhật dữ liệu cá nhân, theo dõi lịch sử đơn hàng, quản lý địa chỉ giao hàng và đổi mật khẩu.
+
+#### Acceptance Criteria
+
+* URL `/profile` (Redirect về `/login` nếu chưa đăng nhập)
+* Bố cục 2 cột (Desktop) và xếp chồng responsive (Mobile):
+  * **Sidebar**: Hiển thị Avatar tính từ chữ cái đầu của tên, họ tên, email, nhãn thành viên (Thành viên từ [tháng/năm]), menu điều hướng các tab và nút Đăng xuất.
+  * **Tab 1: Thông tin cá nhân**: Cho phép sửa Họ tên, Số điện thoại, Ngày sinh, Giới tính. Email ở trạng thái chỉ đọc. Nút lưu thay đổi hoạt động tốt.
+  * **Tab 2: Đơn hàng của tôi**:
+    - Hiển thị danh sách đơn hàng đã mua từ tài khoản của người dùng.
+    - Bộ lọc trạng thái đơn hàng: Tất cả, Đang xử lý, Hoàn thành.
+    - Mỗi đơn hàng hiển thị mã, ngày đặt, trạng thái, ảnh sản phẩm, số lượng, tổng tiền.
+    - Nút "Xem chi tiết" mở rộng xem thông tin người nhận, địa chỉ cụ thể, danh sách chi tiết các mặt hàng.
+    - Nút **"Mua lại"** tự động thêm tất cả sản phẩm của đơn hàng đó vào giỏ hàng và chuyển hướng tới `/cart`.
+  * **Tab 3: Địa chỉ giao hàng**:
+    - Hiển thị danh sách sổ địa chỉ nhận hàng, có nhãn "MẶC ĐỊNH" cho địa chỉ chính.
+    - Biểu mẫu Thêm/Sửa địa chỉ: họ tên, SĐT, địa chỉ cụ thể, chọn Tỉnh/Thành phố và Quận/Huyện động từ API (fallback giống trang Checkout).
+    - Cho phép đặt địa chỉ làm mặc định hoặc xóa địa chỉ (nếu có nhiều hơn 1 địa chỉ).
+  * **Tab 4: Đổi mật khẩu**:
+    - Ô nhập: Mật khẩu hiện tại, Mật khẩu mới, Xác nhận mật khẩu mới.
+    - Tích hợp thanh đánh giá độ mạnh của mật khẩu (Yếu, Trung bình, Mạnh) bằng màu sắc.
+    - Kiểm tra mật khẩu hiện tại khớp với tài khoản trong kho lưu trữ trước khi đổi.
+  * **Tab 5: Thông báo**: Hiển thị danh sách thông báo hệ thống và đơn hàng.
+* Đồng bộ hóa: Khi đặt hàng thành công tại `/checkout`, đơn hàng mới sẽ tự động được thêm vào lịch sử đơn hàng trên trang cá nhân.
+
 ## 3.2.1. Navigation & Breadcrumb
 
 ### US-NAV: Điều hướng thống nhất toàn site
@@ -370,6 +397,7 @@ interface ContactMessage {
 | T-22 | Breadcrumb component + coverage toàn site      | 2  | ✅      |
 | T-23 | Header cleanup + contact layout compact fix    | 1  | ✅      |
 | T-24 | Checkout compact layout + Province API          | 2  | ✅      |
+| T-25 | Account Profile Dashboard page                 | 3  | ✅      |
 
 ## Backlog Phase 2 (Tương lai)
 

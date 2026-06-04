@@ -6,6 +6,44 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
 
 ---
 
+## [0.3.9] - 2026-06-04
+
+### Sprint 3.9 — Thiết kế Trang Quản Lý Tài Khoản (Profile Page)
+
+### Added
+
+#### `src/app/profile/page.tsx`
+* Tạo mới trang quản lý tài khoản cá nhân của người dùng, tích hợp thiết kế giao diện Material Design chi tiết:
+  * **Thông tin cá nhân**: Cập nhật Họ tên, SĐT, Ngày sinh, Giới tính. Giữ trường Email ở chế độ chỉ đọc.
+  * **Đơn hàng của tôi**: Hiển thị danh sách đơn hàng đã mua, bộ lọc trạng thái (Tất cả, Đang xử lý, Hoàn thành), hiển thị hình ảnh và chi tiết sản phẩm, cùng chức năng **"Mua lại"** tự động thêm toàn bộ sản phẩm vào giỏ hàng. Cung cấp dữ liệu đơn hàng mẫu #NS92831.
+  * **Địa chỉ giao hàng**: Danh sách địa chỉ nhận hàng, có nhãn địa chỉ mặc định, chức năng thêm mới / chỉnh sửa / xóa địa chỉ sử dụng API Tỉnh/Thành phố & Quận/Huyện động.
+  * **Đổi mật khẩu**: Biểu mẫu cập nhật mật khẩu với thanh đo độ mạnh yếu (Mật khẩu yếu, Trung bình, Mạnh) bằng màu sắc trực quan.
+  * **Thông báo**: Xem các thông báo đẩy tự động từ hệ thống.
+
+#### `src/types/user.ts` & `src/store/auth-store.ts`
+* Mở rộng cấu trúc dữ liệu người dùng (`User`, `RegisteredUser`) và triển khai các hàm cập nhật thông tin cá nhân, cập nhật mật khẩu, quản lý sổ địa chỉ (thêm, sửa, xóa, thiết lập địa chỉ mặc định) đồng bộ trong store Zustand.
+* Định hình thông tin tài khoản mặc định là **"Nguyễn Văn A"** (`nguyenvana@gmail.com` / mật khẩu `12345678`) để khớp hoàn hảo với mockup.
+
+#### `src/app/checkout/page.tsx`
+* Kết nối luồng thanh toán với trang cá nhân: Khi người dùng đặt hàng thành công, tự động lưu thông tin đơn hàng vào lịch sử đơn hàng của tài khoản cá nhân trên Local Storage.
+
+---
+
+## [0.3.8] - 2026-06-04
+
+### Sprint 3.8 — Fix Header Layout Wrapping Issues
+
+### Fixed
+
+#### `src/components/layout/Header.tsx` & `src/components/layout/CartBadge.tsx`
+
+* Sửa lỗi vỡ giao diện trên thanh Header khi đăng nhập hoặc trên màn hình trung bình:
+  * Thêm lớp `whitespace-nowrap` và `shrink-0` vào tất cả các liên kết điều hướng (Navigation links), Logo, biểu tượng giỏ hàng, thông tin tài khoản, và nút "Đăng xuất" để ngăn việc xuống dòng ngoài ý muốn.
+  * Tối ưu hóa các khoảng trống (gaps) giữa các phần tử bằng các thuộc tính responsive của Tailwind CSS (`gap-6 lg:gap-12`, `gap-4 lg:gap-7`, `gap-3 lg:gap-5`).
+  * Làm cho ô tìm kiếm có chiều rộng co giãn linh hoạt (`w-40 md:w-52 lg:w-72`) để đảm bảo thanh menu luôn hiển thị đẹp mắt trên một dòng trên mọi kích thước màn hình desktop.
+
+---
+
 ## [0.3.7] - 2026-06-04
 
 ### Sprint 3.7 — Redesign Success Page từ Screenshot & Tích hợp Local Storage
