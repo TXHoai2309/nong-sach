@@ -217,6 +217,25 @@ export default function CheckoutPage() {
     if (!validate()) return;
 
     const orderId = `NS-${Date.now()}`;
+
+    // Save order details to localStorage for display on the success page
+    const orderDetails = {
+      orderId,
+      name: fullName.trim(),
+      phone: phone.trim(),
+      address: `${address.trim()}, ${selectedDistrict?.name ?? ""}, ${selectedProvince?.name ?? ""}`,
+      total,
+      paymentMethod,
+      items: items.map((item) => ({
+        productId: item.productId,
+        name: item.name,
+        price: item.price,
+        image: item.image,
+        quantity: item.quantity,
+      })),
+    };
+    localStorage.setItem("nong-sach-last-order", JSON.stringify(orderDetails));
+
     clearCart();
 
     const queryParams = new URLSearchParams({

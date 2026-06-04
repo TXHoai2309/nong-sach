@@ -6,6 +6,77 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
 
 ---
 
+## [0.3.7] - 2026-06-04
+
+### Sprint 3.7 — Redesign Success Page từ Screenshot & Tích hợp Local Storage
+
+### Added
+
+#### `src/app/checkout/success/page.tsx`
+
+* Thiết kế lại hoàn toàn trang thông báo đặt hàng thành công theo mẫu screenshot:
+  * Hiển thị dấu tích tròn xanh lá lớn ở trên cùng.
+  * Hiển thị tiêu đề xanh lá cây `Đặt hàng thành công! 🎉` cùng dòng cảm ơn/trạng thái.
+  * Thiết kế capsule badge chứa mã đơn hàng có nút **Sao chép (Copy to clipboard)** tương tác động.
+  * Thiết kế lại bảng thông tin đơn hàng chia thành 2 cột:
+    * Cột trái: Trạng thái (Đang chuẩn bị), Giao hàng dự kiến (14:00 - 16:00 hôm nay), Thanh toán (Tên phương thức động), Địa chỉ nhận hàng. Các mục đi kèm biểu tượng Material Icons tương ứng.
+    * Cột phải: Danh sách sản phẩm chi tiết đã mua (ảnh, tên, số lượng dạng xQ, tổng tiền của sản phẩm đó) cùng dòng Tổng cộng thanh toán.
+  * Thêm thanh tiến trình đơn hàng (Timeline Stepper) gồm 4 bước: Đặt hàng (Active xanh lá), Đóng gói, Đang giao, Đã nhận.
+  * Thêm banner thông báo Zalo/Hotline hỗ trợ có nút tương tác bật thông báo và ẩn/hiện.
+  * Thêm nút hành động "Theo dõi đơn hàng" và "Tiếp tục mua sắm".
+  * Hỗ trợ nút tải hóa đơn PDF thực tế bằng cách gọi lệnh `window.print()` của trình duyệt.
+  * Thêm danh sách gợi ý mua sắm "Bạn có thể thích" chứa 4 sản phẩm ngẫu nhiên từ cơ sở dữ liệu (đã lọc các sản phẩm vừa mua), có khả năng nhấp chuột chuyển hướng tới trang chi tiết sản phẩm thật.
+
+---
+
+### Changed
+
+#### `src/app/checkout/page.tsx`
+
+* Tích hợp lưu trữ thông tin đơn hàng đầy đủ (bao gồm cả danh sách các sản phẩm và số lượng) vào `localStorage` với khóa `nong-sach-last-order` trước khi dọn giỏ hàng và chuyển hướng, giúp trang thành công hiển thị được chi tiết danh sách sản phẩm.
+
+---
+
+### Fixed
+
+#### `src/app/checkout/success/page.tsx`
+
+* Sửa lỗi vỡ giao diện phần mô tả và stepper thanh tiến trình (text bị co cụm thành hàng dọc 40px và stepper bị co cụm thành 64px) do conflict giữa custom spacing của Tailwind v4 và các class `max-w-lg` / `max-w-xl`. Đổi các class này thành explicit width `max-w-[480px]` và `max-w-[520px]`.
+
+---
+
+## [0.3.6] - 2026-06-04
+
+### Sprint 3.6 — Redesign Cart Page từ Stitch HTML / Screenshot
+
+### Added
+
+* Hỗ trợ tìm mã giảm giá và áp dụng mã giảm giá động (ví dụ: nhập mã `NONGSACK` để được giảm ngay 15.000₫).
+
+---
+
+### Changed
+
+#### `src/app/cart/page.tsx`
+
+* Thiết kế lại hoàn toàn giao diện giỏ hàng để khớp với và đáp ứng tất cả các yêu cầu từ ảnh chụp màn hình:
+  * Đổi tiêu đề thành màu xanh `text-primary` "Giỏ hàng của bạn" kèm badge số lượng sản phẩm bên cạnh.
+  * Thiết kế lại các card sản phẩm:
+    * Thêm badge xuất xứ (ví dụ: ĐÀ LẠT, TIỀN GIANG, LÂM ĐỒNG) đồng bộ màu sắc riêng bằng cách tra cứu dữ liệu gốc.
+    * Thêm thông báo cảnh báo nếu số lượng tồn kho thấp (`⚠️ Chỉ còn X sản phẩm`).
+    * Thay đổi bộ chọn số lượng thành pill-shaped select với các nút tăng/giảm và số lượng hiển thị ngang.
+    * Đặt nút xóa (dấu X) ở góc trên bên phải mỗi card sản phẩm.
+  * Tái cấu trúc phần chân trang:
+    * Link "Tiếp tục mua sắm" nằm ở góc trái dưới danh sách sản phẩm.
+    * Khung nhập mã giảm giá và nút "Áp dụng" nằm ở góc phải dưới danh sách sản phẩm.
+  * Thiết kế lại sidebar tóm tắt đơn hàng:
+    * Sử dụng nền màu xanh dương nhạt `#f0f3ff` và bo góc tròn `rounded-[2rem]`.
+    * Hiển thị dòng Giảm giá và tổng tiền sau giảm.
+    * Thêm các nhãn uy tín/trust badges dưới nút checkout (Thanh toán an toàn, Đổi trả 7 ngày, Giao trong ngày).
+    * Thêm hộp thoại thông tin liên hệ hỗ trợ Zalo/Hotline ở góc dưới sidebar.
+
+---
+
 ## [0.3.5] - 2026-06-04
 
 ### Sprint 3.5 — Checkout Compact Layout & Province API

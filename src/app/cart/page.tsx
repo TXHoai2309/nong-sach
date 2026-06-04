@@ -3,14 +3,18 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Trash2, Plus, Minus, ArrowLeft, ShoppingBag } from "lucide-react";
-import Breadcrumb from "@/components/layout/Breadcrumb";
-import Container from "@/components/layout/Container";
 import { useCartStore } from "@/store/cart-store";
 import { formatCurrency } from "@/lib/format";
+import Breadcrumb from "@/components/layout/Breadcrumb";
+import Container from "@/components/layout/Container";
+import { products } from "@/data/products";
 
 export default function CartPage() {
   const [mounted, setMounted] = useState(false);
+  const [promoCode, setPromoCode] = useState("");
+  const [discount, setDiscount] = useState(0);
+  const [promoError, setPromoError] = useState("");
+  const [promoSuccess, setPromoSuccess] = useState("");
 
   useEffect(() => {
     setMounted(true);
@@ -21,203 +25,305 @@ export default function CartPage() {
     removeFromCart,
     increaseQuantity,
     decreaseQuantity,
-    clearCart,
     getTotalPrice,
     getTotalItems,
   } = useCartStore();
 
+  const handleApplyPromo = () => {
+    setPromoError("");
+    setPromoSuccess("");
+    if (promoCode.trim().toUpperCase() === "NONGSACK") {
+      setDiscount(15000);
+      setPromoSuccess("Áp dụng mã giảm giá 15.000₫ thành công!");
+    } else if (!promoCode.trim()) {
+      setPromoError("Vui lòng nhập mã giảm giá");
+      setDiscount(0);
+    } else {
+      setPromoError("Mã giảm giá không chính xác");
+      setDiscount(0);
+    }
+  };
+
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-slate-50 py-10 flex items-center justify-center">
-        <div className="text-slate-500">Đang tải...</div>
+      <div className="min-h-screen bg-background py-10 flex items-center justify-center">
+        <div className="text-on-surface-variant">Đang tải...</div>
       </div>
     );
   }
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-slate-50 px-6 py-10">
+      <div className="min-h-screen bg-background py-10 flex items-center justify-center">
         <Container>
           <Breadcrumb
+            className="mb-8"
             items={[
               { label: "Trang chủ", href: "/" },
               { label: "Giỏ hàng" },
             ]}
           />
+          <div className="max-w-[448px] mx-auto bg-surface-container-lowest rounded-2xl shadow-[0_10px_15px_-3px_rgba(30,41,59,0.05)] border border-outline-variant/20 p-8 text-center mt-10">
+            <span className="material-symbols-outlined text-[64px] text-primary mb-4">
+              shopping_cart
+            </span>
+            <h1 className="text-headline-md font-bold text-on-surface mb-2">
+              Giỏ hàng của bạn đang trống
+            </h1>
+            <p className="text-on-surface-variant text-label-md mb-6 leading-relaxed">
+              Hãy quay lại trang sản phẩm và chọn những nông sản tươi ngon nhất!
+            </p>
+            <Link
+              href="/products"
+              className="inline-flex items-center justify-center px-6 py-3 bg-primary text-white font-bold rounded-xl hover:opacity-90 active:scale-95 transition-all duration-300 shadow-md"
+            >
+              Quay lại trang sản phẩm
+            </Link>
+          </div>
         </Container>
-        <div className="text-center py-20 px-4">
-          <ShoppingBag className="w-16 h-16 text-slate-300 mx-auto mb-4 animate-bounce" />
-          <h1 className="text-xl font-bold text-slate-700 mb-2">
-            Giỏ hàng của bạn đang trống.
-          </h1>
-          <p className="text-slate-400 text-sm mb-6">
-            Hãy quay lại trang sản phẩm và chọn những nông sản tươi ngon nhất!
-          </p>
-          <Link
-            href="/products"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-colors shadow-md hover:shadow-lg active:scale-95"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Quay lại trang sản phẩm
-          </Link>
-        </div>
       </div>
     );
   }
 
+  // Dynamic calculations
+  const subtotal = getTotalPrice();
+  const finalDiscount = Math.min(discount, subtotal);
+  const total = Math.max(0, subtotal - finalDiscount);
+
+  // Origin badges styled colors
+  const getOriginBadgeStyle = (orig: string) => {
+    const o = orig.toLowerCase();
+    if (o.includes("tiền giang")) {
+      return "bg-[#e0f7fa] text-[#006064] text-[10px] font-bold px-2 py-0.5 rounded-md border border-[#b2ebf2]";
+    }
+    if (o.includes("lâm đồng") || o.includes("đà lạt")) {
+      return "bg-[#e8f5e9] text-[#2e7d32] text-[10px] font-bold px-2 py-0.5 rounded-md border border-[#c8e6c9]";
+    }
+    return "bg-[#f0f3ff] text-primary text-[10px] font-bold px-2 py-0.5 rounded-md border border-[#bbcabf]/30";
+  };
+
+  // Mock unit matching
+  const getUnit = (name: string) => {
+    if (name.includes("Rau") || name.includes("Xà lách") || name.includes("Húng")) return "bó";
+    if (name.includes("Gạo") || name.includes("Khoai") || name.includes("Cà chua") || name.includes("Cam") || name.includes("Bưởi") || name.includes("Dưa") || name.includes("Cà rốt")) return "kg";
+    if (name.includes("Chuối")) return "nải";
+    return "hộp";
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 py-10">
+    <div className="min-h-screen bg-background py-10">
       <Container>
         <Breadcrumb
-          className="mb-6"
+          className="mb-8"
           items={[
             { label: "Trang chủ", href: "/" },
             { label: "Giỏ hàng" },
           ]}
         />
-        {/* Tiêu đề & Back button */}
-        <div className="flex items-center gap-3 mb-8">
-          <Link
-            href="/products"
-            aria-label="Quay lại trang sản phẩm"
-            className="flex items-center justify-center w-9 h-9 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4 text-slate-600" />
-          </Link>
-          <h1 className="text-2xl font-bold text-slate-800">
-            Giỏ hàng
+
+        {/* Heading Left with total items count badge */}
+        <div className="flex items-center gap-xs sm:gap-sm mb-8">
+          <h1 className="text-headline-lg font-bold text-primary">
+            Giỏ hàng của bạn
           </h1>
-          <span className="text-sm text-slate-400">({getTotalItems()} sản phẩm)</span>
+          <span className="bg-[#10b981] text-white text-xs px-3 py-1 rounded-full font-bold">
+            {getTotalItems()} sản phẩm
+          </span>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Danh sách sản phẩm trong giỏ */}
-          <div className="lg:col-span-2 flex flex-col gap-4">
-            {items.map((item) => (
-              <div
-                key={item.productId}
-                className="flex gap-4 bg-white rounded-2xl border border-slate-100 shadow-sm p-4 items-center"
-              >
-                {/* Ảnh sản phẩm */}
-                <div className="relative w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-slate-50 border border-slate-100">
-                  <Image
-                    src={item.image}
-                    alt={item.name}
-                    fill
-                    sizes="80px"
-                    className="object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src =
-                        "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=200&h=200&fit=crop";
-                    }}
-                  />
-                </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-xl">
+          {/* Left Column: Cart Items List */}
+          <div className="lg:col-span-8 space-y-md">
+            {items.map((item) => {
+              const productData = products.find((p) => p.id === item.productId);
+              const origin = productData?.origin || "Đà Lạt";
+              // Low stock warning (stock <= 5)
+              const isLowStock = item.stock <= 5;
 
-                {/* Tên & Giá */}
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-slate-800 text-sm sm:text-base truncate">
-                    {item.name}
-                  </h3>
-                  <p className="text-emerald-600 font-bold text-sm mt-1">
-                    {formatCurrency(item.price)}
-                  </p>
-                </div>
+              return (
+                <div
+                  key={item.productId}
+                  className="relative flex gap-4 bg-white rounded-3xl border border-outline-variant/20 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.03)] p-5 items-center"
+                >
+                  {/* Remove Button (X) at Top Right */}
+                  <button
+                    onClick={() => removeFromCart(item.productId)}
+                    className="absolute top-4 right-4 text-on-surface-variant hover:text-error transition-colors p-1 cursor-pointer"
+                    aria-label={`Xóa ${item.name} khỏi giỏ hàng`}
+                  >
+                    <span className="material-symbols-outlined text-[20px]">close</span>
+                  </button>
 
-                {/* Điều khiển số lượng & Nút xóa */}
-                <div className="flex items-center gap-4 shrink-0">
-                  <div className="flex items-center gap-2">
-                    {/* Nút giảm số lượng */}
-                    <button
-                      id={`qty-decrease-${item.productId}`}
-                      onClick={() => decreaseQuantity(item.productId)}
-                      aria-label="Giảm số lượng"
-                      className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-colors"
-                    >
-                      <Minus className="w-3.5 h-3.5 text-slate-600" />
-                    </button>
-                    {/* Số lượng */}
-                    <span className="w-6 text-center text-sm font-semibold text-slate-800">
-                      {item.quantity}
-                    </span>
-                    {/* Nút tăng số lượng */}
-                    <button
-                      id={`qty-increase-${item.productId}`}
-                      onClick={() => increaseQuantity(item.productId)}
-                      disabled={item.quantity >= item.stock}
-                      aria-label="Tăng số lượng"
-                      className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      <Plus className="w-3.5 h-3.5 text-slate-600" />
-                    </button>
+                  {/* Product image */}
+                  <div className="relative w-20 h-20 rounded-2xl overflow-hidden shrink-0 bg-background border border-outline-variant/10">
+                    <Image
+                      src={item.image}
+                      alt={item.name}
+                      fill
+                      sizes="80px"
+                      className="object-cover"
+                    />
                   </div>
 
-                  <p className="text-sm font-bold text-slate-800 hidden sm:block w-24 text-right">
-                    {formatCurrency(item.price * item.quantity)}
-                  </p>
+                  {/* Middle Area: Name, Origin, Stock warning, and Pill Qty Select */}
+                  <div className="flex-1 min-w-0 pr-6 space-y-1">
+                    <h3 className="font-bold text-on-surface text-base sm:text-lg truncate">
+                      {item.name}
+                    </h3>
+                    <div className="flex flex-wrap gap-1">
+                      <span className={getOriginBadgeStyle(origin)}>
+                        {origin.toUpperCase()}
+                      </span>
+                    </div>
+                    {isLowStock && (
+                      <p className="text-xs text-error font-medium flex items-center gap-1 mt-1">
+                        <span>⚠️</span> Chỉ còn {item.stock} sản phẩm
+                      </p>
+                    )}
 
-                  {/* Nút xóa khỏi giỏ */}
+                    {/* Pill selector quantity */}
+                    <div className="flex items-center gap-2 mt-3 bg-surface-container-low border border-outline-variant/40 rounded-full w-fit px-1.5 py-0.5">
+                      <button
+                        onClick={() => decreaseQuantity(item.productId)}
+                        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container-lowest text-on-surface-variant transition-colors cursor-pointer"
+                        aria-label="Giảm số lượng"
+                      >
+                        <span className="text-[18px] font-semibold">-</span>
+                      </button>
+                      <span className="w-6 text-center text-sm font-bold text-on-surface">
+                        {item.quantity}
+                      </span>
+                      <button
+                        onClick={() => increaseQuantity(item.productId)}
+                        disabled={item.quantity >= item.stock}
+                        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container-lowest text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                        aria-label="Tăng số lượng"
+                      >
+                        <span className="text-[18px] font-semibold">+</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Total price for the item */}
+                  <div className="text-right shrink-0 mt-auto sm:mt-0">
+                    <p className="text-lg font-bold text-on-background">
+                      {formatCurrency(item.price * item.quantity)}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Bottom bar: Continue shopping link & Promo Code Apply box */}
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-6 pt-4 border-t border-outline-variant/10">
+              <Link
+                href="/products"
+                className="text-on-surface hover:text-primary transition-colors flex items-center gap-1 font-bold text-sm"
+              >
+                <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+                Tiếp tục mua sắm
+              </Link>
+
+              {/* Promo Code Apply */}
+              <div className="flex flex-col gap-1 w-full sm:w-auto">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Nhập mã giảm giá..."
+                    value={promoCode}
+                    onChange={(e) => {
+                      setPromoCode(e.target.value);
+                      if (promoError) setPromoError("");
+                      if (promoSuccess) setPromoSuccess("");
+                    }}
+                    className="w-full sm:w-64 rounded-xl border border-outline-variant focus:border-primary p-sm bg-surface text-sm focus:outline-none"
+                  />
                   <button
-                    id={`remove-${item.productId}`}
-                    onClick={() => removeFromCart(item.productId)}
-                    aria-label={`Xóa ${item.name} khỏi giỏ hàng`}
-                    className="text-slate-400 hover:text-red-500 transition-colors p-1"
+                    onClick={handleApplyPromo}
+                    className="px-md bg-primary text-white rounded-xl font-bold hover:opacity-95 transition-colors cursor-pointer text-sm"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    Áp dụng
                   </button>
                 </div>
+                {promoError && (
+                  <p className="text-xs text-error font-semibold mt-1 pl-1">{promoError}</p>
+                )}
+                {promoSuccess && (
+                  <p className="text-xs text-primary font-semibold mt-1 pl-1">{promoSuccess}</p>
+                )}
               </div>
-            ))}
-
-            <button
-              id="clear-cart"
-              onClick={clearCart}
-              className="self-start text-xs text-slate-400 hover:text-red-500 transition-colors flex items-center gap-1 mt-2"
-            >
-              <Trash2 className="w-3.5 h-3.5" /> Xóa toàn bộ giỏ hàng
-            </button>
+            </div>
           </div>
 
-          {/* Tóm tắt đơn hàng */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 sticky top-20">
-              <h2 className="font-bold text-slate-800 text-base mb-5">
+          {/* Right Column: Order Summary (Sidebar) */}
+          <div className="lg:col-span-4">
+            <div className="bg-[#f0f3ff] rounded-[2rem] border border-outline-variant/15 p-6 space-y-6 sticky top-24 shadow-[0_10px_20px_-5px_rgba(0,108,73,0.02)]">
+              <h2 className="font-bold text-on-surface text-lg">
                 Tóm tắt đơn hàng
               </h2>
 
-              <div className="flex flex-col gap-3 pb-4 border-b border-slate-100">
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Tổng số sản phẩm</span>
-                  <span className="text-slate-800 font-medium">{getTotalItems()}</span>
+              <div className="flex flex-col gap-3.5 text-sm text-on-surface-variant font-medium">
+                <div className="flex justify-between items-center">
+                  <span>Tạm tính</span>
+                  <span className="text-on-surface font-bold">{formatCurrency(subtotal)}</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Phí vận chuyển</span>
-                  <span className="text-emerald-600 font-medium">Miễn phí</span>
+                <div className="flex justify-between items-center">
+                  <span>Phí giao hàng</span>
+                  <span className="text-primary font-bold flex items-center gap-0.5">
+                    Miễn phí
+                    <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                  </span>
                 </div>
+                {finalDiscount > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span>Giảm giá</span>
+                    <span className="text-error font-bold">-{formatCurrency(finalDiscount)}</span>
+                  </div>
+                )}
               </div>
 
-              <div className="flex justify-between items-center pt-4 pb-6">
-                <span className="font-bold text-slate-800">Tổng tiền</span>
-                <span className="text-xl font-extrabold text-emerald-700">
-                  {formatCurrency(getTotalPrice())}
+              <div className="border-t border-outline-variant/20 pt-4 flex justify-between items-end">
+                <span className="font-bold text-on-surface text-base">Tổng cộng</span>
+                <span className="text-2xl font-bold text-primary">
+                  {formatCurrency(total)}
                 </span>
               </div>
 
-              {/* Nút "Đặt hàng" */}
+              {/* Checkout CTA */}
               <Link
                 href="/checkout"
-                id="proceed-to-checkout"
-                className="block w-full text-center py-3.5 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-colors shadow-sm hover:shadow-md active:scale-95"
+                className="block w-full text-center py-4 bg-primary text-white font-bold rounded-2xl hover:opacity-90 active:scale-[0.99] transition-all shadow-md flex justify-center items-center gap-xs text-base cursor-pointer"
               >
-                Đặt hàng
+                Tiến hành đặt hàng
+                <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
               </Link>
 
-              {/* Nút "Tiếp tục mua hàng" */}
-              <Link
-                href="/products"
-                className="block w-full text-center py-3 mt-3 border border-slate-200 text-slate-600 text-sm font-medium rounded-xl hover:bg-slate-50 transition-colors"
-              >
-                Tiếp tục mua hàng
-              </Link>
+              {/* Trust Badges */}
+              <div className="space-y-3 pt-2 text-sm text-on-surface-variant font-medium">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[#006c49]/80 text-[18px]">lock</span>
+                  <span>Thanh toán an toàn</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[#006c49]/80 text-[18px]">assignment_return</span>
+                  <span>Đổi trả 7 ngày</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[#006c49]/80 text-[18px]">local_shipping</span>
+                  <span>Giao trong ngày</span>
+                </div>
+              </div>
+
+              {/* Alert Help Box */}
+              <div className="p-4 bg-[#e7eeff] border border-outline-variant/10 rounded-2xl flex flex-col gap-1.5 text-sm text-[#006c49] font-medium shadow-sm">
+                <div className="flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[18px]">info</span>
+                  <span className="font-bold">Cần hỗ trợ?</span>
+                </div>
+                <p className="text-xs text-on-surface-variant leading-relaxed">
+                  Liên hệ với đội ngũ hỗ trợ NôngSạch qua Zalo hoặc Hotline 1900 xxxx.
+                </p>
+              </div>
             </div>
           </div>
         </div>
