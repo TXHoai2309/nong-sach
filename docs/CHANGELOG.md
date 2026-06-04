@@ -27,6 +27,23 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
 #### `src/app/checkout/page.tsx`
 * Kết nối luồng thanh toán với trang cá nhân: Khi người dùng đặt hàng thành công, tự động lưu thông tin đơn hàng vào lịch sử đơn hàng của tài khoản cá nhân trên Local Storage.
 
+#### `src/components/layout/Header.tsx`
+* Loại bỏ nút "Đăng xuất" trên Header điều hướng của phiên bản desktop, giữ thanh menu tinh giản. Người dùng hiện có thể đăng xuất trực tiếp từ trang quản lý cá nhân `/profile`.
+
+#### `src/app/contact/page.tsx`
+* Sửa lỗi trang liên hệ bị kéo giãn và phình to (bloated layout):
+  * Thu nhỏ chiều rộng tối đa của các container từ `1120px` về `960px` để giao diện cân đối, gọn gàng hơn.
+  * Giảm padding của các ô nhập liệu, hộp chọn, và nút bấm từ `py-4` xuống `py-3` để tối ưu chiều cao.
+  * Thu nhỏ các kích thước chữ tiêu đề và giảm chiều cao bản đồ vị trí cửa hàng từ `260px` xuống `200px`.
+  * Đồng bộ hóa màu sắc chủ đạo sử dụng tông màu thương hiệu NôngSạch xanh lục (`#006c49` và `#10b981`).
+
+#### `src/app/about/page.tsx`
+* Nâng cấp phần kêu gọi hành động (Call To Action - CTA) cuối trang giới thiệu:
+  * Thay thế hình nền màu xanh trơn bằng ảnh chụp thực tế nông trại hữu cơ xanh mát chất lượng cao từ Unsplash, phủ lớp màu chuyển sắc thương hiệu (gradient `#006c49` và `#10b981`).
+  * Thu nhỏ chiều rộng container về mức `1040px` (đồng bộ với Cart, Checkout, Profile).
+  * Thu nhỏ kích thước nút "Mua ngay" từ quá khổ (`px-16 py-6 text-2xl`) về kích thước tiêu chuẩn (`px-8 py-3 text-sm font-bold rounded-full`), đồng bộ trải nghiệm các nút bấm trên toàn bộ hệ thống.
+  * Sửa lỗi rớt dòng từng chữ (font layout wrapping) do xung đột lớp `max-w-xl` trong Tailwind v4 (bị đè thành 64px do token `--spacing-xl`). Thay bằng chiều rộng tường minh `max-w-[576px]` và thêm `whitespace-nowrap` cho chữ trên nút.
+
 ---
 
 ## [0.3.8] - 2026-06-04

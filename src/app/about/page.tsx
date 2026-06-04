@@ -209,20 +209,24 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="mx-auto my-16 max-w-[1280px] px-6">
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary to-secondary p-16 text-center md:p-24">
-          <div className="pointer-events-none absolute inset-0 opacity-10">
-            <svg height="100%" preserveAspectRatio="none" viewBox="0 0 100 100" width="100%">
-              <path d="M0,0 Q50,50 100,0 V100 H0 Z" fill="white" />
-            </svg>
-          </div>
-          <div className="relative z-10 mx-auto max-w-2xl">
-            <h2 className="mb-6 text-4xl font-bold leading-tight tracking-[-0.02em] text-white md:text-5xl md:leading-[56px]">
+      <section className="mx-auto my-16 max-w-[1040px] px-6">
+        <div className="relative overflow-hidden rounded-3xl p-12 text-center md:py-16 md:px-12 shadow-lg">
+          <Image
+            src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=1280&h=400&fit=crop"
+            alt="Nông trại rau sạch tươi mát"
+            fill
+            sizes="(min-width: 1040px) 990px, 100vw"
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#006c49]/85 to-[#10b981]/80" />
+          
+          <div className="relative z-10 mx-auto max-w-[576px]">
+            <h2 className="mb-6 text-2xl font-bold leading-9 text-white md:text-3xl md:leading-10">
               Hãy cùng chúng tôi xây dựng nền nông nghiệp sạch
             </h2>
             <Link
               href="/products"
-              className="inline-flex rounded-2xl bg-white px-16 py-6 text-2xl font-semibold leading-8 text-primary shadow-lg transition-all hover:bg-surface-container-low active:scale-95"
+              className="inline-flex rounded-full bg-white px-8 py-3 text-sm font-bold text-[#006c49] shadow-md transition-all hover:bg-gray-100 hover:shadow-lg active:scale-95 cursor-pointer whitespace-nowrap"
             >
               Mua ngay
             </Link>

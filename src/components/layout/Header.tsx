@@ -101,12 +101,6 @@ export default function Header() {
                 <span className="material-symbols-outlined text-[24px]">account_circle</span>
                 <span className="hidden text-[14px] leading-5 lg:inline whitespace-nowrap">{currentUser.name}</span>
               </Link>
-              <button
-                onClick={logout}
-                className="cursor-pointer rounded-full border border-[#bbcabf] px-3 py-1.5 text-[12px] font-semibold text-[#3c4a42] transition-all hover:bg-[#f0f3ff] whitespace-nowrap shrink-0"
-              >
-                Đăng xuất
-              </button>
             </div>
           ) : (
             <Link
