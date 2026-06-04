@@ -77,6 +77,23 @@ Người tiêu dùng ngày càng lo ngại về an toàn thực phẩm, đặc b
 * AI gợi ý sản phẩm cá nhân hóa
 * Ví điện tử và tích điểm thưởng
 
+## 2.3. Quy trình nghiệp vụ tổng thể định hướng Phase 2
+
+Quy trình dưới đây là định hướng phát triển sau MVP, khi hệ thống mở rộng từ mô hình người mua đơn giản sang mô hình marketplace có người bán, kiểm duyệt và đánh giá.
+
+1. Người dùng đăng ký tài khoản.
+2. Người dùng đăng nhập hệ thống.
+3. Người dùng sử dụng hệ thống với vai trò người mua.
+4. Người dùng đăng ký trở thành người bán nếu có nhu cầu.
+5. Hệ thống kiểm duyệt và phê duyệt hồ sơ người bán.
+6. Tài khoản được nâng cấp để vừa có thể mua vừa có thể bán.
+7. Người bán đăng sản phẩm.
+8. Người mua đặt hàng.
+9. Xử lý đơn hàng và giao hàng.
+10. Hoàn tất đơn hàng và đánh giá.
+
+> **Ghi chú cho team:** MVP hiện chỉ hỗ trợ luồng người mua cơ bản. Các bước liên quan đến người bán, kiểm duyệt, đăng sản phẩm, xử lý đơn hàng đa bên và đánh giá sau mua sẽ được xây dựng ở Phase 2.
+
 ---
 
 # 3. User Stories & Acceptance Criteria
