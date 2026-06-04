@@ -5,12 +5,12 @@
 | Thông tin         | Chi tiết                                    |
 | ----------------- | ------------------------------------------- |
 | Tên dự án         | NôngSạch — Nền tảng giao dịch nông sản sạch |
-| Phiên bản         | MVP v0.2.0                                  |
+| Phiên bản         | MVP v0.3.2                                  |
 | Ngày tạo          | 03/06/2026                                  |
-| Cập nhật lần cuối | 03/06/2026                                  |
+| Cập nhật lần cuối | 04/06/2026                                  |
 | Nhóm              | NôngSạch Team                               |
 | Môn học           | Vibe Coding Thực Chiến — Buổi 3             |
-| Trạng thái        | ✅ Hoàn thành Sprint 1 & Sprint 2            |
+| Trạng thái        | ✅ Hoàn thành Sprint 1, Sprint 2 & Sprint 3  |
 
 ---
 
@@ -62,6 +62,9 @@ Người tiêu dùng ngày càng lo ngại về an toàn thực phẩm, đặc b
 | F-06 | Đăng ký            | Form email+pass, validate, lưu local Zustand persist        | P1      | ✅ Done     |
 | F-07 | Đăng nhập          | Xác thực local, lưu phiên localStorage                      | P1      | ✅ Done     |
 | F-08 | Trang Giới thiệu   | Brand story, sứ mệnh, tầm nhìn, 4 giá trị cốt lõi           | P2      | ✅ Done     |
+| F-09 | Trang Liên hệ      | Form liên hệ, thông tin hỗ trợ, bản đồ, newsletter          | P2      | ✅ Done     |
+
+> **Ghi chú cho team:** F-09 hiện đã có giao diện hoàn chỉnh theo Stitch HTML tại route `/contact`. Form liên hệ đang ở mức UI/UX MVP; nếu cần gửi dữ liệu thật, cần bổ sung API/Firebase handler ở Phase 2.
 
 ## 2.2. Ngoài phạm vi MVP
 
@@ -153,6 +156,39 @@ Người tiêu dùng ngày càng lo ngại về an toàn thực phẩm, đặc b
 * Header hiển thị tên user + nút Đăng xuất
 * Phiên đăng nhập persist sau F5
 
+## 3.3. Thông tin thương hiệu & hỗ trợ khách hàng
+
+### US-08: Xem trang giới thiệu
+
+**Là** người mua, **tôi muốn** tìm hiểu câu chuyện và giá trị của NôngSạch, **để** tăng niềm tin trước khi mua hàng.
+
+#### Acceptance Criteria
+
+* URL `/about`
+* Hiển thị hero full-width theo mẫu Stitch
+* Có section câu chuyện thương hiệu, thống kê, giá trị cốt lõi, đội ngũ sáng lập và CTA
+* Hình ảnh không dùng screenshot toàn trang; dùng ảnh riêng cho hero/story/team
+* Responsive trên desktop, tablet và mobile
+
+### US-09: Gửi liên hệ / yêu cầu hỗ trợ
+
+**Là** khách hàng, **tôi muốn** gửi thông tin liên hệ cho NôngSạch, **để** được hỗ trợ về đặt hàng, khiếu nại hoặc hợp tác.
+
+#### Acceptance Criteria
+
+* URL `/contact`
+* Header link `Liên hệ` trỏ đúng route `/contact` và có active state
+* Hiển thị breadcrumb: `Trang chủ > Liên hệ`
+* Form gồm: Họ tên, Email, Số điện thoại, Chủ đề, Nội dung
+* Chủ đề có các lựa chọn: Đặt hàng, Khiếu nại, Hợp tác, Khác
+* Có nút CTA `Gửi tin nhắn`
+* Có card thông tin liên hệ gồm địa chỉ, hotline, email, giờ làm việc
+* Có map placeholder và newsletter section theo mẫu Stitch
+* Footer có link `Liên hệ` trỏ về `/contact`
+* Responsive: desktop 2 cột form/info, mobile xếp dọc
+
+> **Comment cho đồng nghiệp:** Trang `/contact` hiện chưa persist/submission dữ liệu. Khi làm tiếp, ưu tiên thêm `POST /api/contact` hoặc Firebase collection `contactMessages`, validate input và hiển thị trạng thái gửi thành công/thất bại.
+
 ---
 
 # 4. Data Schema
@@ -202,6 +238,25 @@ interface Order {
   createdAt: Date;
 }
 ```
+
+## 4.4. ContactMessage Interface (Phase 2)
+
+```ts
+type ContactSubject = "order" | "complaint" | "cooperate" | "other";
+
+interface ContactMessage {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  subject: ContactSubject;
+  content: string;
+  status: "new" | "read" | "resolved";
+  createdAt: Date;
+}
+```
+
+> **Ghi chú triển khai:** Interface này là đề xuất cho backend/Firebase sau MVP. UI `/contact` đã sẵn form fields tương ứng nhưng chưa ghi dữ liệu.
 
 ---
 
@@ -261,6 +316,16 @@ interface Order {
 | T-14 | Header đồng bộ auth state                      | 2  | ✅      |
 | T-15 | About page                                     | 2  | ✅      |
 
+## Sprint 3 — UI Stitch Conversion & Support Page (✅ Hoàn thành)
+
+| ID   | Task                                           | SP | Status |
+| ---- | ---------------------------------------------- | -- | ------ |
+| T-16 | Redesign Home theo Stitch/Material Design 3    | 4  | ✅      |
+| T-17 | Convert About page theo Stitch HTML            | 3  | ✅      |
+| T-18 | Thêm Contact page `/contact` theo Stitch HTML  | 3  | ✅      |
+| T-19 | Header/Footer cập nhật route và active state   | 2  | ✅      |
+| T-20 | Cấu hình remote images + Webpack build fallback| 1  | ✅      |
+
 ## Backlog Phase 2 (Tương lai)
 
 | ID    | Tính năng          | Mô tả                                   | Priority |
@@ -271,3 +336,4 @@ interface Order {
 | P2-04 | Đánh giá sản phẩm  | Rating 5 sao + review text              | Medium   |
 | P2-05 | Dashboard Admin    | Quản lý sản phẩm, đơn hàng, users       | Medium   |
 | P2-06 | Order Tracking     | Theo dõi trạng thái giao hàng real-time | Low      |
+| P2-07 | Contact Backend    | Lưu/gửi form liên hệ qua API/Firebase   | Medium   |

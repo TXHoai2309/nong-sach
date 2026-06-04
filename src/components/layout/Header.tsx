@@ -10,7 +10,7 @@ const navLinks = [
   { href: "/products", label: "Sản phẩm" },
   { href: "/about",    label: "Về chúng tôi" },
   { href: "/",         label: "Cửa hàng" },
-  { href: "/",         label: "Liên hệ" },
+  { href: "/contact",  label: "Liên hệ" },
 ];
 
 export default function Header() {

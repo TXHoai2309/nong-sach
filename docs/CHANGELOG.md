@@ -6,6 +6,115 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
 
 ---
 
+## [0.3.2] - 2026-06-04 10:28 → 10:45 (GMT+7)
+
+### Sprint 3.2 — Convert About & Contact Pages từ Stitch HTML
+
+### Added
+
+#### `src/app/contact/page.tsx`
+
+* Thêm route mới `/contact`
+* Convert giao diện từ `D:\Thực tập\Buoi3\stitch\li_n_h_n_ngs_ch\code.html` sang **Next.js App Router Server Component**
+* Dựng đầy đủ các section theo mẫu:
+  * Breadcrumb + page title
+  * Form liên hệ
+  * Card thông tin liên hệ
+  * Map placeholder
+  * Newsletter section
+* Dùng `next/image` cho ảnh map remote từ `lh3.googleusercontent.com`
+* Giữ typography, spacing, màu Material Design 3 theo hệ thống hiện có
+
+---
+
+### Changed
+
+#### `src/app/about/page.tsx`
+
+* Convert lại trang `/about` theo đúng HTML mẫu từ `D:\Thực tập\Buoi3\stitch\v_ch_ng_t_i_n_ngs_ch\code.html`
+* Bỏ dùng `public/about-preview.png` làm ảnh nền/nội dung vì đó là screenshot toàn trang, gây lỗi lồng header và text phóng to vào hero
+* Thay bằng các ảnh thật trong HTML mẫu từ `lh3.googleusercontent.com`
+* Dựng lại các section theo đúng ảnh mẫu:
+  * Hero full-width ruộng bậc thang
+  * Câu chuyện của chúng tôi
+  * Stats
+  * Giá trị cốt lõi
+  * Đội ngũ sáng lập
+  * CTA banner
+
+#### `src/components/layout/Header.tsx`
+
+* Cập nhật link nav `Liên hệ` từ `/` sang `/contact`
+* Active state hiện đúng cho route `/contact`
+
+#### `src/components/layout/Footer.tsx`
+
+* Chỉnh footer dùng chung theo mẫu liên hệ:
+  * Brand block + copyright
+  * Social icons
+  * 3 cột link: Mua sắm, Hỗ trợ, Pháp lý
+* Sửa lỗi brand column bị co về min-content khiến mô tả xuống từng chữ một
+* Active link trong footer dựa theo route hiện tại bằng `usePathname`
+
+#### `next.config.ts`
+
+* Thêm remote image host `lh3.googleusercontent.com` cho các ảnh Stitch HTML mẫu
+
+#### `package.json`
+
+* Đổi script build từ `next build` sang `next build --webpack`
+* Lý do: Turbopack bị panic khi project nằm trong path có ký tự tiếng Việt `D:\Thực tập\...`; Webpack build pass ổn định
+
+---
+
+### Verified
+
+* `npx.cmd tsc --noEmit --incremental false` — pass
+* `npm.cmd run build` — pass
+* Route `/contact` xuất hiện trong build output
+
+---
+
+## [0.3.1] - 2026-06-04 10:16 → 10:28 (GMT+7)
+
+### Sprint 3.1 — Convert About Page từ Stitch HTML
+
+### Added
+
+#### `public/about-preview.png`
+
+* Thêm asset local cho trang giới thiệu, copy từ `D:\Thực tập\Buoi3\stitch\v_ch_ng_t_i_n_ngs_ch\screen.png`
+* Dùng làm ảnh nội bộ cho hero/story section thay vì phụ thuộc ảnh remote ngoài project
+
+---
+
+### Changed
+
+#### `src/app/about/page.tsx` — 10:16 (GMT+7)
+
+Chuyển đổi lại hoàn toàn từ `src/stitch-about.html` sang **Next.js App Router Server Component**:
+
+* Bỏ toàn bộ script DOM, `IntersectionObserver`, smooth scroll và các phần interactivity không cần thiết
+* Bỏ header/footer trùng lặp từ HTML nguồn vì đã được bọc sẵn trong `src/app/layout.tsx`
+* Viết lại metadata cho route `/about`
+* Dùng `next/image` với ảnh local `/about-preview.png` theo đúng hướng dẫn App Router/images
+* Chuẩn hóa lại toàn bộ nội dung tiếng Việt bị lỗi encoding trong file HTML nguồn
+* Tổ chức lại page thành các section:
+  * Hero banner
+  * Brand story
+  * Stats
+  * Core values
+  * Founding team
+  * CTA banner
+* Thay phần ảnh thành viên remote bằng card tĩnh dùng initials + mô tả để giữ page thuần server, không cần config thêm remote image host
+* Dùng `Link` nội bộ cho CTA về `/products` và `/`
+
+### Verified
+
+* Chạy `eslint src/app/about/page.tsx` và pass
+
+---
+
 ## [0.3.0] - 2026-06-04 09:35 → 09:58 (GMT+7)
 
 ### Sprint 3 — UI Redesign theo Material Design 3
@@ -358,7 +467,7 @@ Redesign hoàn toàn theo HTML mới `stitch/ng_k_n_ngs_ch/code.html`:
 
 ## Result
 
-🎯 MVP completed successfully.
+MVP completed successfully.
 
 Highlights:
 

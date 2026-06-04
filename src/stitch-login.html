@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+
+<html class="light" lang="vi">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Liên hệ - NôngSạch</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <style>
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .bg-organic-mesh {
+            background-color: #f9f9ff;
+            background-image: radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.05) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(0, 108, 73, 0.03) 0px, transparent 50%);
+        }
+    </style>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-background": "#111c2d",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed": "#89f5e7",
+                        "primary-fixed-dim": "#4edea3",
+                        "error-container": "#ffdad6",
+                        "tertiary-fixed": "#e0e3e5",
+                        "inverse-on-surface": "#ecf1ff",
+                        "surface-bright": "#f9f9ff",
+                        "on-tertiary": "#ffffff",
+                        "outline-variant": "#bbcabf",
+                        "secondary-container": "#86f2e4",
+                        "on-primary-fixed": "#002113",
+                        "on-tertiary-container": "#36393b",
+                        "on-secondary-fixed-variant": "#005049",
+                        "tertiary-container": "#a0a3a5",
+                        "error": "#ba1a1a",
+                        "surface-tint": "#006c49",
+                        "on-secondary-container": "#006f66",
+                        "primary-fixed": "#6ffbbe",
+                        "on-primary-container": "#00422b",
+                        "on-surface-variant": "#3c4a42",
+                        "secondary-fixed-dim": "#6bd8cb",
+                        "on-tertiary-fixed-variant": "#444749",
+                        "on-tertiary-fixed": "#191c1e",
+                        "surface-dim": "#cfdaf2",
+                        "on-primary": "#ffffff",
+                        "surface-container": "#e7eeff",
+                        "surface": "#f9f9ff",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-fixed-dim": "#c4c7c9",
+                        "on-primary-fixed-variant": "#005236",
+                        "surface-container-highest": "#d8e3fb",
+                        "primary": "#006c49",
+                        "inverse-primary": "#4edea3",
+                        "on-surface": "#111c2d",
+                        "background": "#f9f9ff",
+                        "primary-container": "#10b981",
+                        "on-secondary-fixed": "#00201d",
+                        "surface-variant": "#d8e3fb",
+                        "surface-container-low": "#f0f3ff",
+                        "secondary": "#006a61",
+                        "tertiary": "#5c5f61",
+                        "surface-container-high": "#dee8ff",
+                        "outline": "#6c7a71",
+                        "inverse-surface": "#263143"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "16px",
+                        "xs": "8px",
+                        "xl": "64px",
+                        "sm": "16px",
+                        "gutter": "24px",
+                        "base": "4px",
+                        "md": "24px",
+                        "container-max": "1280px",
+                        "margin-desktop": "auto",
+                        "lg": "40px"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Be Vietnam Pro"],
+                        "headline-2xl": ["Be Vietnam Pro"],
+                        "headline-lg-mobile": ["Be Vietnam Pro"],
+                        "headline-xl": ["Be Vietnam Pro"],
+                        "headline-md": ["Be Vietnam Pro"],
+                        "label-md": ["Be Vietnam Pro"],
+                        "headline-xl-mobile": ["Be Vietnam Pro"],
+                        "headline-lg": ["Be Vietnam Pro"],
+                        "body-md": ["Be Vietnam Pro"],
+                        "body-lg": ["Be Vietnam Pro"]
+                    },
+                    "fontSize": {
+                        "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "headline-2xl": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-xl": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+                        "headline-xl-mobile": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "headline-lg": ["30px", { "lineHeight": "38px", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="bg-background text-on-surface">
+    <!-- Header Navigation Shell -->
+    <header class="bg-surface/80 dark:bg-surface-dim/80 backdrop-blur-md shadow-sm docked full-width top-0 sticky z-50">
+        <div class="flex justify-between items-center px-gutter py-sm max-w-container-max mx-auto w-full">
+            <div class="flex items-center gap-xl">
+                <span
+                    class="font-headline-lg text-headline-lg font-bold text-primary dark:text-inverse-primary">NôngSạch</span>
+                <nav class="hidden md:flex items-center gap-md">
+                    <a class="text-on-surface-variant dark:text-outline-variant hover:text-primary transition-colors font-label-md text-label-md"
+                        href="#">Sản phẩm</a>
+                    <a class="text-on-surface-variant dark:text-outline-variant hover:text-primary transition-colors font-label-md text-label-md"
+                        href="#">Về chúng tôi</a>
+                    <a class="text-on-surface-variant dark:text-outline-variant hover:text-primary transition-colors font-label-md text-label-md"
+                        href="#">Cửa hàng</a>
+                    <a class="text-primary dark:text-inverse-primary border-b-2 border-primary pb-1 font-bold font-label-md text-label-md"
+                        href="#">Liên hệ</a>
+                </nav>
+            </div>
+            <div class="flex items-center gap-sm">
+                <button
+                    class="p-xs text-on-surface-variant hover:bg-primary-container/10 transition-all rounded-full flex items-center justify-center">
+                    <span class="material-symbols-outlined" data-icon="shopping_cart">shopping_cart</span>
+                </button>
+                <button
+                    class="p-xs text-on-surface-variant hover:bg-primary-container/10 transition-all rounded-full flex items-center justify-center">
+                    <span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+                </button>
+                <button class="md:hidden p-xs">
+                    <span class="material-symbols-outlined" data-icon="menu">menu</span>
+                </button>
+            </div>
+        </div>
+    </header>
+    <main class="bg-organic-mesh min-h-screen">
+        <!-- Hero Section/Page Title -->
+        <section class="max-w-container-max mx-auto px-gutter pt-xl pb-lg">
+            <nav class="flex mb-xs items-center gap-xs text-on-surface-variant font-label-md text-label-md">
+                <a class="hover:text-primary" href="#">Trang chủ</a>
+                <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+                <span class="text-primary">Liên hệ</span>
+            </nav>
+            <h1 class="font-headline-xl text-headline-xl text-on-surface mb-xs">Liên hệ với chúng tôi</h1>
+            <p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">Chúng tôi luôn sẵn sàng lắng nghe ý
+                kiến và hỗ trợ bạn. Hãy gửi tin nhắn cho NôngSạch để được phục vụ tốt nhất.</p>
+        </section>
+        <!-- Contact Section -->
+        <section class="max-w-container-max mx-auto px-gutter pb-xl">
+            <div class="flex flex-col md:grid md:grid-cols-10 gap-lg">
+                <!-- Left Column: Contact Form (60%) -->
+                <div
+                    class="md:col-span-6 bg-surface-container-lowest rounded-2xl p-md md:p-xl shadow-sm border border-outline-variant/10">
+                    <h2 class="font-headline-lg text-headline-lg text-on-surface mb-lg">Gửi tin nhắn cho chúng tôi</h2>
+                    <form class="space-y-sm">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-sm">
+                            <div class="space-y-1">
+                                <label class="font-label-md text-label-md text-on-surface-variant ml-1" for="name">Họ
+                                    tên</label>
+                                <input
+                                    class="w-full bg-surface-container-low border-none rounded-2xl px-sm py-md focus:ring-2 focus:ring-primary-container text-on-surface transition-all"
+                                    id="name" placeholder="Nguyễn Văn A" type="text" />
+                            </div>
+                            <div class="space-y-1">
+                                <label class="font-label-md text-label-md text-on-surface-variant ml-1"
+                                    for="email">Email</label>
+                                <input
+                                    class="w-full bg-surface-container-low border-none rounded-2xl px-sm py-md focus:ring-2 focus:ring-primary-container text-on-surface transition-all"
+                                    id="email" placeholder="email@example.com" type="email" />
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-sm">
+                            <div class="space-y-1">
+                                <label class="font-label-md text-label-md text-on-surface-variant ml-1" for="phone">Số
+                                    điện thoại</label>
+                                <input
+                                    class="w-full bg-surface-container-low border-none rounded-2xl px-sm py-md focus:ring-2 focus:ring-primary-container text-on-surface transition-all"
+                                    id="phone" placeholder="0901 234 567" type="tel" />
+                            </div>
+                            <div class="space-y-1">
+                                <label class="font-label-md text-label-md text-on-surface-variant ml-1"
+                                    for="subject">Chủ đề</label>
+                                <select
+                                    class="w-full bg-surface-container-low border-none rounded-2xl px-sm py-md focus:ring-2 focus:ring-primary-container text-on-surface transition-all appearance-none"
+                                    id="subject">
+                                    <option value="order">Đặt hàng</option>
+                                    <option value="complaint">Khiếu nại</option>
+                                    <option value="cooperate">Hợp tác</option>
+                                    <option value="other">Khác</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="font-label-md text-label-md text-on-surface-variant ml-1" for="content">Nội
+                                dung</label>
+                            <textarea
+                                class="w-full bg-surface-container-low border-none rounded-2xl px-sm py-md focus:ring-2 focus:ring-primary-container text-on-surface transition-all resize-none"
+                                id="content" placeholder="Nhập nội dung bạn muốn gửi cho chúng tôi..."
+                                rows="4"></textarea>
+                        </div>
+                        <button
+                            class="w-full bg-primary-container hover:bg-primary text-white font-bold py-md rounded-2xl shadow-sm hover:shadow-lg transition-all transform active:scale-98 mt-xs"
+                            type="submit">
+                            Gửi tin nhắn
+                        </button>
+                    </form>
+                </div>
+                <!-- Right Column: Info Card (40%) -->
+                <div class="md:col-span-4 flex flex-col gap-md">
+                    <!-- Info Card -->
+                    <div
+                        class="bg-gradient-to-br from-primary to-secondary rounded-2xl p-md md:p-lg text-white shadow-xl relative overflow-hidden group">
+                        <!-- Decorative glow -->
+                        <div
+                            class="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all">
+                        </div>
+                        <h3 class="font-headline-md text-headline-md mb-lg relative z-10">Thông tin liên hệ</h3>
+                        <div class="space-y-md relative z-10">
+                            <div class="flex gap-sm">
+                                <span class="material-symbols-outlined shrink-0"
+                                    data-icon="location_on">location_on</span>
+                                <div class="font-body-md text-body-md">
+                                    <p class="font-bold mb-1">Địa chỉ:</p>
+                                    <p class="opacity-90">123 Đường Nông Nghiệp, Quận 1, TP.HCM</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-sm">
+                                <span class="material-symbols-outlined shrink-0" data-icon="call">call</span>
+                                <div class="font-body-md text-body-md">
+                                    <p class="font-bold mb-1">Hotline:</p>
+                                    <p class="opacity-90">1800 1234 (miễn phí)</p>
+                                    <p class="text-label-sm font-label-sm opacity-70">8:00 – 22:00 hàng ngày</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-sm">
+                                <span class="material-symbols-outlined shrink-0" data-icon="mail">mail</span>
+                                <div class="font-body-md text-body-md">
+                                    <p class="font-bold mb-1">Email:</p>
+                                    <p class="opacity-90">hello@nongsach.vn</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-sm">
+                                <span class="material-symbols-outlined shrink-0" data-icon="schedule">schedule</span>
+                                <div class="font-body-md text-body-md">
+                                    <p class="font-bold mb-1">Giờ làm việc:</p>
+                                    <p class="opacity-90">Thứ 2–7: 8:00 – 18:00</p>
+                                    <p class="opacity-90">Chủ nhật: Nghỉ</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Social Links -->
+                        <div class="mt-xl flex gap-md relative z-10 border-t border-white/20 pt-md">
+                            <a class="hover:scale-110 transition-transform" href="#"><span
+                                    class="material-symbols-outlined" data-icon="facebook">face_nod</span></a>
+                            <a class="hover:scale-110 transition-transform" href="#"><span
+                                    class="material-symbols-outlined" data-icon="photo_camera">photo_camera</span></a>
+                            <a class="hover:scale-110 transition-transform" href="#"><span
+                                    class="material-symbols-outlined" data-icon="chat">chat</span></a>
+                            <a class="hover:scale-110 transition-transform" href="#"><span
+                                    class="material-symbols-outlined" data-icon="smart_display">smart_display</span></a>
+                        </div>
+                    </div>
+                    <!-- Map Section -->
+                    <div
+                        class="flex-1 bg-surface-container rounded-2xl border border-outline-variant/30 min-h-[300px] flex flex-col items-center justify-center p-md relative overflow-hidden">
+                        <img alt="Map placeholder"
+                            class="absolute inset-0 w-full h-full object-cover opacity-20 grayscale"
+                            data-alt="A highly detailed overhead 3D map rendering of a bustling Vietnamese urban district, featuring modern green architecture and tree-lined streets. The scene is bathed in a warm morning sunlight, creating long soft shadows and a professional, crisp atmosphere. The aesthetic is clean and high-contrast, aligned with an organic minimalist design system."
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAPj3G70avqSv4gKJN1SxC8-ysY-_cWSFhubEXDrBQtWlsEddANy9GpsJVRtFe0jYvmLS_XDCe6JQUA85tPlFGy2wo-kAoW87yRFs1cNwO0g-woY5AWMcRoC20sGOVaZBr6IA9KjBEEfDwHpXJjy8MjoavIxQTMGs3ULE05ra8AfRje1DD4FgipJICL-ZdjqiDCwFHMA-a21Ht1cxprjcIF_L6GOnl5_lvEIqPeYWtlgCaRL7xPKTwSDPV8LKRRhBdoxkt1TXX51A" />
+                        <div class="relative z-10 flex flex-col items-center gap-xs">
+                            <div
+                                class="w-16 h-16 bg-primary-container/20 rounded-full flex items-center justify-center text-primary animate-bounce">
+                                <span class="material-symbols-outlined text-4xl" data-icon="location_on"
+                                    data-weight="fill" style="font-variation-settings: 'FILL' 1;">location_on</span>
+                            </div>
+                            <span class="font-headline-md text-headline-md text-primary">Xem bản đồ</span>
+                            <p class="font-label-md text-label-md text-on-surface-variant text-center max-w-[200px]">
+                                Click để mở bản đồ đường đi chi tiết trên Google Maps</p>
+                        </div>
+                        <div
+                            class="absolute inset-0 bg-gradient-to-t from-surface-container via-transparent to-transparent">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- Newsletter Section -->
+        <section class="bg-secondary-container/30 py-xl mt-lg">
+            <div
+                class="max-w-container-max mx-auto px-gutter flex flex-col md:flex-row items-center justify-between gap-lg">
+                <div class="max-w-md">
+                    <h2 class="font-headline-md text-headline-md text-on-surface mb-xs">Đăng ký nhận bản tin</h2>
+                    <p class="font-body-md text-body-md text-on-surface-variant">Cập nhật ngay các mẹo nấu ăn hữu ích và
+                        ưu đãi đặc biệt hàng tuần từ trang trại của chúng tôi.</p>
+                </div>
+                <div class="flex w-full md:w-auto gap-xs">
+                    <input
+                        class="flex-1 md:w-80 bg-surface-container-lowest border-none rounded-2xl px-sm py-md focus:ring-2 focus:ring-primary-container shadow-sm"
+                        placeholder="Email của bạn" type="email" />
+                    <button
+                        class="bg-primary text-white font-bold px-lg py-md rounded-2xl hover:shadow-lg transition-all whitespace-nowrap">Đăng
+                        ký</button>
+                </div>
+            </div>
+        </section>
+    </main>
+    <!-- Footer Shell -->
+    <footer class="bg-surface-container dark:bg-inverse-surface full-width">
+        <div
+            class="flex flex-col md:flex-row justify-between items-start px-gutter py-xl max-w-container-max mx-auto w-full border-t border-outline-variant/30">
+            <div class="mb-lg md:mb-0">
+                <span
+                    class="font-headline-md text-headline-md font-bold text-primary dark:text-inverse-primary block mb-sm">NôngSạch</span>
+                <p class="font-body-md text-body-md text-on-surface-variant max-w-xs mb-md">© 2024 NôngSạch. Tươi ngon
+                    từ ruộng đồng đến bàn ăn.</p>
+                <div class="flex gap-sm">
+                    <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary"><span
+                            class="material-symbols-outlined text-[18px]">face_nod</span></div>
+                    <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary"><span
+                            class="material-symbols-outlined text-[18px]">photo_camera</span></div>
+                    <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary"><span
+                            class="material-symbols-outlined text-[18px]">smart_display</span></div>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-xl w-full md:w-auto">
+                <div class="flex flex-col gap-sm">
+                    <span class="font-label-md text-label-md font-bold text-on-surface mb-xs">Mua sắm</span>
+                    <a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors"
+                        href="#">Tất cả sản phẩm</a>
+                    <a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors"
+                        href="#">Combo tiết kiệm</a>
+                    <a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors"
+                        href="#">Sản phẩm Organic</a>
+                </div>
+                <div class="flex flex-col gap-sm">
+                    <span class="font-label-md text-label-md font-bold text-on-surface mb-xs">Hỗ trợ</span>
+                    <a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors"
+                        href="#">Vận chuyển</a>
+                    <a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors"
+                        href="#">Hoàn trả</a>
+                    <a class="font-label-sm text-label-sm text-primary underline" href="#">Liên hệ</a>
+                </div>
+                <div class="flex flex-col gap-sm col-span-2 md:col-span-1">
+                    <span class="font-label-md text-label-md font-bold text-on-surface mb-xs">Pháp lý</span>
+                    <a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors"
+                        href="#">Chính sách bảo mật</a>
+                    <a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors"
+                        href="#">Điều khoản sử dụng</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <script>
+        // Micro-interactions
+        const form = document.querySelector('form');
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const btn = form.querySelector('button');
+            const originalText = btn.innerText;
+            btn.innerText = 'Đang gửi...';
+            btn.disabled = true;
+            btn.style.opacity = '0.7';
+
+            setTimeout(() => {
+                btn.innerText = 'Đã gửi thành công!';
+                btn.classList.replace('bg-primary-container', 'bg-secondary');
+                form.reset();
+
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.classList.replace('bg-secondary', 'bg-primary-container');
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                }, 3000);
+            }, 1500);
+        });
+
+        // Hover effect for map section
+        const mapContainer = document.querySelector('.bg-surface-container.rounded-2xl');
+        mapContainer.addEventListener('mousemove', (e) => {
+            const rect = mapContainer.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            mapContainer.style.setProperty('--x', `${x}px`);
+            mapContainer.style.setProperty('--y', `${y}px`);
+        });
+    </script>
+</body>
+
+</html>

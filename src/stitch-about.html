@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+
+<html class="light" lang="vi">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Về chúng tôi - NôngSạch</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@100;200;300;400;500;600;700;800;900&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-container": "#a0a3a5",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-fixed-variant": "#005236",
+                        "outline-variant": "#bbcabf",
+                        "on-secondary-fixed": "#00201d",
+                        "outline": "#6c7a71",
+                        "secondary-fixed-dim": "#6bd8cb",
+                        "secondary": "#006a61",
+                        "secondary-fixed": "#89f5e7",
+                        "surface-tint": "#006c49",
+                        "on-secondary": "#ffffff",
+                        "surface-container-low": "#f0f3ff",
+                        "on-primary-fixed": "#002113",
+                        "on-secondary-container": "#006f66",
+                        "surface": "#f9f9ff",
+                        "on-surface": "#111c2d",
+                        "surface-dim": "#cfdaf2",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-container": "#00422b",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#444749",
+                        "secondary-container": "#86f2e4",
+                        "surface-container-highest": "#d8e3fb",
+                        "on-surface-variant": "#3c4a42",
+                        "primary-fixed": "#6ffbbe",
+                        "surface-bright": "#f9f9ff",
+                        "on-tertiary-fixed": "#191c1e",
+                        "on-tertiary-container": "#36393b",
+                        "on-background": "#111c2d",
+                        "error": "#ba1a1a",
+                        "on-secondary-fixed-variant": "#005049",
+                        "primary-container": "#10b981",
+                        "surface-container": "#e7eeff",
+                        "primary-fixed-dim": "#4edea3",
+                        "tertiary-fixed": "#e0e3e5",
+                        "tertiary-fixed-dim": "#c4c7c9",
+                        "background": "#f9f9ff",
+                        "tertiary": "#5c5f61",
+                        "on-error": "#ffffff",
+                        "inverse-on-surface": "#ecf1ff",
+                        "surface-container-high": "#dee8ff",
+                        "error-container": "#ffdad6",
+                        "surface-variant": "#d8e3fb",
+                        "inverse-surface": "#263143",
+                        "on-error-container": "#93000a",
+                        "primary": "#006c49",
+                        "inverse-primary": "#4edea3"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "16px",
+                        "lg": "40px",
+                        "md": "24px",
+                        "xs": "8px",
+                        "margin-desktop": "auto",
+                        "sm": "16px",
+                        "base": "4px",
+                        "xl": "64px",
+                        "gutter": "24px",
+                        "container-max": "1280px"
+                    },
+                    "fontFamily": {
+                        "headline-2xl": ["Be Vietnam Pro"],
+                        "body-lg": ["Be Vietnam Pro"],
+                        "label-sm": ["Be Vietnam Pro"],
+                        "headline-md": ["Be Vietnam Pro"],
+                        "headline-xl-mobile": ["Be Vietnam Pro"],
+                        "label-md": ["Be Vietnam Pro"],
+                        "headline-lg-mobile": ["Be Vietnam Pro"],
+                        "body-md": ["Be Vietnam Pro"],
+                        "headline-xl": ["Be Vietnam Pro"],
+                        "headline-lg": ["Be Vietnam Pro"]
+                    },
+                    "fontSize": {
+                        "headline-2xl": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-xl-mobile": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-xl": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg": ["30px", { "lineHeight": "38px", "fontWeight": "600" }]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .active-nav {
+            border-bottom: 2px solid #006c49;
+            padding-bottom: 4px;
+            font-weight: 700;
+            color: #006c49;
+        }
+    </style>
+</head>
+
+<body class="bg-background text-on-background font-body-md overflow-x-hidden">
+    <!-- Header Section -->
+    <header class="bg-surface/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+        <div class="flex justify-between items-center px-gutter py-sm max-w-container-max mx-auto w-full">
+            <div class="flex items-center gap-md">
+                <a class="font-headline-lg text-headline-lg font-bold text-primary" href="/">NôngSạch</a>
+                <nav class="hidden md:flex items-center gap-md">
+                    <a class="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors"
+                        href="#">Sản phẩm</a>
+                    <a class="font-label-md text-label-md text-primary border-b-2 border-primary pb-1 font-bold"
+                        href="#">Về chúng tôi</a>
+                    <a class="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors"
+                        href="#">Cửa hàng</a>
+                    <a class="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors"
+                        href="#">Liên hệ</a>
+                </nav>
+            </div>
+            <div class="flex items-center gap-sm">
+                <div class="relative hidden sm:block">
+                    <span
+                        class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+                    <input
+                        class="bg-surface-container-low border-none rounded-full py-2 pl-10 pr-4 text-body-md focus:ring-2 focus:ring-primary-container w-48 lg:w-64"
+                        placeholder="Tìm kiếm sản phẩm..." type="text" />
+                </div>
+                <button
+                    class="flex items-center gap-xs text-on-surface-variant hover:bg-primary-container/10 p-2 rounded-full transition-all">
+                    <span class="material-symbols-outlined" data-icon="shopping_cart">shopping_cart</span>
+                    <span class="hidden lg:inline font-label-md">Giỏ hàng</span>
+                </button>
+                <button
+                    class="flex items-center gap-xs text-on-surface-variant hover:bg-primary-container/10 p-2 rounded-full transition-all">
+                    <span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+                    <span class="hidden lg:inline font-label-md">Tài khoản</span>
+                </button>
+            </div>
+        </div>
+    </header>
+    <main>
+        <!-- Section 1: Hero -->
+        <section class="relative h-[614px] md:h-[716px] flex items-center justify-center overflow-hidden">
+            <div class="absolute inset-0 z-0">
+                <img alt="Rice field aerial view" class="w-full h-full object-cover"
+                    data-alt="A breathtaking aerial view of lush, verdant terraced rice fields in the Vietnamese highlands during a misty sunrise. The golden morning light filters through the clouds, illuminating the vibrant emerald green crops and casting soft shadows across the undulating landscape. The atmosphere is peaceful, organic, and reflects the deep connection between the earth and the food we eat, maintaining a high-end, fresh aesthetic."
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNe2wF5FDSeway6t_8CIq6myFUn9iqkWFJ5_yerZ7PdXuq1bo7gq9hkO3XqGdXA4wSfK5wKVCbw473Yz-hRMTXrqR3sbR6I9080CvlquFgxUw-yyf1ROBaTySwaYSqTT_Zildn5wCQAqTRCx3Td6IO27zY3oJwysEb_nTO-8T14sgoC6Iv9dFDM6sVZdm75xmmv0VWtyAtXNTUWRNAHz_F4sMWy4b9cjzyqnFsH-w-8k6e_cB4rBeUsKDcUowV70PxJYSWUHuINg" />
+                <div class="absolute inset-0 bg-black/40"></div>
+            </div>
+            <div class="relative z-10 text-center px-gutter max-w-3xl">
+                <h1
+                    class="font-headline-xl md:font-headline-2xl text-headline-xl md:text-headline-2xl text-white mb-md">
+                    Chúng tôi tin vào một bữa ăn sạch cho mọi gia đình Việt
+                </h1>
+                <p class="font-body-lg text-body-lg text-white/90">
+                    NôngSạch ra đời năm 2024 với sứ mệnh kết nối nông dân và người tiêu dùng, loại bỏ hoàn toàn trung
+                    gian để mang lại giá trị thực chất nhất.
+                </p>
+            </div>
+        </section>
+        <!-- Section 2: Our Story -->
+        <section class="py-xl px-gutter max-w-container-max mx-auto">
+            <div class="grid md:grid-cols-2 gap-xl items-center">
+                <div class="space-y-md">
+                    <h2 class="font-headline-xl text-headline-xl text-primary">Câu chuyện của chúng tôi</h2>
+                    <div class="space-y-sm text-on-surface-variant font-body-md leading-relaxed">
+                        <p>
+                            Khởi nguồn từ những trăn trở về thực phẩm không rõ nguồn gốc đang tràn lan trên thị trường,
+                            NôngSạch được thành lập bởi một nhóm những người trẻ tâm huyết với nông nghiệp bền vững.
+                            Chúng tôi khao khát xây dựng một hệ sinh thái nơi mọi sản phẩm đều có thể truy xuất nguồn
+                            gốc rõ ràng.
+                        </p>
+                        <p>
+                            Sứ mệnh của chúng tôi không chỉ dừng lại ở việc cung cấp thực phẩm sạch. NôngSạch hướng tới
+                            việc thay đổi tư duy sản xuất của người nông dân, khuyến khích canh tác hữu cơ, không hóa
+                            chất độc hại, bảo vệ môi trường và sức khỏe cộng đồng.
+                        </p>
+                        <p>
+                            Bằng cách loại bỏ các khâu trung gian phức tạp, chúng tôi đảm bảo nông sản được đưa từ ruộng
+                            đồng đến bàn ăn trong thời gian ngắn nhất, giữ trọn độ tươi ngon và dinh dưỡng, đồng thời
+                            đảm bảo thu nhập công bằng cho những người trực tiếp tạo ra sản phẩm.
+                        </p>
+                    </div>
+                </div>
+                <div class="relative">
+                    <img alt="Vietnamese farmer" class="rounded-2xl shadow-xl w-full h-[500px] object-cover"
+                        data-alt="A warm, intimate portrait of an elderly Vietnamese farmer smiling gently in a sun-drenched vegetable field. He is wearing a traditional conical hat, and his weathered hands are gently touching green leaves. The lighting is soft and natural, emphasizing a mood of trust, wisdom, and the earthy warmth of rural Vietnam. The overall aesthetic is organic and high-quality."
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuA_KUKBdKXB4KAxDlnPG9QrWyy6TK3MXYFfAlUNRsGEFCupHqP1eI6k_Yna0Xjknx_ORdHWrnZrMrMwVIX6kX7-NigrkSKp_ZisXQsoXF4Qk9E8bJgdt1JeGBfr-FqOCiLQ2XPVomNngvFZhd5pZS8-USHtVseWHYVbGI5W-cTl9hCmL9Ob9ZWqcbN1jhrTp6TO-jg_Nns1SaikHvIpfNB3-Ji9iHzjRUK1wzoDiqCSrKvOK_0JbvDfROHkGSrWp7GNsbHibg6RtQ" />
+                    <div
+                        class="absolute -bottom-6 -left-6 bg-secondary-container p-6 rounded-2xl hidden lg:block shadow-lg">
+                        <p class="font-headline-md text-headline-md text-on-secondary-container italic">"Tâm huyết từ
+                            đất mẹ"</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- Section 3: Numbers -->
+        <section class="bg-surface-container-low py-xl">
+            <div class="max-w-container-max mx-auto px-gutter">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-md text-center">
+                    <div class="space-y-base">
+                        <p class="font-headline-xl text-headline-xl text-primary-container">500+</p>
+                        <p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Nông dân
+                        </p>
+                    </div>
+                    <div class="space-y-base">
+                        <p class="font-headline-xl text-headline-xl text-primary-container">20+</p>
+                        <p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Tỉnh
+                            thành</p>
+                    </div>
+                    <div class="space-y-base">
+                        <p class="font-headline-xl text-headline-xl text-primary-container">10,000+</p>
+                        <p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Khách
+                            hàng</p>
+                    </div>
+                    <div class="space-y-base">
+                        <p class="font-headline-xl text-headline-xl text-primary-container">98%</p>
+                        <p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Hài lòng
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- Section 4: Core Values -->
+        <section class="py-xl px-gutter max-w-container-max mx-auto">
+            <div class="text-center mb-xl">
+                <h2 class="font-headline-xl text-headline-xl text-on-surface mb-xs">Giá trị cốt lõi</h2>
+                <div class="h-1 w-20 bg-primary mx-auto rounded-full"></div>
+            </div>
+            <div class="grid md:grid-cols-3 gap-md">
+                <!-- Value 1 -->
+                <div
+                    class="bg-surface-container-lowest p-xl rounded-2xl shadow-sm border border-outline-variant/30 hover:shadow-md transition-shadow group">
+                    <div
+                        class="w-16 h-16 bg-primary-container/10 rounded-full flex items-center justify-center mb-md group-hover:scale-110 transition-transform">
+                        <span class="material-symbols-outlined text-primary-container !text-4xl"
+                            data-icon="potted_plant">potted_plant</span>
+                    </div>
+                    <h3 class="font-headline-md text-headline-md text-on-surface mb-sm">Canh tác bền vững</h3>
+                    <p class="text-on-surface-variant font-body-md">Chúng tôi áp dụng các kỹ thuật nông nghiệp hữu cơ,
+                        bảo vệ độ phì nhiêu của đất và đa dạng sinh học cho thế hệ tương lai.</p>
+                </div>
+                <!-- Value 2 -->
+                <div
+                    class="bg-surface-container-lowest p-xl rounded-2xl shadow-sm border border-outline-variant/30 hover:shadow-md transition-shadow group">
+                    <div
+                        class="w-16 h-16 bg-primary-container/10 rounded-full flex items-center justify-center mb-md group-hover:scale-110 transition-transform">
+                        <span class="material-symbols-outlined text-primary-container !text-4xl"
+                            data-icon="verified_user">verified_user</span>
+                    </div>
+                    <h3 class="font-headline-md text-headline-md text-on-surface mb-sm">Minh bạch hoàn toàn</h3>
+                    <p class="text-on-surface-variant font-body-md">Mọi sản phẩm đều có mã QR truy xuất nguồn gốc, thông
+                        tin chi tiết về nông trại, ngày thu hoạch và quy trình kiểm định.</p>
+                </div>
+                <!-- Value 3 -->
+                <div
+                    class="bg-surface-container-lowest p-xl rounded-2xl shadow-sm border border-outline-variant/30 hover:shadow-md transition-shadow group">
+                    <div
+                        class="w-16 h-16 bg-primary-container/10 rounded-full flex items-center justify-center mb-md group-hover:scale-110 transition-transform">
+                        <span class="material-symbols-outlined text-primary-container !text-4xl"
+                            data-icon="volunteer_activism">volunteer_activism</span>
+                    </div>
+                    <h3 class="font-headline-md text-headline-md text-on-surface mb-sm">Vì cộng đồng</h3>
+                    <p class="text-on-surface-variant font-body-md">NôngSạch cam kết trích một phần lợi nhuận để hỗ trợ
+                        giáo dục và hạ tầng cho các vùng nông thôn còn khó khăn.</p>
+                </div>
+            </div>
+        </section>
+        <!-- Section 5: Team -->
+        <section class="py-xl bg-surface">
+            <div class="max-w-container-max mx-auto px-gutter text-center">
+                <h2 class="font-headline-xl text-headline-xl text-on-surface mb-xl">Đội ngũ sáng lập</h2>
+                <div class="grid md:grid-cols-3 gap-xl">
+                    <!-- Person 1 -->
+                    <div class="flex flex-col items-center">
+                        <div class="w-48 h-48 rounded-full overflow-hidden mb-md border-4 border-primary/10">
+                            <img alt="Nguyễn Văn A" class="w-full h-full object-cover"
+                                data-alt="Professional headshot of a confident Vietnamese male co-founder in his late 30s. He is wearing a smart-casual linen shirt, standing against a blurred background of a modern green office space. The lighting is bright and professional, conveying a sense of leadership, approachability, and vision in a clean, high-end UI style."
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDcUO--vvPfn7b53IEwIG2nNAXKYdExrbZMer1uJ-DEnSN-j4iNS4KQD-CUF4q5NIoyQ3gjWyrGZAYxlurFNIILZAXpR5f4420roXlpEKwFHOrDzNc4advqmuvy4Ung4LhdY1jFZrbm67EHQFfpgR0S-Hrpi3isn7OUIq8URSsjsUt91X2VMVdiYerx-q7ZxP4esWv3ilyKfemrzPs6wxbq9WIdqDMZbTfjEw5wfu8j7HX8jx245zf6wkomDaAg4q9aN0ud7AYyFA" />
+                        </div>
+                        <h4 class="font-headline-md text-headline-md text-on-surface">Nguyễn Văn A</h4>
+                        <p class="font-label-md text-label-md text-primary-container uppercase tracking-widest mt-base">
+                            Co-founder</p>
+                    </div>
+                    <!-- Person 2 -->
+                    <div class="flex flex-col items-center">
+                        <div class="w-48 h-48 rounded-full overflow-hidden mb-md border-4 border-primary/10">
+                            <img alt="Trần Thị B" class="w-full h-full object-cover"
+                                data-alt="Professional headshot of an expert Vietnamese female Head of Farming in her mid 40s. She has a knowledgeable and kind expression, wearing professional attire. Behind her is a soft-focus garden environment. The image uses a clean, bright, and organic aesthetic with soft lighting to emphasize expertise and trustworthiness."
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuA4Di3Rd2IEeZwXRiAbEVm7Ovo8Us17GngldZtlR_3EEO4RWSTkWL837QDow4C3LZdHlkJJ_2VkuQc1iu3htAxOsK_MvSLjmJWpi8I5g-HvSMCaGye4tSQk93ymC1cAR0ztpFYjL7R4OmaaMoo142eO42bjEY0ipJZPttb4UwXurTJhAWcPRhYTHJXzAE_c0NEg_LNWpW1xVCDrmvFaqjom2ps-bmkyBcbXN6piUM2Brjavv0QoYqxk9WUeGc1XpfDsmaOuVlioCA" />
+                        </div>
+                        <h4 class="font-headline-md text-headline-md text-on-surface">Trần Thị B</h4>
+                        <p class="font-label-md text-label-md text-primary-container uppercase tracking-widest mt-base">
+                            Head of Farming</p>
+                    </div>
+                    <!-- Person 3 -->
+                    <div class="flex flex-col items-center">
+                        <div class="w-48 h-48 rounded-full overflow-hidden mb-md border-4 border-primary/10">
+                            <img alt="Lê Văn C" class="w-full h-full object-cover"
+                                data-alt="Professional headshot of a young, tech-savvy Vietnamese male Tech Lead in his late 20s. He is wearing a minimal navy t-shirt, standing in a bright modern workspace with subtle technology elements in the background. The lighting is crisp and modern, reflecting innovation, precision, and the digital side of the NôngSạch brand."
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuD4r91xvh7CiXnZcETYKx2XJO8E8iyQyNXC4NILZ3QLwpMwmJZVJ3MlciuFtHWwPnlrmnbQ6d5GtruyfXGkeU2wKUAgqXEgxbAmaJYTCJCnUg3MT2v1HPJEJnd5FnD2-L4nhxysKGTOkR1_-GewvLewderejm3WUPE1F3NbqVCrjyckZzFS-3ZmyIDd_HTWDmbboPKHPcQU5rVBHfk98-eYY21w3RWIm84_IHbeomavmqKVQ0tdabvAqr29AEEL07GAK9NgrXcthg" />
+                        </div>
+                        <h4 class="font-headline-md text-headline-md text-on-surface">Lê Văn C</h4>
+                        <p class="font-label-md text-label-md text-primary-container uppercase tracking-widest mt-base">
+                            Tech Lead</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- Section 6: CTA Banner -->
+        <section class="my-xl px-gutter max-w-container-max mx-auto">
+            <div
+                class="bg-gradient-to-r from-primary to-secondary p-xl md:p-24 rounded-2xl text-center relative overflow-hidden">
+                <div class="absolute inset-0 opacity-10 pointer-events-none">
+                    <svg height="100%" preserveaspectratio="none" viewbox="0 0 100 100" width="100%">
+                        <path d="M0,0 Q50,50 100,0 V100 H0 Z" fill="white"></path>
+                    </svg>
+                </div>
+                <div class="relative z-10 max-w-2xl mx-auto">
+                    <h2
+                        class="font-headline-xl md:font-headline-2xl text-headline-xl md:text-headline-2xl text-white mb-md">
+                        Hãy cùng chúng tôi xây dựng nền nông nghiệp sạch
+                    </h2>
+                    <button
+                        class="bg-white text-primary font-headline-md px-xl py-md rounded-2xl hover:bg-surface-container-low transition-all active:scale-95 shadow-lg">
+                        Mua ngay
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+    <!-- Footer Section -->
+    <footer class="bg-surface-container dark:bg-inverse-surface border-t border-outline-variant/30">
+        <div
+            class="flex flex-col md:flex-row justify-between items-start px-gutter py-xl max-w-container-max mx-auto w-full gap-xl">
+            <div class="space-y-md md:max-w-xs">
+                <a class="font-headline-md text-headline-md font-bold text-primary" href="/">NôngSạch</a>
+                <p class="font-body-md text-on-surface-variant">Mang tinh hoa ruộng đồng đến từng gian bếp Việt với sự
+                    tận tâm và minh bạch tuyệt đối.</p>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-xl w-full md:w-auto">
+                <div class="space-y-sm">
+                    <p class="font-label-md text-on-surface font-bold uppercase tracking-wider">Khám phá</p>
+                    <div class="flex flex-col gap-xs">
+                        <a class="font-label-sm text-on-surface-variant hover:text-primary transition-colors"
+                            href="#">Sản phẩm</a>
+                        <a class="font-label-sm text-primary underline" href="#">Về chúng tôi</a>
+                        <a class="font-label-sm text-on-surface-variant hover:text-primary transition-colors"
+                            href="#">Cửa hàng</a>
+                    </div>
+                </div>
+                <div class="space-y-sm">
+                    <p class="font-label-md text-on-surface font-bold uppercase tracking-wider">Hỗ trợ</p>
+                    <div class="flex flex-col gap-xs">
+                        <a class="font-label-sm text-on-surface-variant hover:text-primary transition-colors"
+                            href="#">Vận chuyển</a>
+                        <a class="font-label-sm text-on-surface-variant hover:text-primary transition-colors"
+                            href="#">Hoàn trả</a>
+                        <a class="font-label-sm text-on-surface-variant hover:text-primary transition-colors"
+                            href="#">Liên hệ</a>
+                    </div>
+                </div>
+                <div class="space-y-sm">
+                    <p class="font-label-md text-on-surface font-bold uppercase tracking-wider">Pháp lý</p>
+                    <div class="flex flex-col gap-xs">
+                        <a class="font-label-sm text-on-surface-variant hover:text-primary transition-colors"
+                            href="#">Chính sách bảo mật</a>
+                        <a class="font-label-sm text-on-surface-variant hover:text-primary transition-colors"
+                            href="#">Điều khoản sử dụng</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="border-t border-outline-variant/20 py-md text-center px-gutter">
+            <p class="font-label-sm text-on-surface-variant">© 2024 NôngSạch. Tươi ngon từ ruộng đồng đến bàn ăn.</p>
+        </div>
+    </footer>
+    <script>
+        // Simple micro-interaction for smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href'))?.scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Reveal animations on scroll
+        const observerOptions = {
+            threshold: 0.1
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('opacity-100', 'translate-y-0');
+                    entry.target.classList.remove('opacity-0', 'translate-y-10');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('section').forEach(section => {
+            section.classList.add('transition-all', 'duration-700', 'opacity-0', 'translate-y-10');
+            observer.observe(section);
+        });
+    </script>
+</body>
+
+</html>
