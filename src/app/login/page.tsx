@@ -242,12 +242,6 @@ export default function LoginPage() {
             Tiếp tục với Google
           </button>
 
-          {/* ── Demo account hint ── */}
-          <div className="mt-6 p-4 bg-[#f0f3ff] rounded-xl border border-[#bbcabf]/30 text-[13px] text-[#3c4a42]">
-            <p className="font-semibold text-[#111c2d] mb-1">Tài khoản demo:</p>
-            <p>Email: <strong className="text-[#006c49]">admin@nongsach.vn</strong></p>
-            <p>Mật khẩu: <strong className="text-[#006c49]">12345678</strong></p>
-          </div>
 
           {/* ── Register link ── */}
           <p className="mt-6 text-center text-[14px] text-[#3c4a42]">
