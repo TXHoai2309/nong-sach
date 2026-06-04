@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import Breadcrumb from "@/components/layout/Breadcrumb";
 import { useAuthStore } from "@/store/auth-store";
 
 // ── Validation ─────────────────────────────────────────────────────────────────
@@ -114,7 +115,16 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="flex flex-col md:flex-row w-full min-h-[calc(100vh-64px)] bg-[#f9f9ff]">
+    <main className="w-full min-h-[calc(100vh-64px)] bg-[#f9f9ff]">
+      <div className="mx-auto max-w-[1280px] px-6 py-6">
+        <Breadcrumb
+          items={[
+            { label: "Trang chủ", href: "/" },
+            { label: "Đăng ký" },
+          ]}
+        />
+      </div>
+      <div className="flex flex-col md:flex-row">
 
       {/* ── Left: Visual panel ── */}
       <section className="hidden md:flex relative w-1/2 min-h-full overflow-hidden">
@@ -324,6 +334,7 @@ export default function RegisterPage() {
         </div>
       </section>
 
+      </div>
     </main>
   );
 }

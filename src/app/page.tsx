@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import Breadcrumb from "@/components/layout/Breadcrumb";
 import ProductGrid from "@/components/product/ProductGrid";
 import { getAllProducts } from "@/lib/products";
 import { CATEGORY_LABELS, ProductCategory } from "@/types/product";
@@ -51,6 +52,9 @@ export default function HomePage() {
 
   return (
     <main>
+      <div className="mx-auto max-w-[1280px] px-6 py-4">
+        <Breadcrumb items={[{ label: "Trang chủ" }]} />
+      </div>
       {/* ── Hero Section ── */}
       <section className="relative min-h-[600px] flex items-center overflow-hidden">
         {/* Background image with hero-gradient overlay */}

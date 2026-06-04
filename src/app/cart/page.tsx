@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Trash2, Plus, Minus, ArrowLeft, ShoppingBag } from "lucide-react";
+import Breadcrumb from "@/components/layout/Breadcrumb";
 import Container from "@/components/layout/Container";
 import { useCartStore } from "@/store/cart-store";
 import { formatCurrency } from "@/lib/format";
@@ -35,7 +36,15 @@ export default function CartPage() {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 px-6 py-10">
+        <Container>
+          <Breadcrumb
+            items={[
+              { label: "Trang chủ", href: "/" },
+              { label: "Giỏ hàng" },
+            ]}
+          />
+        </Container>
         <div className="text-center py-20 px-4">
           <ShoppingBag className="w-16 h-16 text-slate-300 mx-auto mb-4 animate-bounce" />
           <h1 className="text-xl font-bold text-slate-700 mb-2">
@@ -59,6 +68,13 @@ export default function CartPage() {
   return (
     <div className="min-h-screen bg-slate-50 py-10">
       <Container>
+        <Breadcrumb
+          className="mb-6"
+          items={[
+            { label: "Trang chủ", href: "/" },
+            { label: "Giỏ hàng" },
+          ]}
+        />
         {/* Tiêu đề & Back button */}
         <div className="flex items-center gap-3 mb-8">
           <Link

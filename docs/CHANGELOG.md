@@ -6,6 +6,100 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
 
 ---
 
+## [0.3.3] - 2026-06-04
+
+### Sprint 3.3 — Product Detail Data Sync, Breadcrumbs & Layout Refinement
+
+### Added
+
+#### `src/components/layout/Breadcrumb.tsx`
+
+* Thêm component breadcrumb dùng chung cho toàn bộ app
+* Hỗ trợ item có `href` và item cuối không link
+* Dùng Material Symbols `chevron_right` để đồng bộ ngôn ngữ UI hiện tại
+
+---
+
+### Changed
+
+#### `src/components/product/ProductDetail.tsx`
+
+* Convert lại product detail theo Stitch HTML nhưng vẫn bám dữ liệu thật từ `src/data/products.ts`
+* Sửa lỗi mọi sản phẩm đều hiển thị ảnh/gallery cà chua:
+  * Ảnh chính lấy từ `product.image`
+  * Tên, giá, mô tả, danh mục, nguồn gốc, tồn kho lấy từ `product`
+  * Related products lấy `item.image` thật của từng sản phẩm
+* Thêm gallery 4 ảnh:
+  * Ảnh đầu là ảnh thật của sản phẩm
+  * 3 ảnh còn lại lấy theo `product.category` để đẹp hơn nhưng vẫn đúng nhóm sản phẩm
+* Giữ tương tác client-side:
+  * Đổi ảnh thumbnail
+  * Tăng/giảm số lượng
+  * Add-to-cart theo số lượng đã chọn
+  * Mua ngay chuyển sang `/checkout`
+  * Tabs: Mô tả / Thông tin / Đánh giá
+* Thu gọn layout:
+  * `max-w` giảm còn `1040px`
+  * Ảnh chính đổi từ `aspect-square` sang `aspect-[4/3]`
+  * Giảm gap, padding, margin, heading size và tab size để body không bị phình quá lớn
+
+#### `src/app/products/[id]/page.tsx`
+
+* Truyền `relatedProducts` thật vào `ProductDetail`
+* Thêm breadcrumb nhiều cấp: `Trang chủ > Cửa hàng > Danh mục > Tên sản phẩm`
+* Sửa màn hình không tìm thấy sản phẩm sang style Material Design 3
+
+#### `src/components/layout/Header.tsx`
+
+* Xóa nav item `Sản phẩm` bị thừa
+* Giữ `Cửa hàng` là link duy nhất tới `/products`
+* Thu gọn header:
+  * `max-w-[1120px]`
+  * padding nhỏ hơn
+  * search input gọn hơn
+* Active state của `Cửa hàng` áp dụng cho cả `/products` và `/products/[id]`
+
+#### `src/app/contact/page.tsx`
+
+* Sửa lỗi newsletter bị xuống từng chữ do dùng `max-w-md` trong Tailwind v4 bị conflict với custom spacing token
+* Thay bằng width explicit `md:w-[420px]`
+* Thu gọn layout liên hệ:
+  * `max-w-[1120px]`
+  * giảm padding form/card/input/button
+  * giảm chiều cao map placeholder
+  * newsletter section gọn hơn
+
+#### Breadcrumb coverage
+
+* Thêm breadcrumb cho các route chính:
+  * `/`
+  * `/products`
+  * `/products/[id]`
+  * `/about`
+  * `/contact`
+  * `/cart`
+  * `/checkout`
+  * `/login`
+  * `/register`
+
+---
+
+### Fixed
+
+* Product detail không còn bị hard-code ảnh/nội dung cà chua cho mọi sản phẩm
+* Header không còn hiển thị đồng thời `Sản phẩm` và `Cửa hàng`
+* Contact newsletter không còn bị vỡ layout thành từng chữ
+* Product detail không còn bị phình quá lớn trên desktop
+
+---
+
+### Verified
+
+* `npm.cmd run build` — pass
+* `npx.cmd tsc --noEmit --incremental false` — pass
+
+---
+
 ## [0.3.2] - 2026-06-04 10:28 → 10:45 (GMT+7)
 
 ### Sprint 3.2 — Convert About & Contact Pages từ Stitch HTML

@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Search, SlidersHorizontal, X } from "lucide-react";
+import Breadcrumb from "@/components/layout/Breadcrumb";
 import Container from "@/components/layout/Container";
 import ProductGrid from "@/components/product/ProductGrid";
 import { getAllProducts } from "@/lib/products";
@@ -78,6 +79,13 @@ export default function ProductsPage() {
       {/* Page header */}
       <div className="bg-white border-b border-slate-100">
         <Container className="py-8">
+          <Breadcrumb
+            className="mb-4"
+            items={[
+              { label: "Trang chủ", href: "/" },
+              { label: "Cửa hàng" },
+            ]}
+          />
           <h1 className="text-3xl font-bold text-slate-800 mb-2">
             Nông sản sạch
           </h1>

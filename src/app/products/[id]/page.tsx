@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { ArrowLeft, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
+import Breadcrumb from "@/components/layout/Breadcrumb";
 import Container from "@/components/layout/Container";
 import ProductDetail from "@/components/product/ProductDetail";
-import { getProductById } from "@/lib/products";
+import { getAllProducts, getProductById } from "@/lib/products";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -11,27 +12,35 @@ interface PageProps {
 export default async function ProductDetailPage({ params }: PageProps) {
   const { id } = await params;
   const product = getProductById(id);
+  const relatedProducts = getAllProducts()
+    .filter((item) => item.id !== id)
+    .slice(0, 4);
 
   if (!product) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center py-12 px-4">
-        <Container className="max-w-md">
-          <div className="bg-white rounded-2xl border border-slate-100 p-8 shadow-sm text-center flex flex-col items-center">
-            <div className="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4">
-              <AlertCircle className="w-6 h-6" />
+      <div className="min-h-screen bg-background px-4 py-12">
+        <Container className="max-w-[448px]">
+          <Breadcrumb
+            className="mb-8"
+            items={[
+              { label: "Trang chủ", href: "/" },
+              { label: "Cửa hàng", href: "/products" },
+              { label: "Không tìm thấy" },
+            ]}
+          />
+          <div className="flex flex-col items-center rounded-2xl border border-outline-variant/20 bg-white p-8 text-center shadow-sm">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-500">
+              <AlertCircle className="h-6 w-6" />
             </div>
-            <h2 className="text-xl font-bold text-slate-800 mb-2">
-              Không tìm thấy sản phẩm.
-            </h2>
-            <p className="text-slate-500 text-sm mb-6">
-              Sản phẩm bạn đang tìm kiếm không tồn tại hoặc đã bị gỡ bỏ khỏi cửa hàng.
+            <h2 className="mb-2 text-xl font-bold text-on-surface">Không tìm thấy sản phẩm.</h2>
+            <p className="mb-6 text-sm text-on-surface-variant">
+              Sản phẩm bạn đang tìm kiếm không tồn tại hoặc đã bị gỡ khỏi cửa hàng.
             </p>
             <Link
               href="/products"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl text-sm transition-colors shadow-sm"
+              className="inline-flex rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-container"
             >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Quay lại danh sách</span>
+              Quay lại danh sách
             </Link>
           </div>
         </Container>
@@ -40,10 +49,8 @@ export default async function ProductDetailPage({ params }: PageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8">
-      <Container>
-        <ProductDetail product={product} />
-      </Container>
+    <div className="min-h-screen bg-background">
+      <ProductDetail product={product} relatedProducts={relatedProducts} />
     </div>
   );
 }

@@ -1,31 +1,31 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import CartBadge from "./CartBadge";
 import { useAuthStore } from "@/store/auth-store";
 
 const navLinks = [
-  { href: "/products", label: "Sản phẩm" },
-  { href: "/about",    label: "Về chúng tôi" },
-  { href: "/",         label: "Cửa hàng" },
-  { href: "/contact",  label: "Liên hệ" },
+  { href: "/about", label: "Về chúng tôi" },
+  { href: "/products", label: "Cửa hàng" },
+  { href: "/contact", label: "Liên hệ" },
 ];
 
 export default function Header() {
-  const [mobileOpen, setMobileOpen]   = useState(false);
-  const [searchOpen, setSearchOpen]   = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [mounted, setMounted]         = useState(false);
-  const pathname                       = usePathname();
-  const router                         = useRouter();
-  const searchRef                      = useRef<HTMLInputElement>(null);
-  const { currentUser, logout }        = useAuthStore();
+  const [mounted, setMounted] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchRef = useRef<HTMLInputElement>(null);
+  const { currentUser, logout } = useAuthStore();
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  // Focus search input when opened
   useEffect(() => {
     if (searchOpen) searchRef.current?.focus();
   }, [searchOpen]);
@@ -39,33 +39,32 @@ export default function Header() {
     }
   }
 
-  return (
-    <header className="sticky top-0 z-50 bg-[#f9f9ff]/80 backdrop-blur-md shadow-sm">
-      <nav className="flex justify-between items-center px-6 py-4 max-w-[1280px] mx-auto w-full">
+  function isActiveLink(href: string) {
+    if (href === "/products") {
+      return pathname === "/products" || pathname.startsWith("/products/");
+    }
+    return pathname === href;
+  }
 
-        {/* ── Left: logo + desktop nav ── */}
-        <div className="flex items-center gap-16">
-          {/* Logo */}
-          <Link
-            href="/"
-            aria-label="NôngSạch - Trang chủ"
-            className="text-[30px] leading-[38px] font-bold text-[#006c49]"
-          >
+  return (
+    <header className="sticky top-0 z-50 bg-[#f9f9ff]/85 shadow-sm backdrop-blur-md">
+      <nav className="mx-auto flex w-full max-w-[1120px] items-center justify-between px-6 py-3">
+        <div className="flex items-center gap-12">
+          <Link href="/" aria-label="NôngSạch - Trang chủ" className="text-[28px] font-bold leading-9 text-[#006c49]">
             NôngSạch
           </Link>
 
-          {/* Desktop nav links */}
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden items-center gap-7 md:flex">
             {navLinks.map((link) => {
-              const isActive = pathname === link.href && link.href !== "/";
+              const isActive = isActiveLink(link.href);
               return (
                 <Link
-                  key={link.href + link.label}
+                  key={link.href}
                   href={link.href}
                   className={[
-                    "text-[14px] leading-[20px] font-medium transition-colors",
+                    "text-[14px] font-medium leading-5 transition-colors",
                     isActive
-                      ? "text-[#006c49] border-b-2 border-[#006c49] pb-1 font-bold"
+                      ? "border-b-2 border-[#006c49] pb-1 font-bold text-[#006c49]"
                       : "text-[#3c4a42] hover:text-[#006c49]",
                   ].join(" ")}
                 >
@@ -76,93 +75,60 @@ export default function Header() {
           </div>
         </div>
 
-        {/* ── Right: search + cart + account ── */}
-        <div className="flex items-center gap-6">
-          {/* Search bar (desktop) */}
-          <div className="relative hidden sm:block">
-            <form onSubmit={handleSearch}>
-              <input
-                ref={searchRef}
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Tìm kiếm..."
-                className="bg-[#e7eeff] border-none rounded-full py-2 px-10 pl-10 focus:ring-2 focus:ring-[#006c49] text-[16px] w-64 transition-all outline-none"
-              />
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#3c4a42] text-xl pointer-events-none select-none">
-                search
-              </span>
-            </form>
-          </div>
+        <div className="flex items-center gap-5">
+          <form onSubmit={handleSearch} className="relative hidden sm:block">
+            <input
+              ref={searchRef}
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Tìm kiếm..."
+              className="w-60 rounded-full border-none bg-[#e7eeff] py-2 pl-10 pr-4 text-[15px] outline-none transition-all focus:ring-2 focus:ring-[#006c49] lg:w-72"
+            />
+            <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 select-none text-xl text-[#3c4a42]">
+              search
+            </span>
+          </form>
 
-          {/* Cart */}
           <CartBadge />
 
-          {/* Account / Auth */}
           {mounted && currentUser ? (
-            <>
-              {/* Desktop: show name + logout */}
-              <div className="hidden md:flex items-center gap-3">
-                <button
-                  className="flex items-center gap-2 text-[#3c4a42] hover:bg-[#10b981]/10 px-2 py-2 rounded-full transition-all"
-                >
-                  <span className="material-symbols-outlined text-[24px]">account_circle</span>
-                  <span className="hidden lg:inline text-[14px] leading-[20px]">
-                    {currentUser.name}
-                  </span>
-                </button>
-                <button
-                  onClick={logout}
-                  className="text-[12px] font-semibold border border-[#bbcabf] text-[#3c4a42] px-3 py-1.5 rounded-full hover:bg-[#f0f3ff] transition-all cursor-pointer"
-                >
-                  Đăng xuất
-                </button>
-              </div>
-              {/* Mobile: icon only */}
-              <button className="md:hidden flex items-center gap-2 text-[#3c4a42] hover:bg-[#10b981]/10 px-2 py-2 rounded-full transition-all">
+            <div className="hidden items-center gap-3 md:flex">
+              <button className="flex items-center gap-2 rounded-full px-2 py-2 text-[#3c4a42] transition-all hover:bg-[#10b981]/10">
                 <span className="material-symbols-outlined text-[24px]">account_circle</span>
+                <span className="hidden text-[14px] leading-5 lg:inline">{currentUser.name}</span>
               </button>
-            </>
+              <button
+                onClick={logout}
+                className="cursor-pointer rounded-full border border-[#bbcabf] px-3 py-1.5 text-[12px] font-semibold text-[#3c4a42] transition-all hover:bg-[#f0f3ff]"
+              >
+                Đăng xuất
+              </button>
+            </div>
           ) : (
-            <>
-              {/* Desktop: icon + Tài khoản text */}
-              <Link
-                href="/login"
-                id="login-button"
-                className="hidden md:flex items-center gap-2 text-[#3c4a42] hover:bg-[#10b981]/10 px-2 py-2 rounded-full transition-all"
-              >
-                <span className="material-symbols-outlined text-[24px]">account_circle</span>
-                <span className="hidden lg:inline text-[14px] leading-[20px]">Tài khoản</span>
-              </Link>
-              {/* Mobile: icon only */}
-              <Link
-                href="/login"
-                className="md:hidden flex items-center gap-2 text-[#3c4a42] hover:bg-[#10b981]/10 px-2 py-2 rounded-full transition-all"
-              >
-                <span className="material-symbols-outlined text-[24px]">account_circle</span>
-              </Link>
-            </>
+            <Link
+              href="/login"
+              id="login-button"
+              className="hidden items-center gap-2 rounded-full px-2 py-2 text-[#3c4a42] transition-all hover:bg-[#10b981]/10 md:flex"
+            >
+              <span className="material-symbols-outlined text-[24px]">account_circle</span>
+              <span className="hidden text-[14px] leading-5 lg:inline">Tài khoản</span>
+            </Link>
           )}
 
-          {/* Mobile menu toggle */}
           <button
-            id="mobile-menu-toggle"
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label="Mở menu di động"
             aria-expanded={mobileOpen}
-            className="md:hidden flex items-center justify-center w-10 h-10 rounded-full text-[#3c4a42] hover:bg-[#10b981]/10 transition-colors"
+            className="flex h-10 w-10 items-center justify-center rounded-full text-[#3c4a42] transition-colors hover:bg-[#10b981]/10 md:hidden"
           >
-            <span className="material-symbols-outlined">
-              {mobileOpen ? "close" : "menu"}
-            </span>
+            <span className="material-symbols-outlined">{mobileOpen ? "close" : "menu"}</span>
           </button>
         </div>
       </nav>
 
-      {/* ── Mobile nav dropdown ── */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-[#bbcabf]/30 bg-[#f9f9ff]">
-          {/* Mobile search */}
+        <div className="border-t border-[#bbcabf]/30 bg-[#f9f9ff] md:hidden">
           <div className="px-6 py-4">
             <form onSubmit={handleSearch} className="relative">
               <input
@@ -170,22 +136,21 @@ export default function Header() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Tìm kiếm sản phẩm..."
-                className="w-full bg-[#e7eeff] border-none rounded-full py-2 px-10 pl-10 text-[16px] focus:ring-2 focus:ring-[#006c49] outline-none"
+                className="w-full rounded-full border-none bg-[#e7eeff] py-2 pl-10 pr-4 text-[16px] outline-none focus:ring-2 focus:ring-[#006c49]"
               />
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#3c4a42] text-xl pointer-events-none select-none">
+              <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 select-none text-xl text-[#3c4a42]">
                 search
               </span>
             </form>
           </div>
 
-          {/* Mobile links */}
-          <nav className="flex flex-col px-6 pb-4 gap-1" aria-label="Menu di động">
+          <nav className="flex flex-col gap-1 px-6 pb-4" aria-label="Menu di động">
             {navLinks.map((link) => (
               <Link
-                key={link.href + link.label}
+                key={link.href}
                 href={link.href}
                 onClick={() => setMobileOpen(false)}
-                className="py-3 text-[14px] font-medium text-[#3c4a42] hover:text-[#006c49] border-b border-[#bbcabf]/20 transition-colors"
+                className="border-b border-[#bbcabf]/20 py-3 text-[14px] font-medium text-[#3c4a42] transition-colors hover:text-[#006c49]"
               >
                 {link.label}
               </Link>
@@ -193,8 +158,11 @@ export default function Header() {
 
             {mounted && currentUser ? (
               <button
-                onClick={() => { logout(); setMobileOpen(false); }}
-                className="mt-3 w-full py-2.5 bg-[#f0f3ff] text-[#3c4a42] text-[14px] font-semibold rounded-2xl hover:bg-[#e7eeff] transition-colors text-center cursor-pointer"
+                onClick={() => {
+                  logout();
+                  setMobileOpen(false);
+                }}
+                className="mt-3 w-full cursor-pointer rounded-2xl bg-[#f0f3ff] py-2.5 text-center text-[14px] font-semibold text-[#3c4a42] transition-colors hover:bg-[#e7eeff]"
               >
                 Đăng xuất ({currentUser.name})
               </button>
@@ -202,7 +170,7 @@ export default function Header() {
               <Link
                 href="/login"
                 onClick={() => setMobileOpen(false)}
-                className="mt-3 py-2.5 bg-[#006c49] text-white text-[14px] font-bold rounded-2xl hover:opacity-90 transition-all text-center"
+                className="mt-3 rounded-2xl bg-[#006c49] py-2.5 text-center text-[14px] font-bold text-white transition-all hover:opacity-90"
               >
                 Đăng nhập
               </Link>

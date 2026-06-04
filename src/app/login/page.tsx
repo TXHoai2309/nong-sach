@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import Breadcrumb from "@/components/layout/Breadcrumb";
 import { useAuthStore } from "@/store/auth-store";
 
 export default function LoginPage() {
@@ -76,7 +77,16 @@ export default function LoginPage() {
   const inputErr = "border-[#ba1a1a] focus:ring-[#ba1a1a]/20";
 
   return (
-    <main className="min-h-[calc(100vh-64px)] flex items-stretch">
+    <main className="min-h-[calc(100vh-64px)]">
+      <div className="mx-auto max-w-[1280px] px-6 py-6">
+        <Breadcrumb
+          items={[
+            { label: "Trang chủ", href: "/" },
+            { label: "Đăng nhập" },
+          ]}
+        />
+      </div>
+      <div className="flex items-stretch">
 
       {/* ── Left panel: hero image ── */}
       <section className="hidden lg:flex w-1/2 relative items-center justify-center p-16 overflow-hidden">
@@ -250,6 +260,7 @@ export default function LoginPage() {
         </div>
       </section>
 
+      </div>
     </main>
   );
 }

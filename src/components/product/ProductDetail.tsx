@@ -2,121 +2,347 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, MapPin, ShieldCheck, Truck } from "lucide-react";
-import { Product, CATEGORY_LABELS } from "@/types/product";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import Breadcrumb from "@/components/layout/Breadcrumb";
+import { useCartStore } from "@/store/cart-store";
 import { formatCurrency } from "@/lib/format";
-import { AddToCartButton } from "@/components/product/AddToCartButton";
+import { CATEGORY_LABELS, Product } from "@/types/product";
 
 interface ProductDetailProps {
   product: Product;
+  relatedProducts: Product[];
 }
 
-export default function ProductDetail({ product }: ProductDetailProps) {
+type TabKey = "description" | "info" | "reviews";
+
+const categoryGalleryImages: Partial<Record<Product["category"], string[]>> = {
+  vegetables: [
+    "https://images.unsplash.com/photo-1568584711075-3d021a7c3ca3?w=900&h=700&fit=crop",
+    "https://images.unsplash.com/photo-1542838132-92c53300491e?w=900&h=700&fit=crop",
+    "https://images.unsplash.com/photo-1518843875459-f738682238a6?w=900&h=700&fit=crop",
+  ],
+  fruits: [
+    "https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=900&h=700&fit=crop",
+    "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=900&h=700&fit=crop",
+    "https://images.unsplash.com/photo-1577234286642-fc512a5f8f11?w=900&h=700&fit=crop",
+  ],
+  grains: [
+    "https://images.unsplash.com/photo-1536304993881-ff6e9eefa2a6?w=900&h=700&fit=crop",
+    "https://images.unsplash.com/photo-1583324113626-70df0f4deaab?w=900&h=700&fit=crop",
+    "https://images.unsplash.com/photo-1604909052743-94e838986d24?w=900&h=700&fit=crop",
+  ],
+  roots: [
+    "https://images.unsplash.com/photo-1445282768818-728615cc910a?w=900&h=700&fit=crop",
+    "https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=900&h=700&fit=crop",
+    "https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=900&h=700&fit=crop",
+  ],
+  herbs: [
+    "https://images.unsplash.com/photo-1471193945509-9ad0617afabf?w=900&h=700&fit=crop",
+    "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=900&h=700&fit=crop",
+    "https://images.unsplash.com/photo-1524593166156-312f362cada0?w=900&h=700&fit=crop",
+  ],
+};
+
+const fallbackGalleryImages = [
+  "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=900&h=700&fit=crop",
+  "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=900&h=700&fit=crop",
+  "https://images.unsplash.com/photo-1506806732259-39c2d0268443?w=900&h=700&fit=crop",
+];
+
+export default function ProductDetail({ product, relatedProducts }: ProductDetailProps) {
+  const router = useRouter();
+  const addToCart = useCartStore((state) => state.addToCart);
+  const galleryImages = [
+    product.image,
+    ...(categoryGalleryImages[product.category] ?? fallbackGalleryImages),
+  ].slice(0, 4);
+  const [selectedImage, setSelectedImage] = useState(product.image);
+  const [quantity, setQuantity] = useState(Math.min(2, Math.max(1, product.stock)));
+  const [activeTab, setActiveTab] = useState<TabKey>("description");
+
   const isOutOfStock = product.stock === 0;
+  const originText = product.origin.includes("Việt Nam") ? product.origin : `${product.origin}, Việt Nam`;
+  const galleryObjectPositions = ["center", "top", "bottom", "left"];
+
+  function addSelectedQuantity() {
+    if (isOutOfStock) return;
+    Array.from({ length: quantity }).forEach(() => addToCart(product));
+  }
+
+  function buyNow() {
+    addSelectedQuantity();
+    router.push("/checkout");
+  }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-8">
-      {/* Back button */}
-      <div className="mb-6">
-        <Link
-          href="/products"
-          className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-emerald-600 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Quay lại danh sách</span>
-        </Link>
-      </div>
+    <main className="mx-auto max-w-[1040px] px-6 py-5">
+      <Breadcrumb
+        className="mb-6"
+        items={[
+          { label: "Trang chủ", href: "/" },
+          { label: "Cửa hàng", href: "/products" },
+          { label: CATEGORY_LABELS[product.category], href: `/products?category=${product.category}` },
+          { label: product.name },
+        ]}
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Left Column: Big Image */}
-        <div className="relative aspect-square rounded-2xl overflow-hidden bg-slate-50 border border-slate-100 shadow-inner group">
-          <Image
-            src={product.image}
-            alt={product.name}
-            fill
-            priority
-            sizes="(max-width: 768px) 100vw, 50vw"
-            className="object-cover group-hover:scale-105 transition-transform duration-500"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src =
-                "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&h=800&fit=crop";
-            }}
-          />
-          {isOutOfStock && (
-            <div className="absolute inset-0 bg-slate-900/60 flex items-center justify-center">
-              <span className="bg-red-500 text-white font-bold text-sm uppercase px-4 py-2 rounded-full tracking-wider shadow-md">
-                Hết hàng
-              </span>
+      <div className="mb-10 grid grid-cols-1 gap-8 lg:grid-cols-[0.95fr_1.05fr]">
+        <div className="space-y-4">
+          <div className="group relative aspect-[4/3] overflow-hidden rounded-2xl border border-outline-variant/20 bg-surface-container shadow-sm">
+            <Image
+              src={selectedImage}
+              alt={product.name}
+              fill
+              priority
+              sizes="(min-width: 1024px) 460px, 100vw"
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+            <div className="absolute left-4 top-4 flex items-center gap-1 rounded-full bg-primary px-4 py-1 text-xs font-semibold leading-4 tracking-wide text-white shadow-md">
+              <span className="material-symbols-outlined text-[14px] [font-variation-settings:'FILL'_1]">eco</span>
+              Hữu cơ
             </div>
-          )}
+          </div>
+
+          <div className="grid grid-cols-4 gap-3">
+            {galleryImages.map((image, index) => (
+              <button
+                key={`${image}-${index}`}
+                onClick={() => setSelectedImage(image)}
+                className={[
+                  "relative aspect-square overflow-hidden rounded-xl transition-colors",
+                  selectedImage === image
+                    ? "border-2 border-primary ring-2 ring-primary/20"
+                    : "border border-outline-variant/30 hover:border-primary",
+                ].join(" ")}
+                type="button"
+              >
+                <Image
+                  src={image}
+                  alt={`${product.name} ${index + 1}`}
+                  fill
+                  sizes="25vw"
+                  className="object-cover"
+                  style={{ objectPosition: galleryObjectPositions[index] }}
+                />
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Right Column: Detailed Info */}
-        <div className="flex flex-col">
-          {/* Category & Origin */}
-          <div className="flex flex-wrap items-center gap-3 mb-4">
-            <span className="px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-lg uppercase tracking-wider">
-              {CATEGORY_LABELS[product.category]}
-            </span>
-            <span className="flex items-center gap-1 text-sm text-slate-500">
-              <MapPin className="w-4 h-4 text-emerald-600" />
-              <span>Nguồn gốc: <strong>{product.origin}</strong></span>
-            </span>
+        <div className="flex flex-col gap-4">
+          <div className="inline-flex w-fit items-center rounded-full bg-surface-container-high px-4 py-1 text-xs font-semibold leading-4 text-on-surface-variant">
+            {originText}
+          </div>
+          <h1 className="text-3xl font-bold leading-[38px] tracking-[-0.02em] text-on-surface">{product.name}</h1>
+
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center text-[#FFB800]">
+              {["star", "star", "star", "star", "star_half"].map((star, index) => (
+                <span key={`${star}-${index}`} className="material-symbols-outlined [font-variation-settings:'FILL'_1]">
+                  {star}
+                </span>
+              ))}
+              <span className="ml-1 font-bold text-on-surface">4.8</span>
+            </div>
+            <span className="text-sm font-medium text-on-surface-variant">(32 đánh giá)</span>
           </div>
 
-          {/* Name */}
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2 leading-tight">
-            {product.name}
-          </h1>
-
-          {/* Price */}
-          <div className="bg-emerald-50/50 rounded-xl p-4 mb-6">
-            <span className="text-xs text-slate-500 block mb-1">Giá bán lẻ:</span>
-            <span className="text-3xl font-extrabold text-emerald-600">
-              {formatCurrency(product.price)}
-            </span>
+          <div className="text-2xl font-semibold leading-8 text-primary">
+            {formatCurrency(product.price)} <span className="text-base font-normal text-on-surface-variant">/kg</span>
           </div>
 
-          {/* Availability Status */}
-          <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-6 text-sm">
-            <span className="text-slate-500">Tình trạng kho:</span>
-            {isOutOfStock ? (
-              <span className="px-2.5 py-1 bg-red-50 text-red-600 font-semibold rounded-md text-xs">
-                Hết hàng
+          <p className="border-l-4 border-primary/20 pl-5 text-sm leading-7 text-on-surface-variant">
+            {product.description}
+          </p>
+
+          <div className="mt-2 flex flex-col gap-3">
+            <label className="text-xs font-semibold uppercase leading-4 tracking-wider text-on-surface-variant">Số lượng</label>
+            <div className="flex items-center gap-6">
+              <div className="flex items-center rounded-full border border-outline-variant/30 bg-surface-container-low px-1 py-1">
+                <button
+                  onClick={() => setQuantity((current) => Math.max(1, current - 1))}
+                  className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-surface-container-high active:scale-90"
+                  type="button"
+                >
+                  <span className="material-symbols-outlined text-[18px]">remove</span>
+                </button>
+                <span className="w-10 text-center font-bold text-on-surface">{quantity}</span>
+                <button
+                  onClick={() => setQuantity((current) => Math.min(product.stock, current + 1))}
+                  className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-surface-container-high active:scale-90"
+                  type="button"
+                  disabled={isOutOfStock}
+                >
+                  <span className="material-symbols-outlined text-[18px]">add</span>
+                </button>
+              </div>
+              <span className="text-sm font-medium text-on-surface-variant">
+                Còn <span className="font-bold text-on-surface">{product.stock}</span> sản phẩm
               </span>
-            ) : (
-              <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 font-semibold rounded-md text-xs">
-                Còn hàng ({product.stock} sản phẩm)
-              </span>
-            )}
+            </div>
           </div>
 
-          {/* Description */}
-          <div className="mb-6">
-            <h3 className="text-sm font-bold text-slate-700 mb-2">Mô tả sản phẩm</h3>
-            <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-line">
-              {product.description}
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <button
+              onClick={addSelectedQuantity}
+              disabled={isOutOfStock}
+              className="flex items-center justify-center gap-3 rounded-xl bg-primary px-7 py-3.5 font-bold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary-container active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+              type="button"
+            >
+              <span className="material-symbols-outlined">shopping_basket</span>
+              Thêm vào giỏ hàng
+            </button>
+            <button
+              onClick={buyNow}
+              disabled={isOutOfStock}
+              className="rounded-xl border-2 border-primary px-7 py-3.5 font-bold text-primary transition-all hover:bg-primary/5 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+              type="button"
+            >
+              Mua ngay
+            </button>
+          </div>
+
+          <div className="mt-3 grid grid-cols-3 gap-4 border-t border-outline-variant/30 pt-6">
+            {[
+              ["verified", "Tiêu chuẩn VietGAP"],
+              ["local_shipping", "Giao trong ngày"],
+              ["assignment_return", "Đổi trả 7 ngày"],
+            ].map(([icon, label]) => (
+              <div key={label} className="flex flex-col items-center gap-2 text-center">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <span className="material-symbols-outlined text-[20px] [font-variation-settings:'FILL'_1]">{icon}</span>
+                </div>
+                <span className="text-xs font-semibold leading-4 text-on-surface-variant">{label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <section className="mt-10">
+        <div className="mb-7 flex gap-8 overflow-x-auto border-b border-outline-variant/30">
+          {[
+            ["description", "Mô tả"],
+            ["info", "Thông tin"],
+            ["reviews", "Đánh giá (32)"],
+          ].map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setActiveTab(key as TabKey)}
+              className={[
+                "whitespace-nowrap pb-4 text-xl font-semibold leading-7 transition-colors",
+                activeTab === key ? "border-b-2 border-primary text-primary" : "text-on-surface-variant hover:text-primary",
+              ].join(" ")}
+              type="button"
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {activeTab === "description" && (
+          <div className="flex max-w-[720px] flex-col gap-5 text-sm leading-7 text-on-surface-variant">
+            <p>
+              Sản phẩm {product.name.toLowerCase()} tại NôngSạch được tuyển chọn từ những trang trại liên kết tại
+              {` ${product.origin}`}. Với quy trình canh tác sạch, sản phẩm giữ được độ tươi ngon tự nhiên và phù hợp cho
+              bữa ăn gia đình hằng ngày.
+            </p>
+            <p>
+              Chúng tôi ưu tiên nguồn hàng rõ xuất xứ, giảm trung gian và kiểm soát chất lượng trước khi giao đến khách
+              hàng. Mỗi sản phẩm được bảo quản cẩn thận để giữ trọn hương vị, dinh dưỡng và sự an tâm khi sử dụng.
             </p>
           </div>
+        )}
 
-          {/* Add To Cart Widget */}
-          <div className="mt-auto pt-6 border-t border-slate-100">
-            <AddToCartButton product={product} />
+        {activeTab === "info" && (
+          <div className="max-w-[640px] overflow-hidden rounded-2xl border border-outline-variant/20 bg-surface-container">
+            {[
+              ["Xuất xứ", originText],
+              ["Danh mục", CATEGORY_LABELS[product.category]],
+              ["Tiêu chuẩn", "VietGAP & Organic"],
+              ["Bảo quản", "Ngăn mát tủ lạnh (4-8°C)"],
+              ["Đơn vị", "Đóng túi 500g / 1kg"],
+            ].map(([label, value], index) => (
+              <div key={label} className={["grid grid-cols-2", index < 4 ? "border-b border-outline-variant/20" : ""].join(" ")}>
+                <div className="bg-surface-container-high/50 p-5 font-bold text-on-surface">{label}</div>
+                <div className="p-5 text-on-surface-variant">{value}</div>
+              </div>
+            ))}
           </div>
+        )}
 
-          {/* Extra Badges/Guarantees */}
-          <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-slate-100 text-xs text-slate-500">
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>100% An toàn, VietGAP</span>
+        {activeTab === "reviews" && (
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+            <div className="flex flex-col items-center justify-center rounded-2xl bg-surface-container-low p-8 text-center lg:col-span-4">
+              <div className="text-4xl font-bold text-primary">4.8</div>
+              <div className="mb-2 flex text-[#FFB800]">
+                {["star", "star", "star", "star", "star_half"].map((star, index) => (
+                  <span key={`${star}-${index}`} className="material-symbols-outlined [font-variation-settings:'FILL'_1]">
+                    {star}
+                  </span>
+                ))}
+              </div>
+              <div className="text-sm font-medium text-on-surface-variant">Dựa trên 32 đánh giá</div>
             </div>
-            <div className="flex items-center gap-2">
-              <Truck className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>Giao hàng nhanh trong ngày</span>
+            <div className="space-y-5 lg:col-span-8">
+              {[
+                ["NH", "Nguyễn Hạnh", `${product.name} rất tươi, đóng gói cẩn thận và giao nhanh. Gia đình mình rất hài lòng.`],
+                ["TM", "Trần Minh", "Hàng rất tốt, sản phẩm có mùi thơm tự nhiên rất khác so với mua ở chợ. Giao hàng nhanh."],
+              ].map(([initials, name, content]) => (
+                <article key={name} className="rounded-2xl border border-outline-variant/30 bg-white p-5">
+                  <div className="mb-4 flex items-center gap-4">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary-container font-bold text-on-secondary-container">
+                      {initials}
+                    </div>
+                    <div>
+                      <div className="font-bold text-on-surface">{name}</div>
+                      <div className="flex text-[#FFB800]">
+                        {Array.from({ length: 5 }).map((_, index) => (
+                          <span key={index} className="material-symbols-outlined text-[16px] [font-variation-settings:'FILL'_1]">
+                            star
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <span className="ml-auto text-xs font-semibold italic text-on-surface-variant">2 ngày trước</span>
+                  </div>
+                  <p className="text-on-surface-variant">{content}</p>
+                </article>
+              ))}
             </div>
           </div>
+        )}
+      </section>
+
+      <section className="mt-10">
+        <h2 className="mb-7 text-2xl font-semibold leading-8 text-on-surface">Sản phẩm tương tự</h2>
+        <div className="grid grid-cols-2 gap-5 md:grid-cols-4">
+          {relatedProducts.map((item) => (
+            <Link
+              key={item.id}
+              href={`/products/${item.id}`}
+              className="group overflow-hidden rounded-2xl border border-outline-variant/20 bg-white shadow-sm transition-all hover:shadow-md"
+            >
+              <div className="relative aspect-square overflow-hidden bg-surface-container">
+                <Image
+                  src={item.image}
+                  alt={item.name}
+                  fill
+                  sizes="(min-width: 768px) 25vw, 50vw"
+                  className="object-cover transition-transform group-hover:scale-105"
+                />
+              </div>
+              <div className="p-4">
+                <h3 className="mb-1 font-bold text-on-surface transition-colors group-hover:text-primary">{item.name}</h3>
+                <div className="font-bold text-primary">
+                  {formatCurrency(item.price)} <span className="text-xs font-semibold text-on-surface-variant">/kg</span>
+                </div>
+              </div>
+            </Link>
+          ))}
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { HandHeart, ShieldCheck, Sprout } from "lucide-react";
+import Breadcrumb from "@/components/layout/Breadcrumb";
 
 export const metadata: Metadata = {
   title: "Về chúng tôi",
@@ -67,6 +68,14 @@ const team = [
 export default function AboutPage() {
   return (
     <main className="bg-background text-on-background">
+      <div className="mx-auto max-w-[1280px] px-6 py-6">
+        <Breadcrumb
+          items={[
+            { label: "Trang chủ", href: "/" },
+            { label: "Về chúng tôi" },
+          ]}
+        />
+      </div>
       <section className="relative flex h-[614px] items-center justify-center overflow-hidden md:h-[716px]">
         <Image
           src={heroImage}

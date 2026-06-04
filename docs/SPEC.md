@@ -5,7 +5,7 @@
 | Thông tin         | Chi tiết                                    |
 | ----------------- | ------------------------------------------- |
 | Tên dự án         | NôngSạch — Nền tảng giao dịch nông sản sạch |
-| Phiên bản         | MVP v0.3.2                                  |
+| Phiên bản         | MVP v0.3.3                                  |
 | Ngày tạo          | 03/06/2026                                  |
 | Cập nhật lần cuối | 04/06/2026                                  |
 | Nhóm              | NôngSạch Team                               |
@@ -56,7 +56,7 @@ Người tiêu dùng ngày càng lo ngại về an toàn thực phẩm, đặc b
 | ---- | ------------------ | ----------------------------------------------------------- | ------- | ---------- |
 | F-01 | Trang chủ          | Hero banner, featured products, danh mục, CTA               | P0      | ✅ Done     |
 | F-02 | Danh sách sản phẩm | Grid, tìm kiếm, lọc danh mục, sắp xếp theo giá/tên          | P0      | ✅ Done     |
-| F-03 | Chi tiết sản phẩm  | Ảnh, tên, giá VND, nguồn gốc, tồn kho, mô tả, thêm giỏ hàng | P0      | ✅ Done     |
+| F-03 | Chi tiết sản phẩm  | Dữ liệu động, gallery, tabs, related products, thêm giỏ hàng | P0      | ✅ Done     |
 | F-04 | Giỏ hàng           | Thêm/xóa/sửa số lượng, tổng tiền, persist localStorage      | P0      | ✅ Done     |
 | F-05 | Checkout           | Form nhập thông tin, validate, tạo mã đơn NS+timestamp      | P1      | ✅ Done     |
 | F-06 | Đăng ký            | Form email+pass, validate, lưu local Zustand persist        | P1      | ✅ Done     |
@@ -113,10 +113,16 @@ Người tiêu dùng ngày càng lo ngại về an toàn thực phẩm, đặc b
 #### Acceptance Criteria
 
 * URL động: `/products/[id]`
-* Hiển thị ảnh lớn, tên, giá VND, nguồn gốc, số tồn kho, mô tả
+* Hiển thị dữ liệu thật theo từng sản phẩm: ảnh, tên, giá VND, nguồn gốc, số tồn kho, mô tả
+* Ảnh chính lấy từ `product.image`; không hard-code ảnh cà chua cho mọi sản phẩm
+* Gallery có 4 ảnh: ảnh sản phẩm thật + ảnh phụ theo `product.category`
+* Breadcrumb nhiều cấp: `Trang chủ > Cửa hàng > Danh mục > Tên sản phẩm`
 * Badge "Hữu cơ" nếu `isOrganic = true`
 * Bộ chọn qty không vượt stock
-* Nút "Thêm vào giỏ" cập nhật cart badge ngay lập tức
+* Nút "Thêm vào giỏ" thêm đúng số lượng đã chọn và cập nhật cart badge
+* Nút "Mua ngay" thêm sản phẩm vào giỏ và chuyển sang `/checkout`
+* Có tabs: Mô tả, Thông tin, Đánh giá
+* Có section "Sản phẩm tương tự" lấy từ data sản phẩm thật
 
 ## 3.2. Giỏ hàng & Thanh toán
 
@@ -156,6 +162,29 @@ Người tiêu dùng ngày càng lo ngại về an toàn thực phẩm, đặc b
 * Header hiển thị tên user + nút Đăng xuất
 * Phiên đăng nhập persist sau F5
 
+## 3.2.1. Navigation & Breadcrumb
+
+### US-NAV: Điều hướng thống nhất toàn site
+
+**Là** người dùng, **tôi muốn** biết mình đang ở đâu trong website, **để** quay lại các trang cha nhanh hơn.
+
+#### Acceptance Criteria
+
+* Header chỉ có một entry tới khu sản phẩm: `Cửa hàng`
+* Không hiển thị đồng thời `Sản phẩm` và `Cửa hàng` nếu cùng trỏ tới `/products`
+* `Cửa hàng` active khi ở `/products` hoặc `/products/[id]`
+* Các page chính có breadcrumb:
+  * `/`
+  * `/products`
+  * `/products/[id]`
+  * `/about`
+  * `/contact`
+  * `/cart`
+  * `/checkout`
+  * `/login`
+  * `/register`
+* Breadcrumb item cuối là text hiện tại, không phải link
+
 ## 3.3. Thông tin thương hiệu & hỗ trợ khách hàng
 
 ### US-08: Xem trang giới thiệu
@@ -186,6 +215,8 @@ Người tiêu dùng ngày càng lo ngại về an toàn thực phẩm, đặc b
 * Có map placeholder và newsletter section theo mẫu Stitch
 * Footer có link `Liên hệ` trỏ về `/contact`
 * Responsive: desktop 2 cột form/info, mobile xếp dọc
+* Layout contact dùng width explicit thay vì `max-w-md` để tránh conflict Tailwind v4 custom spacing token
+* Body/form/newsletter được thu gọn để không bị phình trên desktop
 
 > **Comment cho đồng nghiệp:** Trang `/contact` hiện chưa persist/submission dữ liệu. Khi làm tiếp, ưu tiên thêm `POST /api/contact` hoặc Firebase collection `contactMessages`, validate input và hiển thị trạng thái gửi thành công/thất bại.
 
@@ -325,6 +356,9 @@ interface ContactMessage {
 | T-18 | Thêm Contact page `/contact` theo Stitch HTML  | 3  | ✅      |
 | T-19 | Header/Footer cập nhật route và active state   | 2  | ✅      |
 | T-20 | Cấu hình remote images + Webpack build fallback| 1  | ✅      |
+| T-21 | Product detail dynamic data + compact layout   | 3  | ✅      |
+| T-22 | Breadcrumb component + coverage toàn site      | 2  | ✅      |
+| T-23 | Header cleanup + contact layout compact fix    | 1  | ✅      |
 
 ## Backlog Phase 2 (Tương lai)
 

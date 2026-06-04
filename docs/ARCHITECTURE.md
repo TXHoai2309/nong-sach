@@ -1,7 +1,7 @@
 # 🌿 NôngSạch Architecture
 
 > Architecture Document
-> Version: v1.0.0
+> Version: v1.1.0
 > Project: NôngSạch — Nền tảng giao dịch nông sản sạch
 
 ---
@@ -79,7 +79,7 @@ Next.js
 
 | Layer             | Technology            | Purpose                |
 | ----------------- | --------------------- | ---------------------- |
-| Framework         | Next.js 15 App Router | Routing, SSR, SEO      |
+| Framework         | Next.js 16 App Router | Routing, SSR, SEO      |
 | Language          | TypeScript            | Type Safety            |
 | Styling           | Tailwind CSS v4       | UI Development         |
 | State             | Zustand + Persist     | Local State Management |
@@ -98,7 +98,7 @@ Next.js
 nong-sach/
 
 ├── docs/
-│   ├── PRODUCT_SPEC.md
+│   ├── SPEC.md
 │   ├── ARCHITECTURE.md
 │   └── CHANGELOG.md
 │
@@ -107,8 +107,11 @@ nong-sach/
 │   ├── app/
 │   │   ├── page.tsx
 │   │   ├── products/
+│   │   │   ├── page.tsx
+│   │   │   └── [id]/page.tsx
 │   │   ├── cart/
 │   │   ├── checkout/
+│   │   ├── contact/
 │   │   ├── login/
 │   │   ├── register/
 │   │   └── about/
@@ -147,6 +150,23 @@ nong-sach/
 | /login         | Login           |
 | /register      | Register        |
 | /about         | About           |
+| /contact       | Contact         |
+
+## Navigation Rules
+
+* Header nav hiện chỉ giữ một entry tới khu sản phẩm: `Cửa hàng` → `/products`
+* `Cửa hàng` active cho cả `/products` và `/products/[id]`
+* Breadcrumb dùng chung qua `src/components/layout/Breadcrumb.tsx`
+* Các page chính đều có breadcrumb để thống nhất điều hướng:
+  * `/`
+  * `/products`
+  * `/products/[id]`
+  * `/about`
+  * `/contact`
+  * `/cart`
+  * `/checkout`
+  * `/login`
+  * `/register`
 
 ---
 
@@ -276,13 +296,33 @@ logout()
 products.ts
     │
     ▼
-Server Component
+app/products/[id]/page.tsx
+    │
+    ├── getProductById(id)
+    ├── getAllProducts() → relatedProducts
     │
     ▼
-Product Card
+ProductDetail Client Component
     │
     ▼
-Product Detail
+Gallery + Tabs + Quantity + Add To Cart
+```
+
+## Product Detail Gallery Flow
+
+```text
+product.image
+    │
+    ├── Main image
+    └── First thumbnail
+
+product.category
+    │
+    ▼
+categoryGalleryImages[category]
+    │
+    ▼
+Remaining gallery thumbnails
 ```
 
 ## Cart Flow
@@ -321,6 +361,19 @@ Create Order
 Clear Cart
 ```
 
+## Contact Flow (MVP UI)
+
+```text
+/contact
+   │
+   ├── Contact form UI
+   ├── Contact information card
+   ├── Map placeholder
+   └── Newsletter UI
+```
+
+> Contact form hiện chưa ghi dữ liệu. Phase 2 sẽ thêm API route hoặc Firebase collection `contactMessages`.
+
 ## Authentication Flow
 
 ```text
@@ -350,9 +403,12 @@ Clear Session
 | Component                  | Type   | Reason            |
 | -------------------------- | ------ | ----------------- |
 | app/page.tsx               | Server | SEO + Static Data |
-| app/products/page.tsx      | Server | Product Fetching  |
+| app/products/page.tsx      | Client | Search, Filter, Sort |
 | app/products/[id]/page.tsx | Server | Dynamic Product   |
+| app/contact/page.tsx       | Server | Static Contact UI |
 | Header.tsx                 | Client | Zustand State     |
+| Breadcrumb.tsx             | Server | Static Navigation |
+| ProductDetail.tsx          | Client | Gallery, Tabs, Qty |
 | AddToCartButton.tsx        | Client | User Interaction  |
 | cart/page.tsx              | Client | Cart State        |
 | checkout/page.tsx          | Client | Form Handling     |
@@ -387,6 +443,23 @@ Vercel
    ▼
 Production URL
 ```
+
+Build command:
+
+```bash
+npm run build
+```
+
+Current build script:
+
+```bash
+next build --webpack
+```
+
+Reason:
+
+* Turbopack can panic when the project path contains Vietnamese characters such as `D:\Thực tập\...`
+* Webpack build is stable for the current workspace path
 
 Deployment Strategy:
 
@@ -509,6 +582,7 @@ products
 orders
 users
 reviews
+contactMessages
 ```
 
 ## Payment Gateway

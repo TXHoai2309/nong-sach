@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, ShoppingBag, CheckCircle, MapPin, Phone, User, FileText } from "lucide-react";
+import Breadcrumb from "@/components/layout/Breadcrumb";
 import Container from "@/components/layout/Container";
 import { useCartStore } from "@/store/cart-store";
 import { formatCurrency } from "@/lib/format";
@@ -55,6 +56,14 @@ export default function CheckoutPage() {
     return (
       <div className="min-h-screen bg-slate-50 py-16 flex items-center justify-center">
         <Container>
+          <Breadcrumb
+            className="mb-8"
+            items={[
+              { label: "Trang chủ", href: "/" },
+              { label: "Giỏ hàng", href: "/cart" },
+              { label: "Đặt hàng" },
+            ]}
+          />
           <div className="max-w-2xl mx-auto bg-white rounded-3xl border border-slate-100 shadow-xl p-8 sm:p-12 text-center">
             <div className="inline-flex items-center justify-center w-20 h-20 bg-emerald-50 rounded-full text-emerald-600 mb-6">
               <CheckCircle className="w-12 h-12" />
@@ -106,7 +115,16 @@ export default function CheckoutPage() {
   // Handle Empty Cart
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 px-6 py-10">
+        <Container>
+          <Breadcrumb
+            items={[
+              { label: "Trang chủ", href: "/" },
+              { label: "Giỏ hàng", href: "/cart" },
+              { label: "Đặt hàng" },
+            ]}
+          />
+        </Container>
         <div className="text-center py-20 px-4">
           <ShoppingBag className="w-16 h-16 text-slate-300 mx-auto mb-4" />
           <h1 className="text-xl font-bold text-slate-700 mb-2">
@@ -171,6 +189,14 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen bg-slate-50 py-10">
       <Container>
+        <Breadcrumb
+          className="mb-6"
+          items={[
+            { label: "Trang chủ", href: "/" },
+            { label: "Giỏ hàng", href: "/cart" },
+            { label: "Đặt hàng" },
+          ]}
+        />
         {/* Navigation back */}
         <div className="flex items-center gap-3 mb-8">
           <Link
