@@ -5,7 +5,7 @@
 | Thông tin         | Chi tiết                                    |
 | ----------------- | ------------------------------------------- |
 | Tên dự án         | NôngSạch — Nền tảng giao dịch nông sản sạch |
-| Phiên bản         | MVP v0.3.3                                  |
+| Phiên bản         | MVP v0.3.5                                  |
 | Ngày tạo          | 03/06/2026                                  |
 | Cập nhật lần cuối | 04/06/2026                                  |
 | Nhóm              | NôngSạch Team                               |
@@ -150,6 +150,16 @@ Người tiêu dùng ngày càng lo ngại về an toàn thực phẩm, đặc b
 * Địa chỉ >= 5 ký tự
 * Sidebar tóm tắt đơn hàng
 * Sau đặt hàng: success screen với mã NS+timestamp, xóa giỏ hàng
+
+#### Checkout Address API
+
+* Trang `/checkout` lấy danh sách `Tỉnh / Thành phố` và `Quận / Huyện` từ API `https://provinces.open-api.vn/api/v1/?depth=2`
+* API `depth=2` chỉ cung cấp 2 cấp hành chính: tỉnh/thành phố và quận/huyện; chưa dùng phường/xã trong MVP
+* Khi API lỗi mạng, checkout dùng fallback tối thiểu gồm TP.HCM, Hà Nội và Đà Nẵng để người dùng vẫn có thể đặt hàng
+* Validate bắt buộc người dùng chọn đủ tỉnh/thành phố và quận/huyện trước khi submit
+* Layout checkout dùng width explicit và spacing nhỏ để tránh lỗi Tailwind v4 custom spacing làm body bị phình to
+
+> **Comment cho đồng nghiệp:** Nếu cần thêm phường/xã, đổi API sang `depth=3` và bổ sung state `wardCode`. Không hard-code tỉnh/quận trong UI nữa vì hiện đã có nguồn dữ liệu động từ `provinces.open-api.vn`.
 
 ### US-06 & US-07: Đăng ký / Đăng nhập
 
@@ -359,6 +369,7 @@ interface ContactMessage {
 | T-21 | Product detail dynamic data + compact layout   | 3  | ✅      |
 | T-22 | Breadcrumb component + coverage toàn site      | 2  | ✅      |
 | T-23 | Header cleanup + contact layout compact fix    | 1  | ✅      |
+| T-24 | Checkout compact layout + Province API          | 2  | ✅      |
 
 ## Backlog Phase 2 (Tương lai)
 

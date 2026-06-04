@@ -1,7 +1,7 @@
 # 🌿 NôngSạch Architecture
 
 > Architecture Document
-> Version: v1.1.0
+> Version: v1.1.1
 > Project: NôngSạch — Nền tảng giao dịch nông sản sạch
 
 ---
@@ -360,6 +360,31 @@ Create Order
      ▼
 Clear Cart
 ```
+
+## Checkout Address Flow
+
+```text
+/checkout Client Component
+     |
+     v
+fetch("https://provinces.open-api.vn/api/v1/?depth=2")
+     |
+     |-- success --> Province select + District select
+     |
+     `-- failure --> fallbackProvinces
+     |
+     v
+Validate fullName + phone + email + address + province + district
+     |
+     v
+Build success query address: street, district, province
+```
+
+Notes:
+
+* `depth=2` currently provides province/city and district/county data only.
+* Ward/commune support should use `depth=3` in a later phase.
+* Checkout layout avoids Tailwind named max-width utilities such as `max-w-md/xl` because project spacing tokens can conflict with Tailwind v4 defaults.
 
 ## Contact Flow (MVP UI)
 

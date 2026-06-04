@@ -6,6 +6,65 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
 
 ---
 
+## [0.3.5] - 2026-06-04
+
+### Sprint 3.5 — Checkout Compact Layout & Province API
+
+### Changed
+
+#### `src/app/checkout/page.tsx`
+
+* Thu gọn layout trang `/checkout` để body không còn bị phình quá lớn trên desktop:
+  * Dùng width explicit `max-w-[1040px]`
+  * Chuyển form + summary sang grid `lg:grid-cols-[1fr_360px]`
+  * Giảm padding, gap, kích thước card, input, stepper và ảnh sản phẩm trong order summary
+* Thay danh sách tỉnh/thành phố hard-code bằng API `https://provinces.open-api.vn/api/v1/?depth=2`
+* Select địa chỉ hiện hỗ trợ 2 cấp theo API: `Tỉnh / Thành phố` và `Quận / Huyện`
+* Tự chọn mặc định `Thành phố Hồ Chí Minh` nếu API trả dữ liệu thành công
+* Thêm fallback dữ liệu địa phương cơ bản để checkout vẫn dùng được khi API lỗi mạng
+* Validate thêm `Tỉnh / Thành phố` và `Quận / Huyện` trước khi đặt hàng
+* Chuẩn hóa lại text tiếng Việt trong checkout để tránh lỗi encoding ở UI
+
+### Verified
+
+* `npm.cmd run build` — pass
+* `npx.cmd tsc --noEmit --incremental false` — pass
+
+---
+
+## [0.3.4] - 2026-06-04
+
+### Sprint 3.4 — Redesign Checkout Page & Success Page từ Stitch HTML
+
+### Added
+
+#### `src/app/checkout/success/page.tsx`
+
+* Thêm trang thông báo đặt hàng thành công mới `/checkout/success`
+* Đọc thông tin đơn hàng (mã đơn, người nhận, số điện thoại, địa chỉ, tổng tiền, phương thức thanh toán) từ query parameters
+* Bọc phần đọc Search Params trong `<Suspense>` để tránh lỗi Hydration / Static generation của Next.js
+* Giao diện Material Design 3 đẹp mắt, nút tiếp tục mua sắm trỏ về `/products`
+
+---
+
+### Changed
+
+#### `src/app/checkout/page.tsx`
+
+* Chuyển đổi hoàn toàn trang `/checkout` sang **Next.js App Router Client Component** theo giao diện mẫu từ `stitch-checkout.html`
+* Đồng bộ dữ liệu:
+  * Đọc `currentUser` từ `useAuthStore` để tự động điền (pre-fill) thông tin Họ tên và Email
+  * Đọc giỏ hàng thực tế từ `useCartStore` để hiển thị tóm tắt đơn hàng và tính tổng giá
+  * Gọi `clearCart()` để dọn sạch giỏ hàng khi người dùng đặt hàng thành công
+* Tích hợp tính năng và tương tác:
+  * Tự động thay đổi danh sách Quận/Huyện dựa trên Tỉnh/Thành phố được chọn (Hồ Chí Minh, Hà Nội, Đà Nẵng)
+  * Tính toán phí vận chuyển và tổng tiền động dựa trên phương thức giao hàng: Standard / Fast (+15.000₫) / Pickup
+  * Hiển thị bảng chi tiết chuyển khoản Vietcombank khi chọn phương thức "Chuyển khoản ngân hàng"
+  * Validate chi tiết: Họ tên (>= 2 ký tự), SĐT (10 số bắt đầu bằng 0), Email (đúng định dạng), Địa chỉ cụ thể (>= 5 ký tự)
+  * Thêm màn hình trống (Empty state) lịch sự khi giỏ hàng chưa có sản phẩm
+
+---
+
 ## [0.3.3] - 2026-06-04
 
 ### Sprint 3.3 — Product Detail Data Sync, Breadcrumbs & Layout Refinement

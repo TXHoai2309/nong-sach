@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+
+<html class="light" lang="vi">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Thanh toán | NôngSạch - Tươi ngon từ ruộng đồng</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-fixed-variant": "#005236",
+                        "surface-container-highest": "#d8e3fb",
+                        "error-container": "#ffdad6",
+                        "surface-container-low": "#f0f3ff",
+                        "on-primary-container": "#00422b",
+                        "tertiary-container": "#a0a3a5",
+                        "on-tertiary-fixed": "#191c1e",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-surface": "#263143",
+                        "secondary-container": "#86f2e4",
+                        "primary": "#006c49",
+                        "outline": "#6c7a71",
+                        "on-primary": "#ffffff",
+                        "on-primary-fixed": "#002113",
+                        "surface-variant": "#d8e3fb",
+                        "on-secondary": "#ffffff",
+                        "primary-fixed": "#6ffbbe",
+                        "surface": "#f9f9ff",
+                        "primary-fixed-dim": "#4edea3",
+                        "on-secondary-fixed-variant": "#005049",
+                        "on-surface": "#111c2d",
+                        "on-secondary-fixed": "#00201d",
+                        "surface-container": "#e7eeff",
+                        "surface-bright": "#f9f9ff",
+                        "on-tertiary-fixed-variant": "#444749",
+                        "inverse-primary": "#4edea3",
+                        "inverse-on-surface": "#ecf1ff",
+                        "background": "#f9f9ff",
+                        "surface-dim": "#cfdaf2",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-fixed-dim": "#c4c7c9",
+                        "on-secondary-container": "#006f66",
+                        "surface-tint": "#006c49",
+                        "outline-variant": "#bbcabf",
+                        "surface-container-high": "#dee8ff",
+                        "on-error-container": "#93000a",
+                        "tertiary": "#5c5f61",
+                        "secondary-fixed-dim": "#6bd8cb",
+                        "secondary-fixed": "#89f5e7",
+                        "primary-container": "#10b981",
+                        "error": "#ba1a1a",
+                        "tertiary-fixed": "#e0e3e5",
+                        "on-tertiary-container": "#36393b",
+                        "on-error": "#ffffff",
+                        "on-surface-variant": "#3c4a42",
+                        "secondary": "#006a61",
+                        "on-background": "#111c2d"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "base": "4px",
+                        "xs": "8px",
+                        "sm": "16px",
+                        "container-max": "1280px",
+                        "margin-desktop": "auto",
+                        "lg": "40px",
+                        "gutter": "24px",
+                        "margin-mobile": "16px",
+                        "xl": "64px",
+                        "md": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-2xl": ["Be Vietnam Pro"],
+                        "body-md": ["Be Vietnam Pro"],
+                        "headline-md": ["Be Vietnam Pro"],
+                        "headline-lg": ["Be Vietnam Pro"],
+                        "label-sm": ["Be Vietnam Pro"],
+                        "label-md": ["Be Vietnam Pro"],
+                        "headline-xl": ["Be Vietnam Pro"],
+                        "body-lg": ["Be Vietnam Pro"]
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+
+        .active-radio {
+            border-color: #006c49 !important;
+            background-color: #f0fdf4 !important;
+        }
+    </style>
+</head>
+
+<body class="bg-background font-body-md text-on-surface antialiased">
+    <!-- Top Navigation Bar -->
+    <nav class="bg-surface/80 dark:bg-surface-dim/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+        <div class="flex justify-between items-center px-gutter py-sm max-w-container-max mx-auto w-full">
+            <div class="flex items-center gap-md">
+                <h1
+                    class="font-headline-lg text-headline-lg font-bold text-primary dark:text-inverse-primary cursor-pointer">
+                    NôngSạch</h1>
+                <div class="hidden md:flex gap-sm">
+                    <a class="font-label-md text-label-md text-on-surface-variant dark:text-outline-variant hover:text-primary transition-colors"
+                        href="#">Sản phẩm</a>
+                    <a class="font-label-md text-label-md text-on-surface-variant dark:text-outline-variant hover:text-primary transition-colors"
+                        href="#">Về chúng tôi</a>
+                    <a class="font-label-md text-label-md text-on-surface-variant dark:text-outline-variant hover:text-primary transition-colors"
+                        href="#">Cửa hàng</a>
+                    <a class="font-label-md text-label-md text-on-surface-variant dark:text-outline-variant hover:text-primary transition-colors"
+                        href="#">Liên hệ</a>
+                </div>
+            </div>
+            <div class="flex items-center gap-sm">
+                <button class="p-xs rounded-full hover:bg-primary-container/10 transition-all">
+                    <span class="material-symbols-outlined text-primary">shopping_cart</span>
+                </button>
+                <button class="p-xs rounded-full hover:bg-primary-container/10 transition-all">
+                    <span class="material-symbols-outlined text-primary">account_circle</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+    <main class="max-w-container-max mx-auto px-margin-mobile md:px-gutter py-lg">
+        <!-- Progress Stepper -->
+        <div class="flex justify-center items-center mb-xl">
+            <div class="flex items-center w-full max-w-2xl">
+                <div class="flex flex-col items-center flex-1">
+                    <div
+                        class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold mb-xs">
+                        1</div>
+                    <span class="font-label-md text-label-md text-primary font-bold">Thông tin</span>
+                </div>
+                <div class="h-px bg-outline-variant flex-1 mb-6"></div>
+                <div class="flex flex-col items-center flex-1">
+                    <div
+                        class="w-10 h-10 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center font-bold mb-xs">
+                        2</div>
+                    <span class="font-label-md text-label-md text-on-surface-variant">Thanh toán</span>
+                </div>
+                <div class="h-px bg-outline-variant flex-1 mb-6"></div>
+                <div class="flex flex-col items-center flex-1">
+                    <div
+                        class="w-10 h-10 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center font-bold mb-xs">
+                        3</div>
+                    <span class="font-label-md text-label-md text-on-surface-variant">Xác nhận</span>
+                </div>
+            </div>
+        </div>
+        <div class="flex flex-col lg:flex-row gap-xl">
+            <!-- Left Column: Forms (60%) -->
+            <div class="lg:w-[60%] space-y-lg">
+                <!-- Block 1: Shipping Info -->
+                <section
+                    class="bg-surface-container-lowest p-md rounded-2xl shadow-[0_10px_15px_-3px_rgba(30,41,59,0.05)] border border-outline-variant/20">
+                    <h2 class="font-headline-md text-headline-md text-on-surface mb-md flex items-center gap-xs">
+                        <span class="material-symbols-outlined text-primary">local_shipping</span>
+                        Thông tin giao hàng
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+                        <div class="space-y-xs">
+                            <label class="font-label-md text-label-md text-on-surface-variant">Họ và tên</label>
+                            <input
+                                class="w-full rounded-xl border-outline-variant focus:border-primary focus:ring-4 focus:ring-primary-container/20 transition-all p-md bg-surface"
+                                placeholder="Nguyễn Văn A" type="text" />
+                        </div>
+                        <div class="space-y-xs">
+                            <label class="font-label-md text-label-md text-on-surface-variant">Số điện thoại</label>
+                            <input
+                                class="w-full rounded-xl border-outline-variant focus:border-primary focus:ring-4 focus:ring-primary-container/20 transition-all p-md bg-surface"
+                                placeholder="0901 234 567" type="tel" />
+                        </div>
+                        <div class="md:col-span-2 space-y-xs">
+                            <label class="font-label-md text-label-md text-on-surface-variant">Email</label>
+                            <input
+                                class="w-full rounded-xl border-outline-variant focus:border-primary focus:ring-4 focus:ring-primary-container/20 transition-all p-md bg-surface"
+                                placeholder="email@example.com" type="email" />
+                        </div>
+                        <div class="md:col-span-2 space-y-xs">
+                            <label class="font-label-md text-label-md text-on-surface-variant">Địa chỉ cụ thể</label>
+                            <input
+                                class="w-full rounded-xl border-outline-variant focus:border-primary focus:ring-4 focus:ring-primary-container/20 transition-all p-md bg-surface"
+                                placeholder="Số nhà, tên đường..." type="text" />
+                        </div>
+                        <div class="space-y-xs">
+                            <label class="font-label-md text-label-md text-on-surface-variant">Tỉnh / Thành phố</label>
+                            <select
+                                class="w-full rounded-xl border-outline-variant focus:border-primary focus:ring-4 focus:ring-primary-container/20 transition-all p-md bg-surface appearance-none">
+                                <option>Hồ Chí Minh</option>
+                                <option>Hà Nội</option>
+                                <option>Đà Nẵng</option>
+                            </select>
+                        </div>
+                        <div class="space-y-xs">
+                            <label class="font-label-md text-label-md text-on-surface-variant">Quận / Huyện</label>
+                            <select
+                                class="w-full rounded-xl border-outline-variant focus:border-primary focus:ring-4 focus:ring-primary-container/20 transition-all p-md bg-surface appearance-none">
+                                <option>Quận 1</option>
+                                <option>Quận Bình Thạnh</option>
+                                <option>Thủ Đức</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-2 space-y-xs">
+                            <label class="font-label-md text-label-md text-on-surface-variant">Ghi chú đơn hàng</label>
+                            <textarea
+                                class="w-full rounded-xl border-outline-variant focus:border-primary focus:ring-4 focus:ring-primary-container/20 transition-all p-md bg-surface"
+                                placeholder="Lưu ý cho người giao hàng..." rows="3"></textarea>
+                        </div>
+                    </div>
+                </section>
+                <!-- Block 2: Shipping Method -->
+                <section
+                    class="bg-surface-container-lowest p-md rounded-2xl shadow-[0_10px_15px_-3px_rgba(30,41,59,0.05)] border border-outline-variant/20">
+                    <h2 class="font-headline-md text-headline-md text-on-surface mb-md flex items-center gap-xs">
+                        <span class="material-symbols-outlined text-primary">package_2</span>
+                        Phương thức giao hàng
+                    </h2>
+                    <div class="space-y-sm">
+                        <label
+                            class="relative flex items-center p-md border border-outline-variant rounded-2xl cursor-pointer hover:bg-surface-container-low transition-colors group">
+                            <input checked=""
+                                class="w-5 h-5 text-primary border-outline-variant focus:ring-primary-container"
+                                name="shipping" type="radio" value="standard" />
+                            <div class="ml-md flex-1">
+                                <div class="flex justify-between">
+                                    <span class="font-label-md text-label-md font-bold text-on-surface">Tiêu chuẩn
+                                        (2-4h)</span>
+                                    <span class="font-label-md text-label-md text-primary font-bold">Miễn phí</span>
+                                </div>
+                                <p class="text-sm text-on-surface-variant">Dành cho các đơn hàng không gấp</p>
+                            </div>
+                        </label>
+                        <label
+                            class="relative flex items-center p-md border border-outline-variant rounded-2xl cursor-pointer hover:bg-surface-container-low transition-colors group">
+                            <input class="w-5 h-5 text-primary border-outline-variant focus:ring-primary-container"
+                                name="shipping" type="radio" value="fast" />
+                            <div class="ml-md flex-1">
+                                <div class="flex justify-between">
+                                    <span class="font-label-md text-label-md font-bold text-on-surface">Giao hỏa tốc
+                                        (1-2h)</span>
+                                    <span class="font-label-md text-label-md text-on-surface">15.000₫</span>
+                                </div>
+                                <p class="text-sm text-on-surface-variant">Giao ngay từ nông trại đến bếp của bạn</p>
+                            </div>
+                        </label>
+                        <label
+                            class="relative flex items-center p-md border border-outline-variant rounded-2xl cursor-pointer hover:bg-surface-container-low transition-colors group">
+                            <input class="w-5 h-5 text-primary border-outline-variant focus:ring-primary-container"
+                                name="shipping" type="radio" value="pickup" />
+                            <div class="ml-md flex-1">
+                                <div class="flex justify-between">
+                                    <span class="font-label-md text-label-md font-bold text-on-surface">Nhận tại cửa
+                                        hàng</span>
+                                    <span class="font-label-md text-label-md text-primary font-bold">Miễn phí</span>
+                                </div>
+                                <p class="text-sm text-on-surface-variant">Tại cửa hàng gần nhất của NôngSạch</p>
+                            </div>
+                        </label>
+                    </div>
+                </section>
+                <!-- Block 3: Payment Method -->
+                <section
+                    class="bg-surface-container-lowest p-md rounded-2xl shadow-[0_10px_15px_-3px_rgba(30,41,59,0.05)] border border-outline-variant/20">
+                    <h2 class="font-headline-md text-headline-md text-on-surface mb-md flex items-center gap-xs">
+                        <span class="material-symbols-outlined text-primary">payments</span>
+                        Phương thức thanh toán
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-sm mb-md">
+                        <label
+                            class="flex items-center p-md border border-outline-variant rounded-2xl cursor-pointer hover:bg-surface-container-low transition-colors">
+                            <input checked="" class="w-5 h-5 text-primary border-outline-variant" name="payment"
+                                type="radio" value="cod" />
+                            <span class="ml-md font-label-md text-label-md">Thanh toán khi nhận hàng (COD)</span>
+                        </label>
+                        <label
+                            class="flex items-center p-md border border-outline-variant rounded-2xl cursor-pointer hover:bg-surface-container-low transition-colors"
+                            onclick="document.getElementById('bank-details').classList.remove('hidden')">
+                            <input class="w-5 h-5 text-primary border-outline-variant" name="payment" type="radio"
+                                value="bank" />
+                            <span class="ml-md font-label-md text-label-md">Chuyển khoản ngân hàng</span>
+                        </label>
+                        <label
+                            class="flex items-center p-md border border-outline-variant rounded-2xl cursor-pointer hover:bg-surface-container-low transition-colors">
+                            <input class="w-5 h-5 text-primary border-outline-variant" name="payment" type="radio"
+                                value="credit" />
+                            <span class="ml-md font-label-md text-label-md">Thẻ tín dụng (Visa/Mastercard)</span>
+                        </label>
+                        <label
+                            class="flex items-center p-md border border-outline-variant rounded-2xl cursor-pointer hover:bg-surface-container-low transition-colors">
+                            <input class="w-5 h-5 text-primary border-outline-variant" name="payment" type="radio"
+                                value="wallet" />
+                            <span class="ml-md font-label-md text-label-md">Ví điện tử (MoMo/ZaloPay)</span>
+                        </label>
+                    </div>
+                    <!-- Bank Details Card (Expanded State) -->
+                    <div class="hidden p-md bg-surface-container-low rounded-xl border border-primary-container/30 space-y-sm"
+                        id="bank-details">
+                        <p class="font-label-md text-label-md text-on-surface-variant italic">Vui lòng chuyển khoản với
+                            nội dung: [Họ tên] [Số điện thoại]</p>
+                        <div class="grid grid-cols-2 gap-sm text-sm">
+                            <div>
+                                <p class="text-on-surface-variant">Ngân hàng:</p>
+                                <p class="font-bold">Vietcombank (VCB)</p>
+                            </div>
+                            <div>
+                                <p class="text-on-surface-variant">Số tài khoản:</p>
+                                <p class="font-bold text-primary">1234567890</p>
+                            </div>
+                            <div>
+                                <p class="text-on-surface-variant">Chủ tài khoản:</p>
+                                <p class="font-bold uppercase">NONGSACH JSC</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <button
+                    class="w-full bg-primary-container text-on-primary-container py-md rounded-2xl font-headline-md text-headline-md hover:opacity-90 active:scale-95 transition-all shadow-lg flex justify-center items-center gap-sm">
+                    Đặt hàng ngay
+                    <span class="material-symbols-outlined">shopping_cart</span>
+                </button>
+            </div>
+            <!-- Right Column: Order Summary (40%) -->
+            <aside class="lg:w-[40%]">
+                <div class="sticky top-24 space-y-md">
+                    <section
+                        class="bg-surface-container-lowest p-md rounded-2xl shadow-[0_10px_15px_-3px_rgba(30,41,59,0.05)] border border-outline-variant/20">
+                        <h2 class="font-headline-md text-headline-md text-on-surface mb-md">Tóm tắt đơn hàng</h2>
+                        <!-- Product List -->
+                        <div class="space-y-md mb-lg">
+                            <div class="flex gap-md items-center">
+                                <div class="w-16 h-16 rounded-xl overflow-hidden bg-surface flex-shrink-0">
+                                    <img alt="Cà rốt hữu cơ" class="w-full h-full object-cover"
+                                        data-alt="A macro close-up of fresh, vibrant orange organic carrots with some earthy soil still on them, lying on a wooden rustic surface. The lighting is soft morning sunlight, creating a warm, healthy, and farm-fresh aesthetic. The composition emphasizes the natural texture and high quality of the produce."
+                                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKvlg12cDxk6w-zVAdtvRq6vAa2biwY9ws0wuVexsuzkelD_DlxILwqLzk4qat52p6hzDVDFCmkKNVKK4ISJSMN7xNoYWt8acEIfe34ZbtLj5j6kwi_GSrK1A6qFHwKLyVpd6S_k7pnQGT8bcPAJUfj6fF_y6SuKXsWAI3akl2R6Jrc3Vgg_mzVxGvomzFnvTBdd-krGHn7PqsKBEcBKg-7P6jMSrIPrW7Tjlg5K-rp_uLfsfqRniE2_lQdWizB0ZAZpgrX692-Q" />
+                                </div>
+                                <div class="flex-1">
+                                    <h3 class="font-label-md text-label-md font-bold text-on-surface">Cà rốt hữu cơ Đà
+                                        Lạt</h3>
+                                    <p class="text-sm text-on-surface-variant">Số lượng: 1kg</p>
+                                </div>
+                                <p class="font-label-md text-label-md font-bold">45.000₫</p>
+                            </div>
+                            <div class="flex gap-md items-center">
+                                <div class="w-16 h-16 rounded-xl overflow-hidden bg-surface flex-shrink-0">
+                                    <img alt="Xà lách thủy canh" class="w-full h-full object-cover"
+                                        data-alt="A lush bowl of freshly harvested vibrant green hydroponic lettuce leaves, glistening with small water droplets. The setting is a clean, bright, minimalist kitchen with natural light streaming from a window, emphasizing the crispness and transparency of the healthy greens. The overall mood is vital and refreshing."
+                                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-OVMAxX1gvuJYgGfbXiJgtzPaBVZgWXuNy555x3-p8a9ZCuqLe7nApr1MaXCUdYKjd0sgsi-LUSRWvVVXGADFobwFuf1rrsYaRtHMSTJuk_x9XSdfcB9TeHruLdZmp6cFQBapsNDj7idj7CRTbYb7CT12eVhwNDhH5MHIQs2m7B_3KF3kG9WqgqNAlfryl6t1yQ5FLqnF4XqIzGAZRyHyLe8sx7hIY8Q7DKiHB5tsn_CwqqvKRvAy5SPANxJXzvCjp4rMPLAfsw" />
+                                </div>
+                                <div class="flex-1">
+                                    <h3 class="font-label-md text-label-md font-bold text-on-surface">Xà lách thủy canh
+                                    </h3>
+                                    <p class="text-sm text-on-surface-variant">Số lượng: 2 bó</p>
+                                </div>
+                                <p class="font-label-md text-label-md font-bold">60.000₫</p>
+                            </div>
+                            <div class="flex gap-md items-center">
+                                <div class="w-16 h-16 rounded-xl overflow-hidden bg-surface flex-shrink-0">
+                                    <img alt="Chuối sạch" class="w-full h-full object-cover"
+                                        data-alt="A bunch of perfectly ripe yellow bananas placed on a minimalist ceramic plate. The background is a soft, off-white tonal surface with gentle ambient shadows. The image captures a clean, high-end agricultural aesthetic with high contrast and organic warmth, reflecting the quality of the fruits."
+                                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuCo3C8nkOS-3SBi4x6tifjwDyqPK6Rf6joWcOv38s_7u-MkzOaYR47JavKBdctVjBy61jMDpiYyjeiM4Nu4xIdHwHclHzbjRjAbGC4YFrT7Xs2bxQ42sN9ISHLtYZl3_4tF6e6ShdR5Vk4THHoy3QP6boo-trunsURvYBfSKyF2UssMn_kStHG8vx3JOX-z2YP7SwL9_qAV7HKOf2J0vrSmWao1pibzDhhq6dpESgFMNWQOS7bxpUzawejxZ7a0S2ORRviF0GCM9A" />
+                                </div>
+                                <div class="flex-1">
+                                    <h3 class="font-label-md text-label-md font-bold text-on-surface">Chuối Laba sạch
+                                    </h3>
+                                    <p class="text-sm text-on-surface-variant">Số lượng: 1 nải</p>
+                                </div>
+                                <p class="font-label-md text-label-md font-bold">84.000₫</p>
+                            </div>
+                        </div>
+                        <!-- Totals -->
+                        <div class="border-t border-outline-variant/30 pt-md space-y-sm">
+                            <div class="flex justify-between text-on-surface-variant">
+                                <span>Tạm tính</span>
+                                <span>189.000₫</span>
+                            </div>
+                            <div class="flex justify-between text-on-surface-variant">
+                                <span>Phí vận chuyển</span>
+                                <span class="text-primary">Miễn phí</span>
+                            </div>
+                            <div class="flex justify-between items-end pt-sm border-t border-outline-variant/30">
+                                <span class="font-headline-md text-headline-md">Tổng cộng</span>
+                                <span class="font-headline-md text-headline-md text-primary">189.000₫</span>
+                            </div>
+                        </div>
+                    </section>
+                    <!-- Security Text -->
+                    <div
+                        class="flex items-center justify-center gap-xs p-md text-on-surface-variant bg-surface-container-low rounded-2xl">
+                        <span class="material-symbols-outlined text-sm">lock</span>
+                        <p class="font-label-sm text-label-sm">Thông tin của bạn được bảo mật tuyệt đối</p>
+                    </div>
+                    <!-- Promo Code Block -->
+                    <div class="p-md border border-outline-variant/30 rounded-2xl space-y-sm">
+                        <label class="font-label-md text-label-md text-on-surface-variant">Mã giảm giá / Quà
+                            tặng</label>
+                        <div class="flex gap-xs">
+                            <input class="flex-1 rounded-xl border-outline-variant focus:border-primary p-sm bg-surface"
+                                placeholder="Nhập mã..." type="text" />
+                            <button
+                                class="px-md bg-secondary text-white rounded-xl font-label-md hover:bg-secondary/90 transition-colors">Áp
+                                dụng</button>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </main>
+    <!-- Footer -->
+    <footer class="bg-surface-container dark:bg-inverse-surface border-t border-outline-variant/30 mt-xl">
+        <div
+            class="flex flex-col md:flex-row justify-between items-start px-gutter py-xl max-w-container-max mx-auto w-full">
+            <div class="mb-lg md:mb-0">
+                <h2 class="font-headline-md text-headline-md font-bold text-primary dark:text-inverse-primary mb-xs">
+                    NôngSạch</h2>
+                <p class="text-on-surface-variant max-w-xs font-body-md text-body-md">© 2024 NôngSạch. Tươi ngon từ
+                    ruộng đồng đến bàn ăn.</p>
+            </div>
+            <div class="flex flex-wrap gap-xl">
+                <div class="flex flex-col gap-sm">
+                    <span class="font-label-md text-label-md font-bold text-on-surface">Về NôngSạch</span>
+                    <a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors"
+                        href="#">Câu chuyện thương hiệu</a>
+                    <a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors"
+                        href="#">Nguồn gốc sản phẩm</a>
+                </div>
+                <div class="flex flex-col gap-sm">
+                    <span class="font-label-md text-label-md font-bold text-on-surface">Hỗ trợ</span>
+                    <a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors"
+                        href="#">Chính sách bảo mật</a>
+                    <a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors"
+                        href="#">Điều khoản sử dụng</a>
+                    <a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors"
+                        href="#">Vận chuyển &amp; Hoàn trả</a>
+                </div>
+                <div class="flex flex-col gap-sm">
+                    <span class="font-label-md text-label-md font-bold text-on-surface">Kết nối</span>
+                    <div class="flex gap-sm">
+                        <span
+                            class="material-symbols-outlined text-primary cursor-pointer hover:scale-110 transition-transform">face_nod</span>
+                        <span
+                            class="material-symbols-outlined text-primary cursor-pointer hover:scale-110 transition-transform">share</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <script>
+        // Simple UI interaction for Radio states
+        const radios = document.querySelectorAll('input[type="radio"]');
+        radios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                // Remove visual styling from siblings
+                const container = e.target.closest('section');
+                container.querySelectorAll('label').forEach(label => {
+                    label.classList.remove('active-radio');
+                });
+
+                // Add active state to parent label
+                if (e.target.checked) {
+                    e.target.closest('label').classList.add('active-radio');
+                }
+
+                // Handle bank detail visibility specifically
+                if (e.target.name === 'payment' && e.target.value !== 'bank') {
+                    document.getElementById('bank-details').classList.add('hidden');
+                }
+            });
+        });
+
+        // Initialize active state for checked radios
+        document.querySelectorAll('input[type="radio"]:checked').forEach(radio => {
+            radio.closest('label').classList.add('active-radio');
+        });
+    </script>
+</body>
+
+</html>
