@@ -193,12 +193,13 @@ export default function LoginPage() {
                   Ghi nhớ đăng nhập
                 </span>
               </label>
-              <Link
-                href="/forgot-password"
-                className="text-[14px] font-medium text-[#006c49] hover:underline transition-all"
+              <button
+                type="button"
+                onClick={() => alert("Chức năng đang phát triển!")}
+                className="text-[14px] font-medium text-[#006c49] hover:underline transition-all cursor-pointer bg-transparent border-none p-0"
               >
                 Quên mật khẩu?
-              </Link>
+              </button>
             </div>
 
             {/* ── Submit ── */}
