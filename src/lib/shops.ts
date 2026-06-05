@@ -12,7 +12,7 @@ export interface Shop {
   rating: number;
   reviewCount: number;
   productCount: number;
-  orderCount: string | number;
+  followerCount: string | number;
   joinDate: string;
   location: string;
   slogan: string;
@@ -32,7 +32,7 @@ export const STATIC_SHOPS: Shop[] = [
     rating: 4.8,
     reviewCount: 128,
     productCount: 56,
-    orderCount: "1.2K",
+    followerCount: "2.4K",
     joinDate: "06/2024",
     location: "Lâm Đồng",
     slogan: "Tươi từ vườn mỗi ngày — Đà Lạt",
@@ -54,7 +54,7 @@ export const STATIC_SHOPS: Shop[] = [
     rating: 4.6,
     reviewCount: 92,
     productCount: 34,
-    orderCount: "850",
+    followerCount: "1.8K",
     joinDate: "09/2024",
     location: "Bến Tre",
     slogan: "Nông nghiệp xanh, cuộc sống lành",
@@ -75,7 +75,7 @@ export const STATIC_SHOPS: Shop[] = [
     rating: 4.9,
     reviewCount: 218,
     productCount: 78,
-    orderCount: "2.5K",
+    followerCount: "5.2K",
     joinDate: "03/2024",
     location: "TP. Hồ Chí Minh",
     slogan: "Hữu cơ từ tâm — Sức khỏe xứng tầm",
@@ -96,7 +96,7 @@ export const STATIC_SHOPS: Shop[] = [
     rating: 4.7,
     reviewCount: 110,
     productCount: 42,
-    orderCount: "980",
+    followerCount: "950",
     joinDate: "11/2024",
     location: "Lâm Đồng",
     slogan: "Nông sản mộc mạc, đậm vị quê hương",
@@ -148,7 +148,7 @@ export function getShopById(shopId: string): Shop {
               rating: 5.0,
               reviewCount: 0,
               productCount: count,
-              orderCount: "0",
+              followerCount: "0",
               joinDate: user.memberSince || "06/2026",
               location: info.province || "Lâm Đồng",
               slogan: info.slogan || "Cung cấp nông sản sạch tươi ngon hữu cơ",

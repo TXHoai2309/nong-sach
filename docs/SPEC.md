@@ -71,6 +71,8 @@ Người tiêu dùng ngày càng lo ngại về an toàn thực phẩm, đặc b
 | F-15 | Báo cáo cửa hàng      | Chức năng gửi báo cáo vi phạm kèm lý do và chi tiết để Admin phê duyệt | P2      | ✅ Done     |
 | F-16 | Menu tiện ích sản phẩm| Dấu ba chấm trên ProductCard và ProductDetail cung cấp các lối tắt Chia sẻ, Sao chép link, Báo cáo | P2      | ✅ Done     |
 | F-17 | Báo cáo sản phẩm      | Quy trình gửi báo cáo vi phạm cho từng sản phẩm cụ thể, tích hợp vào hệ thống chung | P2      | ✅ Done     |
+| F-18 | Quản lý đơn bán hàng  | Dashboard cho người bán quản lý danh sách đơn hàng, cập nhật trạng thái đơn (Xác nhận, Giao hàng...) | P1      | ✅ Done     |
+| F-19 | Hệ thống thông báo    | Thông báo thời gian thực cho người mua và người bán về các sự kiện đơn hàng và hệ thống | P1      | ✅ Done     |
 
 
 > **Ghi chú cho team:** F-09 hiện đã có giao diện hoàn chỉnh theo Stitch HTML tại route `/contact`. Form liên hệ đang ở mức UI/UX MVP; nếu cần gửi dữ liệu thật, cần bổ sung API/Firebase handler ở Phase 2. Kênh bán hàng (F-11), Quản lý sản phẩm (F-12) và Trang chi tiết shop (F-14) hiện được lưu động tại `localStorage` phía client của từng người dùng để mô phỏng tính năng thực tế.

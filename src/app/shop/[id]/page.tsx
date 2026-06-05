@@ -52,7 +52,7 @@ function buildShopFromCurrentUser(
     rating: 5.0,
     reviewCount: 0,
     productCount,
-    orderCount: "0",
+    followerCount: "0",
     joinDate: currentUser.memberSince || "06/2026",
     location: info.province || "Lâm Đồng",
     slogan: info.slogan || "Cung cấp nông sản sạch tươi ngon hữu cơ",
@@ -231,6 +231,43 @@ export default function ShopDetailPage({ params }: PageProps) {
   }, [shopProducts, selectedCategory, searchQuery, sortBy]);
 
   const similarShops = useMemo(() => STATIC_SHOPS.filter((s) => s.id !== id).slice(0, 3), [id]);
+
+  // ── Follower Count Logic ──────────────────────────────────────────────────
+  const [displayFollowers, setDisplayFollowers] = useState<string | number>(0);
+
+  // Helper to parse "2.4K" to 2400
+  const parseFollowers = (val: string | number): number => {
+    if (typeof val === "number") return val;
+    const match = val.match(/^(\d+(?:\.\d+)?)(K|M)?$/);
+    if (!match) return 0;
+    let num = parseFloat(match[1]);
+    const unit = match[2];
+    if (unit === "K") return num * 1000;
+    if (unit === "M") return num * 1000000;
+    return num;
+  };
+
+  // Helper to format 2400 to "2.4K"
+  const formatFollowers = (num: number): string | number => {
+    if (num < 1000) return num;
+    if (num < 1000000) return (num / 1000).toFixed(1).replace(/\.0$/, "") + "K";
+    return (num / 1000000).toFixed(1).replace(/\.0$/, "") + "M";
+  };
+
+  useEffect(() => {
+    if (shop) {
+      setDisplayFollowers(shop.followerCount);
+    }
+  }, [shop]);
+
+  const handleToggleFollow = () => {
+    const nextFollowed = !isFollowed;
+    setIsFollowed(nextFollowed);
+    
+    const currentNum = parseFollowers(displayFollowers);
+    const nextNum = nextFollowed ? currentNum + 1 : Math.max(0, currentNum - 1);
+    setDisplayFollowers(formatFollowers(nextNum));
+  };
 
   const handleMessageClick = () => alert(`Chức năng nhắn tin với "${shop?.name}" đang phát triển ở Phase 2!`);
   const handleAddToCart = (product: Product) => {
@@ -470,8 +507,8 @@ export default function ShopDetailPage({ params }: PageProps) {
               <div className="text-[10px] font-bold text-on-surface-variant uppercase mt-0.5 whitespace-nowrap">Sản phẩm</div>
             </div>
             <div className="text-center flex-1 px-1 sm:px-2 border-l border-outline-variant/30">
-              <div className="text-lg font-bold text-on-surface whitespace-nowrap">{shop.orderCount}</div>
-              <div className="text-[10px] font-bold text-on-surface-variant uppercase mt-0.5 whitespace-nowrap">Đơn hàng</div>
+              <div className="text-lg font-bold text-on-surface whitespace-nowrap">{displayFollowers}</div>
+              <div className="text-[10px] font-bold text-on-surface-variant uppercase mt-0.5 whitespace-nowrap">Người theo dõi</div>
             </div>
             <div className="text-center flex-1 px-1 sm:px-2 border-l border-outline-variant/30">
               <div className="text-xs sm:text-sm font-bold text-on-surface whitespace-nowrap">{shop.joinDate}</div>
@@ -482,7 +519,7 @@ export default function ShopDetailPage({ params }: PageProps) {
           {/* Action Buttons */}
           <div className="flex sm:flex-row lg:flex-col justify-end gap-3 self-center shrink-0 w-full lg:w-auto">
             <button
-              onClick={() => setIsFollowed(!isFollowed)}
+              onClick={handleToggleFollow}
               className={[
                 "flex-1 lg:flex-none inline-flex items-center justify-center gap-1.5 px-6 py-2.5 rounded-full font-bold text-sm transition-all shadow-sm",
                 isFollowed

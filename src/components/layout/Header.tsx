@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import CartBadge from "./CartBadge";
+import NotificationBadge from "./NotificationBadge";
 import { useAuthStore } from "@/store/auth-store";
 
 const navLinks = [
@@ -91,6 +92,7 @@ export default function Header() {
           </form>
 
           <CartBadge />
+          <NotificationBadge />
 
           {mounted && currentUser ? (
             <div className="hidden items-center gap-3 md:flex shrink-0">

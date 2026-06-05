@@ -8,6 +8,9 @@ import Breadcrumb from "@/components/layout/Breadcrumb";
 import { formatCurrency } from "@/lib/format";
 import { useAuthStore } from "@/store/auth-store";
 import { useCartStore } from "@/store/cart-store";
+import { useOrderStore } from "@/store/order-store";
+import { useNotificationStore } from "@/store/notification-store";
+import { Order } from "@/types/order";
 
 const PROVINCES_API = "https://provinces.open-api.vn/api/v1/?depth=2";
 
@@ -87,6 +90,8 @@ export default function CheckoutPage() {
   const [mounted, setMounted] = useState(false);
   const { currentUser } = useAuthStore();
   const { items, clearCart, getTotalItems, getTotalPrice } = useCartStore();
+  const addOrder = useOrderStore((state) => state.addOrder);
+  const addNotification = useNotificationStore((state) => state.addNotification);
 
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
@@ -222,14 +227,75 @@ export default function CheckoutPage() {
     event.preventDefault();
     if (!validate()) return;
 
-    const orderId = `NS-${Date.now()}`;
+    const timestamp = Date.now();
+    const orderIdBase = `NS-${timestamp}`;
+    const fullAddress = `${address.trim()}, ${selectedDistrict?.name ?? ""}, ${selectedProvince?.name ?? ""}`;
 
-    // Save order details to localStorage for display on the success page
+    // Group items by sellerId
+    const itemsBySeller = items.reduce((acc, item) => {
+      const sellerId = item.sellerId || "admin";
+      if (!acc[sellerId]) acc[sellerId] = [];
+      acc[sellerId].push(item);
+      return acc;
+    }, {} as Record<string, typeof items>);
+
+    // Create an order for each seller
+    const sellerIds = Object.keys(itemsBySeller);
+    sellerIds.forEach((sellerId, index) => {
+      const sellerItems = itemsBySeller[sellerId];
+      const sellerTotal = sellerItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      const subOrderId = sellerIds.length > 1 ? `${orderIdBase}-${index + 1}` : orderIdBase;
+
+      const newOrder: Order = {
+        id: subOrderId,
+        userId: currentUser?.id || "guest",
+        sellerId,
+        shopName: sellerItems[0]?.shopName || "NôngSạch Store",
+        fullName: fullName.trim(),
+        phone: phone.trim(),
+        email: email.trim(),
+        address: fullAddress,
+        note: note.trim(),
+        items: sellerItems,
+        totalAmount: sellerTotal,
+        status: "pending",
+        paymentMethod,
+        createdAt: new Date().toISOString(),
+      };
+
+      addOrder(newOrder);
+
+      // Notify Seller
+      if (sellerId !== "admin") {
+        addNotification({
+          userId: sellerId,
+          title: "Đơn hàng mới!",
+          message: `Bạn nhận được đơn hàng mới #${subOrderId} từ ${fullName.trim()}.`,
+          type: "new_order",
+          orderId: subOrderId,
+        });
+      }
+    });
+
+    // Notify Buyer
+    if (currentUser) {
+      addNotification({
+        userId: currentUser.id,
+        title: "Đặt hàng thành công",
+        message: `Đơn hàng ${orderIdBase} của bạn đã được tiếp nhận và đang chờ xác nhận.`,
+        type: "order_update",
+        orderId: orderIdBase,
+      });
+    }
+
+    // Keep the old localStorage logic for compatibility with the success page if needed, 
+    // but update it to use the first subOrderId
+    const firstSubOrderId = sellerIds.length > 1 ? `${orderIdBase}-1` : orderIdBase;
     const orderDetails = {
-      orderId,
+      orderId: firstSubOrderId,
       name: fullName.trim(),
       phone: phone.trim(),
-      address: `${address.trim()}, ${selectedDistrict?.name ?? ""}, ${selectedProvince?.name ?? ""}`,
+      address: fullAddress,
       total,
       paymentMethod,
       items: items.map((item) => ({
@@ -242,29 +308,13 @@ export default function CheckoutPage() {
     };
     localStorage.setItem("nong-sach-last-order", JSON.stringify(orderDetails));
 
-    // Save to global orders list in localStorage
-    try {
-      const existingOrdersStr = localStorage.getItem("nong-sach-orders");
-      const existingOrders = existingOrdersStr ? JSON.parse(existingOrdersStr) : [];
-      const newOrder = {
-        ...orderDetails,
-        id: orderId,
-        date: new Date().toLocaleDateString("vi-VN"),
-        status: "processing", // initial state
-        userId: currentUser?.id || "guest",
-      };
-      localStorage.setItem("nong-sach-orders", JSON.stringify([newOrder, ...existingOrders]));
-    } catch (e) {
-      console.error("Error saving order to list", e);
-    }
-
     clearCart();
 
     const queryParams = new URLSearchParams({
-      orderId,
+      orderId: orderIdBase,
       name: fullName.trim(),
       phone: phone.trim(),
-      address: `${address.trim()}, ${selectedDistrict?.name ?? ""}, ${selectedProvince?.name ?? ""}`,
+      address: fullAddress,
       total: total.toString(),
       paymentMethod,
     });

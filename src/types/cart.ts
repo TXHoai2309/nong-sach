@@ -5,4 +5,6 @@ export interface CartItem {
   image: string;
   quantity: number;
   stock: number;
+  sellerId?: string;
+  shopName?: string;
 }

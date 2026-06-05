@@ -1,13 +1,18 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, useMemo, type FormEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import { formatCurrency } from "@/lib/format";
+import { Order } from "@/types/order";
 import { useAuthStore } from "@/store/auth-store";
 import { useCartStore } from "@/store/cart-store";
+import { useOrderStore } from "@/store/order-store";
+import { useNotificationStore } from "@/store/notification-store";
+import { OrderStatus } from "@/types/order";
+import { NotificationType } from "@/types/notification";
 import { UserAddress } from "@/types/user";
 import CoverImageCropper from "@/components/ui/CoverImageCropper";
 
@@ -43,48 +48,22 @@ const fallbackProvinces = [
   },
 ];
 
-interface OrderItem {
-  productId: string;
-  name: string;
-  price: number;
-  image: string;
-  quantity: number;
-}
-
-interface Order {
-  id: string;
-  orderId: string;
-  name: string;
-  phone: string;
-  address: string;
-  total: number;
-  paymentMethod: string;
-  date: string;
-  status: "processing" | "completed" | string;
-  items: OrderItem[];
-  userId?: string;
-}
-
 export default function ProfilePage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const {
-    currentUser,
-    logout,
-    updateProfile,
-    changePassword,
-    addAddress,
-    updateAddress,
-    deleteAddress,
-    setDefaultAddress,
-    registerSeller,
-    approveSeller,
-    updateSellerInfo,
-  } = useAuthStore();
+  const { currentUser, logout, approveSeller, updateSellerInfo } = useAuthStore();
   const { addToCart } = useCartStore();
+  const orders = useOrderStore((state) => state.orders);
+  const updateOrderStatus = useOrderStore((state) => state.updateOrderStatus);
+  const notifications = useNotificationStore((state) => state.notifications);
+  const markAsRead = useNotificationStore((state) => state.markAsRead);
+  const markAllAsRead = useNotificationStore((state) => state.markAllAsRead);
+  const getNotificationsByUserId = useNotificationStore((state) => state.getNotificationsByUserId);
+  const addNotification = useNotificationStore((state) => state.addNotification);
 
   // Navigation tab
   const [activeTab, setActiveTab] = useState<"info" | "orders" | "addresses" | "password" | "notifications" | "seller">("info");
+  const [sellerSubTab, setSellerSubTab] = useState<"products" | "orders">("products");
 
   // Notifications/Toasts
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
@@ -154,10 +133,8 @@ export default function ProfilePage() {
   // Provinces data
   const [provinces, setProvinces] = useState<any[]>([]);
 
-  // Orders State
-  const [orders, setOrders] = useState<Order[]>([]);
+  // Order filter
   const [orderFilter, setOrderFilter] = useState<"all" | "processing" | "completed">("all");
-  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
 
   // Show toast helper
   const showToast = (message: string, type: "success" | "error" = "success") => {
@@ -205,69 +182,15 @@ export default function ProfilePage() {
   }, [currentUser]);
 
   // Load / Setup Orders
-  useEffect(() => {
-    if (!mounted || !currentUser) return;
+  const userOrders = useMemo(() => {
+    if (!currentUser) return [];
+    return orders.filter((o) => o.userId === currentUser.id);
+  }, [orders, currentUser]);
 
-    const storedOrdersStr = localStorage.getItem("nong-sach-orders");
-    let storedOrders: Order[] = [];
-    if (storedOrdersStr) {
-      try {
-        storedOrders = JSON.parse(storedOrdersStr);
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
-    // Filter orders belonging to this user
-    const userOrders = storedOrders.filter((o) => o.userId === currentUser.id);
-
-    // If no orders exist, initialize with a beautiful default mockup order matching the UI mockup
-    if (userOrders.length === 0 && currentUser.email === "nguyenvana@gmail.com") {
-      const mockOrder: Order = {
-        id: "NS-92831",
-        orderId: "NS92831",
-        name: "Nguyễn Văn A",
-        phone: "0123 456 789",
-        address: "123 Đường Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
-        total: 155000,
-        paymentMethod: "cod",
-        date: "24/06/2024",
-        status: "completed",
-        items: [
-          {
-            productId: "1",
-            name: "Súp lơ xanh Đà Lạt",
-            price: 35000,
-            image: "https://images.unsplash.com/photo-1584270354949-c26b0d5b4a0c?w=150&h=150&fit=crop",
-            quantity: 1,
-          },
-          {
-            productId: "2",
-            name: "Cà rốt hữu cơ",
-            price: 60000,
-            image: "https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=150&h=150&fit=crop",
-            quantity: 2,
-          },
-        ],
-      };
-
-      const defaultOrdersList = [mockOrder];
-      // Save default list back to global orders
-      try {
-        const allOrders = storedOrdersStr ? JSON.parse(storedOrdersStr) : [];
-        // prevent double adding
-        if (!allOrders.some((o: any) => o.id === mockOrder.id)) {
-          localStorage.setItem(
-            "nong-sach-orders",
-            JSON.stringify([...allOrders, { ...mockOrder, userId: currentUser.id }])
-          );
-        }
-      } catch {}
-      setOrders(defaultOrdersList);
-    } else {
-      setOrders(userOrders);
-    }
-  }, [mounted, currentUser]);
+  const sellerOrders = useMemo(() => {
+    if (!currentUser || currentUser.role !== "seller") return [];
+    return orders.filter((o) => o.sellerId === currentUser.id);
+  }, [orders, currentUser]);
 
   // Copy phone number to Zalo if checkbox is selected
   useEffect(() => {
@@ -655,6 +578,28 @@ export default function ProfilePage() {
     setNewProdImages([]);
   };
 
+  const handleUpdateOrderStatus = (orderId: string, newStatus: OrderStatus, userId: string) => {
+    updateOrderStatus(orderId, newStatus);
+    
+    let statusText = "";
+    switch (newStatus) {
+      case "confirmed": statusText = "đã được xác nhận"; break;
+      case "shipping": statusText = "đang được giao"; break;
+      case "delivered": statusText = "đã giao thành công"; break;
+      case "cancelled": statusText = "đã bị hủy"; break;
+    }
+
+    addNotification({
+      userId,
+      title: "Cập nhật đơn hàng",
+      message: `Đơn hàng #${orderId} của bạn ${statusText}.`,
+      type: "order_update",
+      orderId,
+    });
+    
+    showToast(`Đã cập nhật đơn hàng thành ${newStatus}`);
+  };
+
   const handleEditProduct = (p: any) => {
     setEditingProduct(p);
     setNewProdName(p.name);
@@ -921,9 +866,9 @@ export default function ProfilePage() {
   };
 
   // Filtered Orders
-  const filteredOrders = orders.filter((o) => {
-    if (orderFilter === "processing") return o.status === "processing" || o.status === "pending";
-    if (orderFilter === "completed") return o.status === "completed";
+  const filteredOrders = userOrders.filter((o) => {
+    if (orderFilter === "processing") return o.status === "pending" || o.status === "confirmed" || o.status === "shipping";
+    if (orderFilter === "completed") return o.status === "delivered";
     return true;
   });
 
@@ -1656,54 +1601,56 @@ export default function ProfilePage() {
             {/* 5. NOTIFICATIONS TAB */}
             {activeTab === "notifications" && (
               <div className="rounded-3xl border border-[#bbcabf]/30 bg-white p-6 shadow-sm">
-                <h3 className="mb-6 text-lg font-bold text-[#006c49]">Thông báo</h3>
-                <div className="space-y-4">
-                  {[
-                    {
-                      id: 1,
-                      title: "Đặt hàng thành công!",
-                      content: "Đơn hàng #NS92831 của bạn đã được tiếp nhận và đang được xử lý giao hàng.",
-                      date: "24/06/2024",
-                      isNew: false,
-                    },
-                    {
-                      id: 2,
-                      title: "Chào mừng thành viên mới!",
-                      content: "Chúc mừng bạn đã gia nhập NôngSạch! Sử dụng mã KM 'NONGSACK' để nhận chiết khấu 15.000₫ cho các đơn hàng của mình nhé.",
-                      date: "03/06/2026",
-                      isNew: true,
-                    },
-                  ].map((noti) => (
-                    <div
-                      key={noti.id}
-                      className={`rounded-2xl border p-4.5 transition-all ${
-                        noti.isNew 
-                          ? "border-[#006c49] bg-[#006c49]/[0.01]" 
-                          : "border-[#bbcabf]/20 bg-white"
-                      }`}
+                <div className="mb-6 flex items-center justify-between">
+                  <h3 className="text-lg font-bold text-[#006c49]">Thông báo</h3>
+                  {currentUser && getNotificationsByUserId(currentUser.id).length > 0 && (
+                    <button
+                      onClick={() => markAllAsRead(currentUser.id)}
+                      className="text-xs font-bold text-[#006c49] hover:underline"
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <h4 className="text-sm font-bold text-[#3c4a42] flex items-center gap-1.5">
-                            {noti.title}
-                            {noti.isNew && (
-                              <span className="h-2 w-2 rounded-full bg-[#006c49]" title="Mới"></span>
-                            )}
-                          </h4>
-                          <p className="mt-1.5 text-xs leading-5 text-[#3c4a42]/70 font-medium">
-                            {noti.content}
-                          </p>
-                          <p className="mt-2 text-[10px] text-[#3c4a42]/40 font-medium">
-                            {noti.date}
-                          </p>
+                      Đánh dấu tất cả đã đọc
+                    </button>
+                  )}
+                </div>
+                <div className="space-y-4">
+                  {!currentUser || getNotificationsByUserId(currentUser.id).length === 0 ? (
+                    <div className="py-10 text-center text-[#3c4a42]/50">
+                      <span className="material-symbols-outlined text-4xl mb-2">notifications_off</span>
+                      <p className="text-sm font-bold">Bạn chưa có thông báo nào.</p>
+                    </div>
+                  ) : (
+                    getNotificationsByUserId(currentUser.id).map((noti) => (
+                      <div
+                        key={noti.id}
+                        onClick={() => markAsRead(noti.id)}
+                        className={`rounded-2xl border p-4.5 transition-all cursor-pointer ${
+                          !noti.isRead
+                            ? "border-[#006c49] bg-[#006c49]/[0.01]"
+                            : "border-[#bbcabf]/20 bg-white"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <h4 className="text-sm font-bold text-[#3c4a42] flex items-center gap-1.5">
+                              {noti.title}
+                              {!noti.isRead && (
+                                <span className="h-2 w-2 rounded-full bg-[#006c49]" title="Mới"></span>
+                              )}
+                            </h4>
+                            <p className="mt-1.5 text-xs leading-5 text-[#3c4a42]/70 font-medium">
+                              {noti.message}
+                            </p>
+                            <p className="mt-2 text-[10px] text-[#3c4a42]/40 font-medium">
+                              {new Date(noti.createdAt).toLocaleString("vi-VN")}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </div>
             )}
-
             {/* 6. SELLER REGISTRATION & CHANNEL TAB */}
             {activeTab === "seller" && (
               <div className="space-y-6">
@@ -2236,10 +2183,30 @@ export default function ProfilePage() {
                     {/* Stats Grid */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                       {[
-                        { title: "Doanh thu tạm tính", value: "0 ₫", icon: "payments", color: "text-blue-600 bg-blue-50 border-blue-100" },
-                        { title: "Đơn hàng mới", value: "0", icon: "inventory_2", color: "text-amber-600 bg-amber-50 border-amber-100" },
-                        { title: "Sản phẩm đang bán", value: String(shopProducts.length), icon: "shopping_basket", color: "text-[#006c49] bg-[#e6f4ea]/40 border-[#006c49]/10" },
-                        { title: "Đánh giá shop", value: "5.0 ⭐", icon: "star", color: "text-red-600 bg-red-50 border-red-100" }
+                        { 
+                          title: "Doanh thu tạm tính", 
+                          value: formatCurrency(sellerOrders.filter(o => o.status !== "cancelled").reduce((acc, o) => acc + o.totalAmount, 0)), 
+                          icon: "payments", 
+                          color: "text-blue-600 bg-blue-50 border-blue-100" 
+                        },
+                        { 
+                          title: "Đơn hàng mới", 
+                          value: String(sellerOrders.filter(o => o.status === "pending").length), 
+                          icon: "inventory_2", 
+                          color: "text-amber-600 bg-amber-50 border-amber-100" 
+                        },
+                        { 
+                          title: "Sản phẩm đang bán", 
+                          value: String(shopProducts.length), 
+                          icon: "shopping_basket", 
+                          color: "text-[#006c49] bg-[#e6f4ea]/40 border-[#006c49]/10" 
+                        },
+                        { 
+                          title: "Đánh giá shop", 
+                          value: "5.0 ⭐", 
+                          icon: "star", 
+                          color: "text-red-600 bg-red-50 border-red-100" 
+                        }
                       ].map((stat, idx) => (
                         <div key={idx} className={`p-4.5 rounded-2xl border shadow-sm flex items-center justify-between bg-white`}>
                           <div>
@@ -2253,106 +2220,241 @@ export default function ProfilePage() {
                       ))}
                     </div>
 
-                    {/* Products Management List */}
-                    <div className="rounded-3xl border border-[#bbcabf]/30 bg-white p-6 shadow-sm">
-                      <div className="flex justify-between items-center mb-6">
-                        <h4 className="text-sm font-bold text-[#006c49] flex items-center gap-2">
-                          <span className="material-symbols-outlined text-base">list_alt</span>
-                          Sản phẩm của tôi
-                        </h4>
-                        <button
-                          type="button"
-                          onClick={() => setIsAddProductOpen(true)}
-                          className="rounded-full bg-[#006c49] px-4 py-2 text-xs font-bold text-white shadow-sm hover:opacity-90 transition-all flex items-center gap-1"
-                        >
-                          <span className="material-symbols-outlined text-sm">add</span>
-                          Đăng sản phẩm mới
-                        </button>
-                      </div>
-
-                      {shopProducts.length === 0 ? (
-                        <div className="py-14 text-center text-[#3c4a42]/60">
-                          <span className="material-symbols-outlined mb-2 text-[48px] text-[#3c4a42]/30">
-                            inventory
+                    {/* Sub-tabs for Seller */}
+                    <div className="flex gap-4 border-b border-[#bbcabf]/20">
+                      <button
+                        onClick={() => setSellerSubTab("products")}
+                        className={`pb-3 text-sm font-bold transition-all ${
+                          sellerSubTab === "products"
+                            ? "border-b-2 border-[#006c49] text-[#006c49]"
+                            : "text-[#3c4a42]/50 hover:text-[#3c4a42]"
+                        }`}
+                      >
+                        Sản phẩm của tôi
+                      </button>
+                      <button
+                        onClick={() => setSellerSubTab("orders")}
+                        className={`pb-3 text-sm font-bold transition-all flex items-center gap-1.5 ${
+                          sellerSubTab === "orders"
+                            ? "border-b-2 border-[#006c49] text-[#006c49]"
+                            : "text-[#3c4a42]/50 hover:text-[#3c4a42]"
+                        }`}
+                      >
+                        Đơn hàng của shop
+                        {sellerOrders.filter(o => o.status === "pending").length > 0 && (
+                          <span className="bg-amber-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                            {sellerOrders.filter(o => o.status === "pending").length}
                           </span>
-                          <p className="text-xs font-bold">Cửa hàng chưa có sản phẩm nào đăng bán.</p>
-                          <p className="text-[10px] text-[#3c4a42]/50 mt-1">Bấm nút "Đăng sản phẩm mới" ở trên để đưa nông sản của bạn lên cửa hàng nhé.</p>
-                        </div>
-                      ) : (
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-left text-xs border-collapse">
-                            <thead>
-                              <tr className="border-b border-[#bbcabf]/25 text-[#3c4a42]/50 font-bold">
-                                <th className="pb-3 pr-2">Ảnh</th>
-                                <th className="pb-3 pr-2">Tên sản phẩm</th>
-                                <th className="pb-3 pr-2">Danh mục</th>
-                                <th className="pb-3 pr-2">Giá bán</th>
-                                <th className="pb-3 pr-2">Tồn kho</th>
-                                <th className="pb-3 pr-2">Nguồn gốc</th>
-                                <th className="pb-3 pr-2 text-right">Thao tác</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-[#bbcabf]/15">
-                              {shopProducts.map((p) => (
-                                <tr key={p.id} className="text-[#3c4a42]">
-                                  <td className="py-3 pr-2">
-                                    <div className="relative h-10 w-10 overflow-hidden rounded-lg border border-gray-100">
-                                      <Image
-                                        src={p.image}
-                                        alt={p.name}
-                                        fill
-                                        className="object-cover"
-                                        sizes="40px"
-                                      />
-                                    </div>
-                                  </td>
-                                  <td className="py-3 pr-2 font-bold">{p.name}</td>
-                                  <td className="py-3 pr-2 font-semibold">
-                                    {p.category === "vegetables" && "Rau củ"}
-                                    {p.category === "fruits" && "Trái cây"}
-                                    {p.category === "grains" && "Ngũ cốc"}
-                                    {p.category === "roots" && "Củ quả"}
-                                    {p.category === "herbs" && "Thảo mộc"}
-                                    {p.category === "other" && "Khác"}
-                                  </td>
-                                  <td className="py-3 pr-2 font-extrabold text-[#006c49]">
-                                    {formatCurrency(p.price)}/{p.unit}
-                                  </td>
-                                  <td className="py-3 pr-2 font-semibold">{p.stock} {p.unit}</td>
-                                  <td className="py-3 pr-2 font-semibold">{p.origin}</td>
-                                  <td className="py-3 pr-2 text-right space-x-1.5 whitespace-nowrap">
-                                    <Link
-                                      href={`/products/${p.id}`}
-                                      target="_blank"
-                                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-gray-50 text-gray-500 hover:bg-gray-100 transition-colors"
-                                      title="Xem chi tiết"
-                                    >
-                                      <span className="material-symbols-outlined text-[16px]">visibility</span>
-                                    </Link>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleEditProduct(p)}
-                                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors"
-                                      title="Chỉnh sửa"
-                                    >
-                                      <span className="material-symbols-outlined text-[16px]">edit</span>
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleDeleteProduct(p.id)}
-                                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
-                                      title="Xóa"
-                                    >
-                                      <span className="material-symbols-outlined text-[16px]">delete</span>
-                                    </button>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
+                        )}
+                      </button>
                     </div>
+
+                    {sellerSubTab === "products" ? (
+                      <div className="rounded-3xl border border-[#bbcabf]/30 bg-white p-6 shadow-sm">
+                        <div className="flex justify-between items-center mb-6">
+                          <h4 className="text-sm font-bold text-[#006c49] flex items-center gap-2">
+                            <span className="material-symbols-outlined text-base">list_alt</span>
+                            Danh sách sản phẩm
+                          </h4>
+                          <button
+                            type="button"
+                            onClick={() => setIsAddProductOpen(true)}
+                            className="rounded-full bg-[#006c49] px-4 py-2 text-xs font-bold text-white shadow-sm hover:opacity-90 transition-all flex items-center gap-1"
+                          >
+                            <span className="material-symbols-outlined text-sm">add</span>
+                            Đăng sản phẩm mới
+                          </button>
+                        </div>
+
+                        {shopProducts.length === 0 ? (
+                          <div className="py-14 text-center text-[#3c4a42]/60">
+                            <span className="material-symbols-outlined mb-2 text-[48px] text-[#3c4a42]/30">
+                              inventory
+                            </span>
+                            <p className="text-xs font-bold">Cửa hàng chưa có sản phẩm nào đăng bán.</p>
+                            <p className="text-[10px] text-[#3c4a42]/50 mt-1">Bấm nút "Đăng sản phẩm mới" ở trên để đưa nông sản của bạn lên cửa hàng nhé.</p>
+                          </div>
+                        ) : (
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-left text-xs border-collapse">
+                              <thead>
+                                <tr className="border-b border-[#bbcabf]/25 text-[#3c4a42]/50 font-bold">
+                                  <th className="pb-3 pr-2">Ảnh</th>
+                                  <th className="pb-3 pr-2">Tên sản phẩm</th>
+                                  <th className="pb-3 pr-2">Danh mục</th>
+                                  <th className="pb-3 pr-2">Giá bán</th>
+                                  <th className="pb-3 pr-2">Tồn kho</th>
+                                  <th className="pb-3 pr-2">Nguồn gốc</th>
+                                  <th className="pb-3 pr-2 text-right">Thao tác</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-[#bbcabf]/15">
+                                {shopProducts.map((p) => (
+                                  <tr key={p.id} className="text-[#3c4a42]">
+                                    <td className="py-3 pr-2">
+                                      <div className="relative h-10 w-10 overflow-hidden rounded-lg border border-gray-100">
+                                        <Image
+                                          src={p.image}
+                                          alt={p.name}
+                                          fill
+                                          className="object-cover"
+                                          sizes="40px"
+                                        />
+                                      </div>
+                                    </td>
+                                    <td className="py-3 pr-2 font-bold">{p.name}</td>
+                                    <td className="py-3 pr-2 font-semibold">
+                                      {p.category === "vegetables" && "Rau củ"}
+                                      {p.category === "fruits" && "Trái cây"}
+                                      {p.category === "grains" && "Ngũ cốc"}
+                                      {p.category === "roots" && "Củ quả"}
+                                      {p.category === "herbs" && "Thảo mộc"}
+                                      {p.category === "other" && "Khác"}
+                                    </td>
+                                    <td className="py-3 pr-2 font-extrabold text-[#006c49]">
+                                      {formatCurrency(p.price)}/{p.unit}
+                                    </td>
+                                    <td className="py-3 pr-2 font-semibold">{p.stock} {p.unit}</td>
+                                    <td className="py-3 pr-2 font-semibold">{p.origin}</td>
+                                    <td className="py-3 pr-2 text-right space-x-1.5 whitespace-nowrap">
+                                      <Link
+                                        href={`/products/${p.id}`}
+                                        target="_blank"
+                                        className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-gray-50 text-gray-500 hover:bg-gray-100 transition-colors"
+                                        title="Xem chi tiết"
+                                      >
+                                        <span className="material-symbols-outlined text-[16px]">visibility</span>
+                                      </Link>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleEditProduct(p)}
+                                        className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors"
+                                        title="Chỉnh sửa"
+                                      >
+                                        <span className="material-symbols-outlined text-[16px]">edit</span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteProduct(p.id)}
+                                        className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                                        title="Xóa"
+                                      >
+                                        <span className="material-symbols-outlined text-[16px]">delete</span>
+                                      </button>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="rounded-3xl border border-[#bbcabf]/30 bg-white p-6 shadow-sm">
+                        <h4 className="text-sm font-bold text-[#006c49] flex items-center gap-2 mb-6">
+                          <span className="material-symbols-outlined text-base">shopping_bag</span>
+                          Quản lý đơn hàng
+                        </h4>
+
+                        {sellerOrders.length === 0 ? (
+                          <div className="py-14 text-center text-[#3c4a42]/60">
+                            <span className="material-symbols-outlined mb-2 text-[48px] text-[#3c4a42]/30">
+                              receipt_long
+                            </span>
+                            <p className="text-xs font-bold">Chưa có đơn hàng nào.</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            {sellerOrders.map((order) => (
+                              <div key={order.id} className="border border-[#bbcabf]/20 rounded-2xl p-4 space-y-3 hover:border-[#006c49]/30 transition-all bg-white shadow-sm">
+                                <div className="flex justify-between items-start">
+                                  <div>
+                                    <p className="text-[10px] font-bold text-[#3c4a42]/50 uppercase">Mã đơn hàng</p>
+                                    <p className="text-xs font-extrabold text-[#006c49]">#{order.id}</p>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="text-[10px] font-bold text-[#3c4a42]/50 uppercase">Trạng thái</p>
+                                    <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                      order.status === "pending" ? "bg-amber-50 text-amber-600 border border-amber-100" :
+                                      order.status === "confirmed" ? "bg-blue-50 text-blue-600 border border-blue-100" :
+                                      order.status === "shipping" ? "bg-purple-50 text-purple-600 border border-purple-100" :
+                                      order.status === "delivered" ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
+                                      "bg-red-50 text-red-600 border border-red-100"
+                                    }`}>
+                                      {order.status === "pending" ? "Chờ xác nhận" :
+                                       order.status === "confirmed" ? "Đã xác nhận" :
+                                       order.status === "shipping" ? "Đang giao" :
+                                       order.status === "delivered" ? "Đã giao" : "Đã hủy"}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-2.5 border-y border-[#bbcabf]/10">
+                                  <div>
+                                    <p className="text-[10px] font-bold text-[#3c4a42]/50 uppercase mb-1">Khách hàng</p>
+                                    <p className="text-xs font-bold text-[#3c4a42]">{order.fullName}</p>
+                                    <p className="text-[10px] text-[#3c4a42]/70 mt-0.5">{order.phone}</p>
+                                    <p className="text-[10px] text-[#3c4a42]/70 mt-0.5 truncate max-w-[200px]">{order.address}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-[10px] font-bold text-[#3c4a42]/50 uppercase mb-1">Chi tiết đơn</p>
+                                    <p className="text-xs font-extrabold text-[#006c49]">{formatCurrency(order.totalAmount)}</p>
+                                    <p className="text-[10px] text-[#3c4a42]/70 mt-0.5">{order.items.length} món sản phẩm</p>
+                                    <p className="text-[10px] text-[#3c4a42]/40 mt-0.5">{new Date(order.createdAt).toLocaleString("vi-VN")}</p>
+                                  </div>
+                                </div>
+
+                                <div className="flex flex-wrap gap-2 pt-1">
+                                  {order.status === "pending" && (
+                                    <button
+                                      onClick={() => handleUpdateOrderStatus(order.id, "confirmed", order.userId)}
+                                      className="flex-1 bg-[#006c49] text-white text-[10px] font-bold py-2 rounded-xl hover:opacity-90 transition-all flex items-center justify-center gap-1.5"
+                                    >
+                                      <span className="material-symbols-outlined text-sm">check_circle</span>
+                                      Xác nhận đơn
+                                    </button>
+                                  )}
+                                  {order.status === "confirmed" && (
+                                    <button
+                                      onClick={() => handleUpdateOrderStatus(order.id, "shipping", order.userId)}
+                                      className="flex-1 bg-blue-600 text-white text-[10px] font-bold py-2 rounded-xl hover:opacity-90 transition-all flex items-center justify-center gap-1.5"
+                                    >
+                                      <span className="material-symbols-outlined text-sm">local_shipping</span>
+                                      Bắt đầu giao
+                                    </button>
+                                  )}
+                                  {order.status === "shipping" && (
+                                    <button
+                                      onClick={() => handleUpdateOrderStatus(order.id, "delivered", order.userId)}
+                                      className="flex-1 bg-emerald-600 text-white text-[10px] font-bold py-2 rounded-xl hover:opacity-90 transition-all flex items-center justify-center gap-1.5"
+                                    >
+                                      <span className="material-symbols-outlined text-sm">task_alt</span>
+                                      Hoàn tất giao
+                                    </button>
+                                  )}
+                                  {order.status !== "delivered" && order.status !== "cancelled" && (
+                                    <button
+                                      onClick={() => handleUpdateOrderStatus(order.id, "cancelled", order.userId)}
+                                      className="px-4 bg-red-50 text-red-600 text-[10px] font-bold py-2 rounded-xl hover:bg-red-100 transition-all flex items-center gap-1.5"
+                                    >
+                                      <span className="material-symbols-outlined text-sm">cancel</span>
+                                      Hủy
+                                    </button>
+                                  )}
+                                  <Link
+                                    href={`/checkout/success?orderId=${order.id}&readonly=true`}
+                                    className="px-4 bg-gray-50 text-gray-600 text-[10px] font-bold py-2 rounded-xl hover:bg-gray-100 transition-all flex items-center gap-1.5 border border-gray-200"
+                                  >
+                                    <span className="material-symbols-outlined text-sm">visibility</span>
+                                    Xem
+                                  </Link>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* Add Product Modal Dialog */}
                     {isAddProductOpen && (

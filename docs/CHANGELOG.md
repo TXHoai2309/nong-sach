@@ -21,7 +21,8 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
 * Thiết kế và triển khai trang chi tiết shop tại route `/shop/[id]`:
   * **Ảnh bìa đại diện**: Hình ảnh phong cảnh nông trại hữu cơ trải dài.
   * **Thẻ hồ sơ cửa hàng**: Avatar bo tròn có viền trắng, badge Đã xác minh màu xanh lá, tên shop, tiêu chuẩn chất lượng (VietGAP, USDA Organic), slogan và vị trí.
-  * **Thống kê chi tiết**: Bảng điểm rating, số sản phẩm, số đơn hàng hoàn thành và mốc tham gia hệ thống.
+  * **Thống kê chi tiết**: Bảng điểm rating, số sản phẩm, số người theo dõi và mốc tham gia hệ thống.
+
   * **Tương tác**: Nút "+ Theo dõi" đổi trạng thái sang "Đang theo dõi" kèm thay đổi màu sắc trực quan; nút "Nhắn tin" mô phỏng; nút chia sẻ.
   * **Giới thiệu tóm tắt**: Khung giới thiệu ngắn về nông trại đi kèm icon Material.
   * **Tab Sản phẩm**: 
@@ -35,8 +36,15 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
   * **Menu Tiện ích Sản phẩm (`...`)**: 
     - Bổ sung menu dấu ba chấm trên cả `ProductCard` và `ProductDetail` cho phép truy cập nhanh: Chia sẻ, Sao chép liên kết, Báo cáo sản phẩm và Trợ giúp.
     - Hỗ trợ nút "Chỉnh sửa sản phẩm" nhanh dành riêng cho chủ sở hữu shop.
-  * **Hệ thống Báo cáo Sản phẩm**: Triển khai quy trình báo cáo sản phẩm hoàn chỉnh với modal chọn lý do và nhập chi tiết, đồng bộ dữ liệu vào hệ thống báo cáo chung của nền tảng.
-  * **Cửa hàng tương tự**: Đề xuất các shop khác ở chân trang có nút liên kết điều hướng mượt mà.
+  * **Hệ thống Quản lý Đơn hàng cho Người bán**: 
+    - Phân tách đơn hàng theo từng nhà vườn khi thanh toán (Multi-seller support).
+    - Dashboard người bán hỗ trợ quản lý danh sách đơn hàng riêng biệt.
+    - Cho phép người bán cập nhật trạng thái đơn hàng: Xác nhận, Đang giao, Đã giao hoặc Hủy.
+  * **Hệ thống Thông báo Thời gian thực (Notifications)**:
+    - Gửi thông báo đến người bán khi có đơn hàng mới.
+    - Gửi thông báo đến người mua khi trạng thái đơn hàng thay đổi.
+    - Badge hiển thị số lượng thông báo chưa đọc trên Header.
+    - Tab quản lý thông báo chi tiết trong trang Profile.
 
 ### Changed
 

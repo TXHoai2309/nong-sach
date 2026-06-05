@@ -42,6 +42,8 @@ export const useCartStore = create<CartState>((set, get) => ({
         image: product.image,
         quantity: 1,
         stock: product.stock,
+        sellerId: product.sellerId,
+        shopName: product.shopName,
       };
 
       return { items: [...state.items, newItem] };
