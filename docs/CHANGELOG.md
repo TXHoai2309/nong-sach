@@ -1,10 +1,123 @@
-# Changelog
+﻿# Changelog
 
 All notable changes to the **NôngSạch** project will be documented in this file.
 
 The format is based on **Keep a Changelog** and this project adheres to **Semantic Versioning**.
 
 ---
+
+## [0.4.8] - 2026-06-05
+
+### Sprint 4.8 — Kiểm tra hoàn thiện Firebase runtime & loại bỏ dữ liệu local khi test
+
+### Changed
+
+#### Các file đã thay đổi trong phiên kiểm tra Firebase
+* `src/app/cart/page.tsx`
+  - Loại bỏ phụ thuộc runtime vào `@/data/products` trong trang giỏ hàng.
+  - Không còn lấy thông tin phụ của sản phẩm từ dữ liệu local khi render cart item.
+
+* `src/app/checkout/page.tsx`
+  - Loại bỏ đoạn ghi `nong-sach-last-order` vào `localStorage`.
+  - Luồng đặt hàng tiếp tục ghi đơn qua `addOrder(...)` lên Firestore collection `orders`.
+
+* `src/app/checkout/success/page.tsx`
+  - Chuyển trang hoàn tất đơn hàng sang đọc chi tiết đơn từ Firestore `orders/{orderId}`.
+  - Chuyển danh sách sản phẩm gợi ý sang lấy từ Firestore thông qua `getAllProducts()`.
+  - Loại bỏ các interface và logic đọc đơn hàng từ localStorage.
+
+* `src/app/products/page.tsx`
+  - Điều chỉnh luồng tải danh sách sản phẩm bất đồng bộ từ Firestore.
+  - Tránh setState trực tiếp trong effect gây lint error.
+
+* `src/app/products/[id]/page.tsx`
+  - Điều chỉnh luồng tải chi tiết sản phẩm và sản phẩm liên quan từ Firestore.
+  - Thêm cleanup/cờ active để tránh cập nhật state sau khi component unmount.
+
+* `src/app/profile/page.tsx`
+  - Điều chỉnh cập nhật tab từ query param theo hướng an toàn hơn với React compiler.
+  - Tiếp tục dùng Firestore để tải sản phẩm của seller và đơn hàng người mua/người bán.
+
+* `src/app/seed/page.tsx`
+  - Sửa xử lý lỗi seed từ `any` sang `unknown` để TypeScript an toàn hơn.
+
+* `src/app/shop/[id]/page.tsx`
+  - Điều chỉnh luồng nạp shop, sản phẩm của shop và shop tương tự từ Firestore.
+  - Tránh setState trực tiếp trong effect khi build shop từ thông tin seller hiện tại.
+
+* `src/components/product/ProductDetail.tsx`
+  - Đồng bộ phần banner thông tin shop với helper Firestore bất đồng bộ.
+
+* `src/lib/seed.ts`
+  - Giữ dữ liệu tĩnh `src/data/products` và `src/data/shops` làm nguồn seed ban đầu lên Firestore.
+  - Sửa xử lý lỗi từ `any` sang `unknown`.
+
+* `src/lib/shops.ts`
+  - Duy trì các helper Firestore cho shop: lấy shop theo id, lấy shop theo sản phẩm, lấy toàn bộ shop, thêm shop và cập nhật shop.
+
+* `src/store/auth-store.ts`
+  - Bổ sung xử lý lỗi Firebase type-safe.
+  - Đồng bộ seller được approve sang collection `shops`.
+  - Đồng bộ thay đổi thông tin seller sang document shop tương ứng.
+
+* `src/store/order-store.ts`
+  - Loại bỏ tham số store không dùng.
+  - Tiếp tục dùng Firestore cho add/update/fetch orders.
+
+* `src/data/shops.ts`
+  - File dữ liệu cửa hàng tĩnh phục vụ seed dữ liệu ban đầu lên Firestore.
+
+### Verification
+
+* `npx tsc --noEmit` hoàn thành thành công sau khi build tạo lại `.next/types`.
+* `npm run lint` hoàn thành thành công, còn một số warning không chặn build.
+* `npm run build` hoàn thành thành công với cảnh báo không chặn từ Firebase/protobuf và workspace root.
+
+### Notes
+
+* Runtime chính hiện không còn dùng `localStorage` cho sản phẩm, shop hoặc đơn hàng.
+* `notification-store.ts` và `report-store.ts` vẫn còn Zustand `persist`; hai phần này chưa được chuyển sang Firebase trong phiên này.
+* `src/lib/seed.ts` vẫn dùng dữ liệu tĩnh local, đây là nguồn seed ban đầu chứ không phải runtime fallback.
+
+---
+
+## [0.4.7] - 2026-06-05
+
+### Sprint 4.7 — Di chuyển Cơ sở dữ liệu Cửa hàng lên Firestore
+
+### Added
+
+#### Quản lý Dữ liệu tĩnh Cửa hàng (`src/data/shops.ts`)
+* Tách mảng dữ liệu cửa hàng mẫu `STATIC_SHOPS` sang file độc lập để hỗ trợ tính năng seed dữ liệu mà không gây phụ thuộc chéo vào thư viện chính.
+
+### Changed
+
+#### Tích hợp Firestore cho Quản lý Cửa hàng (`src/lib/shops.ts`)
+* Chuyển các hàm thao tác cửa hàng thành bất đồng bộ (`async`) kết nối trực tiếp với Firestore:
+  - `getShopById(shopId)`: Đọc tài liệu từ `shops/{shopId}` bằng `getDoc`. Bổ sung cơ chế fallback tự động truy vấn và lấy document đầu tiên trong collection nếu không tìm thấy ID cụ thể.
+  - `getShopForProduct(product)`: Gọi `await getShopById(...)` bất đồng bộ để phân giải thông tin cửa hàng dựa trên `sellerId` hoặc ID của sản phẩm tĩnh.
+  - `getAllShops()`: Lấy toàn bộ danh sách cửa hàng từ Firestore bằng `getDocs`.
+  - `addShop(shop)`: Ghi tài liệu cửa hàng mới thông qua `setDoc` khi tài khoản người bán được phê duyệt.
+  - `updateShop(shopId, data)`: Cập nhật thông tin cửa hàng bằng `updateDoc` khi chủ shop thay đổi thông tin.
+* Loại bỏ mảng `STATIC_SHOPS` cũ và toàn bộ logic đọc `nong-sach-auth` từ local storage để tìm thông tin cửa hàng.
+* Thêm bao bọc `try/catch` cho mọi hàm để đảm bảo ứng dụng không bị crash khi lỗi mạng hoặc Firestore thất bại, log lỗi cụ thể bằng `console.error`.
+
+#### Đồng bộ các Call Sites và luồng hoạt động
+* **Khởi tạo dữ liệu (`src/lib/seed.ts`)**: Cập nhật import `STATIC_SHOPS` từ file dữ liệu tĩnh mới `@/data/shops`.
+* **Trang chi tiết sản phẩm (`src/components/product/ProductDetail.tsx`)**:
+  - Chuyển `shop` thành React state được fetch bất đồng bộ trong hook `useEffect` bằng `getShopForProduct(product)`.
+  - Thiết kế và tích hợp khung xương tải dữ liệu (pulse loading skeleton) cho phần Banner thông tin cửa hàng, hiển thị mượt mà trong lúc chờ dữ liệu.
+* **Trang chi tiết cửa hàng (`src/app/shop/[id]/page.tsx`)**:
+  - Chuyển đổi cách nạp thông tin cửa hàng chính (`shop`) và danh sách cửa hàng tương tự (`similarShops`) từ đồng bộ sang bất đồng bộ thông qua các hook `useEffect` gọi `getShopById(id)` và `getAllShops()`.
+  - Loại bỏ hoàn toàn kiểm tra `isStatic` hoặc `customSeller` thừa do tất cả các cửa hàng (cả mặc định và đăng ký mới) hiện đều đồng bộ trên Firestore.
+* **Kênh người bán & xác thực (`src/store/auth-store.ts`)**:
+  - Tích hợp gọi `await addShop(...)` khi phê duyệt thành công người bán (`approveSeller`) nhằm tự động đồng bộ hồ sơ đăng ký sang collection `shops` trên Firestore.
+  - Tích hợp gọi `await updateShop(...)` trong `updateSellerInfo` để cập nhật thông tin cửa hàng trực tiếp lên Firestore mỗi khi người bán thay đổi cấu hình trên Dashboard.
+
+### Verification
+
+* `npx tsc --noEmit` hoàn thành thành công, đạt 0 lỗi biên dịch.
+* `npm run build` tạo build production Next.js thành công.
 
 ## [0.4.6] - 2026-06-05
 
@@ -107,9 +220,6 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
 
 ### Added
 
-#### Cấu hình & Khởi tạo Firebase
-* Tạo mới file `.env.local` lưu trữ các biến môi trường Firebase (API Key, Auth Domain, Project ID, Storage Bucket, Messaging Sender ID, App ID, Realtime Database URL).
-* Thiết lập file khởi tạo [firebase.ts](file:///d:/Thực tập/Buoi3/nong-sach/src/lib/firebase.ts) kết nối và xuất các thực thể Firebase App, Auth, Firestore (`db`), và Realtime Database (`rtdb`) dùng cho các tính năng cơ sở dữ liệu thời gian thực sau này.
 
 ### Fixed
 

@@ -11,6 +11,15 @@ import {
   EmailAuthProvider,
 } from "firebase/auth";
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { addShop, updateShop } from "@/lib/shops";
+
+const getFirebaseErrorCode = (error: unknown) =>
+  typeof error === "object" && error !== null && "code" in error
+    ? String((error as { code?: unknown }).code ?? "")
+    : "";
+
+const getFirebaseErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : "";
 
 interface AuthState {
   currentUser: User | null;
@@ -109,8 +118,9 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         }
         set({ currentUser: userProfile });
         return { success: true, message: "Đăng nhập thành công với tài khoản Demo!" };
-      } catch (err: any) {
-        if (err.code === "auth/user-not-found" || err.code === "auth/invalid-credential" || err.code === "auth/wrong-password") {
+      } catch (err: unknown) {
+        const errCode = getFirebaseErrorCode(err);
+        if (errCode === "auth/user-not-found" || errCode === "auth/invalid-credential" || errCode === "auth/wrong-password") {
           try {
             // Auto register the demo user
             const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
@@ -141,7 +151,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
             await setDoc(doc(db, "users", uid), defaultUser);
             set({ currentUser: defaultUser });
             return { success: true, message: "Đăng nhập thành công với tài khoản Demo!" };
-          } catch (regErr: any) {
+          } catch (regErr: unknown) {
             console.error("Auto-registration of Demo user failed:", regErr);
           }
         }
@@ -174,17 +184,19 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         set({ currentUser: newUser });
         return { success: true, message: "Đăng nhập thành công!" };
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Login error:", error);
       let errorMsg = "Email hoặc mật khẩu không chính xác.";
-      if (error.code === "auth/invalid-credential" || error.code === "auth/wrong-password" || error.code === "auth/user-not-found") {
+      const errorCode = getFirebaseErrorCode(error);
+      const errorMessage = getFirebaseErrorMessage(error);
+      if (errorCode === "auth/invalid-credential" || errorCode === "auth/wrong-password" || errorCode === "auth/user-not-found") {
         errorMsg = "Email hoặc mật khẩu không chính xác.";
-      } else if (error.code === "auth/invalid-email") {
+      } else if (errorCode === "auth/invalid-email") {
         errorMsg = "Địa chỉ email không hợp lệ.";
-      } else if (error.code === "auth/too-many-requests") {
+      } else if (errorCode === "auth/too-many-requests") {
         errorMsg = "Tài khoản bị tạm khóa do đăng nhập sai nhiều lần. Vui lòng thử lại sau.";
-      } else if (error.message) {
-        errorMsg = `Lỗi đăng nhập: ${error.message}`;
+      } else if (errorMessage) {
+        errorMsg = `Lỗi đăng nhập: ${errorMessage}`;
       }
       return { success: false, message: errorMsg };
     }
@@ -209,17 +221,19 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
       await setDoc(doc(db, "users", uid), newUser);
       return { success: true, message: "Đăng ký thành công!" };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Registration error:", error);
       let errorMsg = "Đăng ký thất bại.";
-      if (error.code === "auth/email-already-in-use") {
+      const errorCode = getFirebaseErrorCode(error);
+      const errorMessage = getFirebaseErrorMessage(error);
+      if (errorCode === "auth/email-already-in-use") {
         errorMsg = "Email này đã được sử dụng.";
-      } else if (error.code === "auth/invalid-email") {
+      } else if (errorCode === "auth/invalid-email") {
         errorMsg = "Địa chỉ email không hợp lệ.";
-      } else if (error.code === "auth/weak-password") {
+      } else if (errorCode === "auth/weak-password") {
         errorMsg = "Mật khẩu quá yếu (tối thiểu 6 ký tự).";
-      } else if (error.message) {
-        errorMsg = `Lỗi đăng ký: ${error.message}`;
+      } else if (errorMessage) {
+        errorMsg = `Lỗi đăng ký: ${errorMessage}`;
       }
       return { success: false, message: errorMsg };
     }
@@ -262,15 +276,17 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       // Update password
       await updatePassword(user, newPass);
       return { success: true, message: "Cập nhật mật khẩu thành công!" };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Change password error:", error);
       let errorMsg = "Mật khẩu hiện tại không chính xác.";
-      if (error.code === "auth/wrong-password" || error.code === "auth/invalid-credential") {
+      const errorCode = getFirebaseErrorCode(error);
+      const errorMessage = getFirebaseErrorMessage(error);
+      if (errorCode === "auth/wrong-password" || errorCode === "auth/invalid-credential") {
         errorMsg = "Mật khẩu hiện tại không chính xác.";
-      } else if (error.code === "auth/weak-password") {
+      } else if (errorCode === "auth/weak-password") {
         errorMsg = "Mật khẩu mới quá yếu (tối thiểu 6 ký tự).";
-      } else if (error.message) {
-        errorMsg = `Lỗi đổi mật khẩu: ${error.message}`;
+      } else if (errorMessage) {
+        errorMsg = `Lỗi đổi mật khẩu: ${errorMessage}`;
       }
       return { success: false, message: errorMsg };
     }
@@ -391,6 +407,38 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     try {
       const userRef = doc(db, "users", userId);
       await updateDoc(userRef, updatedProfile);
+
+      let targetUser = currentUser;
+      if (!isSelf) {
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          targetUser = userSnap.data() as User;
+        }
+      }
+
+      if (targetUser?.sellerInfo) {
+        const info = targetUser.sellerInfo;
+        await addShop({
+          id: targetUser.id,
+          name: info.shopName,
+          logo: info.shopLogo || "https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?w=120&h=120&fit=crop",
+          verified: true,
+          rating: 5.0,
+          reviewCount: 0,
+          productCount: 0,
+          followerCount: "0",
+          joinDate: targetUser.memberSince || "06/2026",
+          location: info.province || "Lâm Đồng",
+          slogan: info.slogan || "Cung cấp nông sản sạch tươi ngon hữu cơ",
+          altitude: info.farmAddress || "Đà Lạt",
+          standard: info.farmingStandards?.join(", ") || "VietGAP",
+          description: info.description || "Nông sản sạch từ nông trại của tôi.",
+          farmImages: info.farmImages && info.farmImages.length > 0 ? info.farmImages : [
+            "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=600&h=400&fit=crop",
+          ],
+          mainCategories: info.mainCategories || ["Rau củ"],
+        });
+      }
     } catch (err) {
       console.error("Firestore approve seller update error:", err);
     }
@@ -419,6 +467,20 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
       await updateDoc(userRef, {
         sellerInfo: sanitizedInfo,
+      });
+
+      await updateShop(currentUser.id, {
+        name: info.shopName,
+        logo: info.shopLogo || "https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?w=120&h=120&fit=crop",
+        location: info.province || "Lâm Đồng",
+        slogan: info.slogan || "Cung cấp nông sản sạch tươi ngon hữu cơ",
+        altitude: info.farmAddress || "Đà Lạt",
+        standard: info.farmingStandards?.join(", ") || "VietGAP",
+        description: info.description || "Nông sản sạch từ nông trại của tôi.",
+        farmImages: info.farmImages && info.farmImages.length > 0 ? info.farmImages : [
+          "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=600&h=400&fit=crop",
+        ],
+        mainCategories: info.mainCategories || ["Rau củ"],
       });
     } catch (err) {
       console.error("Firestore update seller info error:", err);

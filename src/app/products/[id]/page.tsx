@@ -22,22 +22,31 @@ export default function ProductDetailPage({ params }: PageProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setMounted(true);
+    const timer = window.setTimeout(() => setMounted(true), 0);
+    let active = true;
     async function loadData() {
       try {
         const p = await getProductById(id);
+        if (!active) return;
         setProduct(p);
 
         const all = await getAllProducts();
         const related = all.filter((item) => item.id !== id).slice(0, 4);
+        if (!active) return;
         setRelatedProducts(related);
       } catch (err) {
         console.error(err);
       } finally {
-        setLoading(false);
+        if (active) {
+          setLoading(false);
+        }
       }
     }
     loadData();
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
   }, [id]);
 
   if (!mounted || loading) {

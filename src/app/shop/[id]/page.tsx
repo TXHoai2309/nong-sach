@@ -8,7 +8,7 @@ import {
   Info, ShoppingCart, Star, MapPin, X, Pencil, Upload,
 } from "lucide-react";
 import Breadcrumb from "@/components/layout/Breadcrumb";
-import { getShopById, STATIC_SHOPS, Shop } from "@/lib/shops";
+import { getShopById, getAllShops, Shop } from "@/lib/shops";
 import { getAllProducts } from "@/lib/products";
 import { useCartStore } from "@/store/cart-store";
 import { useAuthStore } from "@/store/auth-store";
@@ -17,8 +17,6 @@ import { CATEGORY_LABELS, Product } from "@/types/product";
 import CoverImageCropper from "@/components/ui/CoverImageCropper";
 import { REPORT_REASONS } from "@/types/report";
 import { useReportStore } from "@/store/report-store";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { User } from "@/types/user";
 
 interface PageProps {
@@ -77,7 +75,7 @@ export default function ShopDetailPage({ params }: PageProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [sortBy, setSortBy] = useState("popular");
-  const [customSeller, setCustomSeller] = useState<User | null>(null);
+  const [shop, setShop] = useState<Shop | null>(null);
 
   // ── Edit shop modal state ───────────────────────────────────────────────
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -203,51 +201,37 @@ export default function ShopDetailPage({ params }: PageProps) {
   // ── Fetch external custom shop from Firestore ─────────────────────────────
   useEffect(() => {
     if (!mounted) return;
-    const isStatic = STATIC_SHOPS.some((s) => s.id === id);
-    const isCurrentUser = currentUser && currentUser.id === id;
-
-    if (!isStatic && !isCurrentUser) {
-      async function fetchCustomSeller() {
-        try {
-          const userRef = doc(db, "users", id);
-          const userSnap = await getDoc(userRef);
-          if (userSnap.exists()) {
-            const userData = userSnap.data() as User;
-            if (userData.sellerInfo) {
-              setCustomSeller(userData);
-            }
-          }
-        } catch (err) {
-          console.error("Error fetching custom seller from Firestore:", err);
-        }
-      }
-      fetchCustomSeller();
-    }
-  }, [mounted, id, currentUser?.id]);
-
-  // ── Resolve Shop – REACTIVE ───────────────────────────────────────────────
-  const shop: Shop | null = (() => {
-    if (!mounted) return null;
 
     // 1. If the currently-logged-in user IS this shop, build reactively
     if (currentUser && currentUser.id === id && currentUser.sellerInfo) {
       const count = allProducts.filter((p) => p.sellerId === id).length;
-      return buildShopFromUser(currentUser, count);
+      const timer = window.setTimeout(() => setShop(buildShopFromUser(currentUser, count)), 0);
+      return () => window.clearTimeout(timer);
     }
 
-    // 2. If it's a dynamic custom shop from Firestore (not the logged-in user)
-    const isStatic = STATIC_SHOPS.some((s) => s.id === id);
-    if (!isStatic) {
-      if (customSeller) {
-        const count = allProducts.filter((p) => p.sellerId === id).length;
-        return buildShopFromUser(customSeller, count);
+    // 2. Otherwise, fetch the shop from the 'shops' collection in Firestore
+    let active = true;
+    async function loadShop() {
+      try {
+        const resolvedShop = await getShopById(id);
+        if (active && resolvedShop) {
+          // Update productCount dynamically based on allProducts
+          const count = allProducts.filter((p) => p.sellerId === id).length;
+          setShop({
+            ...resolvedShop,
+            productCount: count > 0 ? count : resolvedShop.productCount,
+          });
+        }
+      } catch (err) {
+        console.error("Error loading shop details:", err);
       }
-      return null; // Keep loading until customSeller is loaded
     }
+    loadShop();
 
-    // 3. Otherwise use static data
-    return getShopById(id);
-  })();
+    return () => {
+      active = false;
+    };
+  }, [mounted, id, currentUser, allProducts]);
 
   const isOwner = mounted && currentUser?.id === id && !!currentUser?.sellerInfo;
 
@@ -279,7 +263,27 @@ export default function ShopDetailPage({ params }: PageProps) {
     return result;
   })();
 
-  const similarShops = STATIC_SHOPS.filter((s) => s.id !== id).slice(0, 3);
+  const [similarShops, setSimilarShops] = useState<Shop[]>([]);
+
+  // ── Fetch Similar Shops from Firestore ────────────────────────────────────
+  useEffect(() => {
+    if (!mounted) return;
+    let active = true;
+    async function loadSimilarShops() {
+      try {
+        const shops = await getAllShops();
+        if (active) {
+          setSimilarShops(shops.filter((s) => s.id !== id).slice(0, 3));
+        }
+      } catch (err) {
+        console.error("Error loading similar shops:", err);
+      }
+    }
+    loadSimilarShops();
+    return () => {
+      active = false;
+    };
+  }, [mounted, id]);
 
   // ── Follower Count Logic ──────────────────────────────────────────────────
   const [displayFollowers, setDisplayFollowers] = useState<string | number>(0);

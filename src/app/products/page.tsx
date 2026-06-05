@@ -26,19 +26,23 @@ const SORT_LABELS: Record<SortOption, string> = {
 };
 export default function ProductsPage() {
   const [allProducts, setAllProducts] = useState<Product[]>([]);
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    let active = true;
     async function load() {
       try {
         const data = await getAllProducts();
-        setAllProducts(data);
+        if (active) {
+          setAllProducts(data);
+        }
       } catch (err) {
         console.error(err);
       }
     }
     load();
+    return () => {
+      active = false;
+    };
   }, []);
 
   const [search, setSearch] = useState("");

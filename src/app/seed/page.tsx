@@ -15,10 +15,10 @@ export default function SeedPage() {
     try {
       const res = await runSeed();
       setResult(res);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setResult({
         success: false,
-        message: err?.message || "Lỗi không xác định khi chạy seed.",
+        message: err instanceof Error ? err.message : "Lỗi không xác định khi chạy seed.",
       });
     } finally {
       setLoading(false);

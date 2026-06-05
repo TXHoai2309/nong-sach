@@ -292,26 +292,6 @@ export default function CheckoutPage() {
       });
     }
 
-    // Keep the old localStorage logic for compatibility with the success page if needed, 
-    // but update it to use the first subOrderId
-    const firstSubOrderId = sellerIds.length > 1 ? `${orderIdBase}-1` : orderIdBase;
-    const orderDetails = {
-      orderId: firstSubOrderId,
-      name: fullName.trim(),
-      phone: phone.trim(),
-      address: fullAddress,
-      total,
-      paymentMethod,
-      items: items.map((item) => ({
-        productId: item.productId,
-        name: item.name,
-        price: item.price,
-        image: item.image,
-        quantity: item.quantity,
-      })),
-    };
-    localStorage.setItem("nong-sach-last-order", JSON.stringify(orderDetails));
-
     clearCart();
 
     const queryParams = new URLSearchParams({

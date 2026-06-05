@@ -6,26 +6,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { formatCurrency } from "@/lib/format";
 import Breadcrumb from "@/components/layout/Breadcrumb";
-import Container from "@/components/layout/Container";
-import { products } from "@/data/products";
-
-interface StoredOrderItem {
-  productId: string;
-  name: string;
-  price: number;
-  image: string;
-  quantity: number;
-}
-
-interface StoredOrderDetails {
-  orderId: string;
-  name: string;
-  phone: string;
-  address: string;
-  total: number;
-  paymentMethod: string;
-  items: StoredOrderItem[];
-}
+import { getAllProducts } from "@/lib/products";
+import { db } from "@/lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
+import { Order } from "@/types/order";
+import { Product } from "@/types/product";
 
 function SuccessContent() {
   const searchParams = useSearchParams();
@@ -38,22 +23,28 @@ function SuccessContent() {
 
   const [copied, setCopied] = useState(false);
   const [notificationStatus, setNotificationStatus] = useState<"idle" | "enabled" | "dismissed">("idle");
-  const [localOrder, setLocalOrder] = useState<StoredOrderDetails | null>(null);
+  const [order, setOrder] = useState<Order | null>(null);
+  const [recommendedProducts, setRecommendedProducts] = useState<Product[]>([]);
 
-  // Load items from localStorage if orderId matches
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("nong-sach-last-order");
-      if (stored) {
-        const parsed = JSON.parse(stored) as StoredOrderDetails;
-        if (parsed && parsed.orderId === orderId) {
-          const timer = window.setTimeout(() => setLocalOrder(parsed), 0);
-          return () => window.clearTimeout(timer);
-        }
+    let active = true;
+    async function loadSuccessData() {
+      try {
+        const orderSnap = await getDoc(doc(db, "orders", orderId));
+        const loadedOrder = orderSnap.exists() ? (orderSnap.data() as Order) : null;
+        const products = await getAllProducts();
+        if (!active) return;
+        setOrder(loadedOrder);
+        const purchasedIds = new Set(loadedOrder?.items.map((item) => item.productId) ?? []);
+        setRecommendedProducts(products.filter((p) => !purchasedIds.has(p.id)).slice(0, 4));
+      } catch (e) {
+        console.error("Error reading order details from Firestore", e);
       }
-    } catch (e) {
-      console.error("Error reading last order details", e);
     }
+    loadSuccessData();
+    return () => {
+      active = false;
+    };
   }, [orderId]);
 
   // Copy Order ID
@@ -85,14 +76,8 @@ function SuccessContent() {
   };
 
   // Get items list to display
-  const displayItems = localOrder?.items || [];
-  const displayTotal = localOrder?.total ?? totalParam;
-
-  // Filter recommendations (exclude items purchased)
-  const purchasedIds = new Set(displayItems.map((item) => item.productId));
-  const recommendedProducts = products
-    .filter((p) => !purchasedIds.has(p.id))
-    .slice(0, 4);
+  const displayItems = order?.items || [];
+  const displayTotal = order?.totalAmount ?? totalParam;
 
   return (
     <div className="max-w-[860px] mx-auto space-y-8 pb-12">

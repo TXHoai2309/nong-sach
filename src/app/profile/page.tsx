@@ -105,7 +105,8 @@ function ProfileContent() {
     if (tabParam) {
       const validTabs: ProfileTab[] = ["info", "orders", "addresses", "password", "notifications", "seller"];
       if (validTabs.includes(tabParam as ProfileTab)) {
-        setActiveTab(tabParam as ProfileTab);
+        const timer = window.setTimeout(() => setActiveTab(tabParam as ProfileTab), 0);
+        return () => window.clearTimeout(timer);
       }
     }
   }, [tabParam]);

@@ -9,7 +9,6 @@ import { useRouter } from "next/navigation";
 import { formatCurrency } from "@/lib/format";
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import Container from "@/components/layout/Container";
-import { products } from "@/data/products";
 
 export default function CartPage() {
   const router = useRouter();
@@ -113,14 +112,6 @@ export default function CartPage() {
     return "bg-[#f0f3ff] text-primary text-[10px] font-bold px-2 py-0.5 rounded-md border border-[#bbcabf]/30";
   };
 
-  // Mock unit matching
-  const getUnit = (name: string) => {
-    if (name.includes("Rau") || name.includes("Xà lách") || name.includes("Húng")) return "bó";
-    if (name.includes("Gạo") || name.includes("Khoai") || name.includes("Cà chua") || name.includes("Cam") || name.includes("Bưởi") || name.includes("Dưa") || name.includes("Cà rốt")) return "kg";
-    if (name.includes("Chuối")) return "nải";
-    return "hộp";
-  };
-
   return (
     <div className="page-surface min-h-screen py-8">
       <Container>
@@ -146,8 +137,7 @@ export default function CartPage() {
           {/* Left Column: Cart Items List */}
           <div className="space-y-4 lg:col-span-8">
             {items.map((item) => {
-              const productData = products.find((p) => p.id === item.productId);
-              const origin = productData?.origin || "Đà Lạt";
+              const origin = item.shopName || "NôngSạch";
               // Low stock warning (stock <= 5)
               const isLowStock = item.stock <= 5;
 

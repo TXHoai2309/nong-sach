@@ -1,6 +1,6 @@
 import { db } from "@/lib/firebase";
 import { products } from "@/data/products";
-import { STATIC_SHOPS } from "@/lib/shops";
+import { STATIC_SHOPS } from "@/data/shops";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 
 /**
@@ -37,8 +37,9 @@ export async function runSeed(): Promise<{ success: boolean; message: string }> 
     console.log(`Đã seed ${products.length} products.`);
 
     return { success: true, message: "Seed dữ liệu thành công!" };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Lỗi khi chạy seed:", error);
-    return { success: false, message: `Lỗi khi chạy seed: ${error.message || error}` };
+    const message = error instanceof Error ? error.message : String(error);
+    return { success: false, message: `Lỗi khi chạy seed: ${message}` };
   }
 }

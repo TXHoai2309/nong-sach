@@ -14,7 +14,7 @@ interface OrderState {
   fetchOrdersBySellerId: (sellerId: string) => Promise<void>;
 }
 
-export const useOrderStore = create<OrderState>()((set, get) => ({
+export const useOrderStore = create<OrderState>()((set) => ({
   orders: [],
   isLoading: false,
 

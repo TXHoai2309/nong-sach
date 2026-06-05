@@ -10,7 +10,7 @@ import { useCartStore } from "@/store/cart-store";
 import { useAuthStore } from "@/store/auth-store";
 import { formatCurrency } from "@/lib/format";
 import { CATEGORY_LABELS, Product } from "@/types/product";
-import { getShopForProduct } from "@/lib/shops";
+import { getShopForProduct, Shop } from "@/lib/shops";
 import { useReportStore } from "@/store/report-store";
 import { REPORT_REASONS } from "@/types/report";
 
@@ -60,7 +60,25 @@ const defaultSelectedImageSize = { width: 1200, height: 900 };
 export default function ProductDetail({ product, relatedProducts }: ProductDetailProps) {
   const router = useRouter();
   const { currentUser } = useAuthStore();
-  const shop = getShopForProduct(product);
+  const [shop, setShop] = useState<Shop | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    async function loadShop() {
+      try {
+        const resolvedShop = await getShopForProduct(product);
+        if (active) {
+          setShop(resolvedShop);
+        }
+      } catch (err) {
+        console.error("Error loading shop for product:", err);
+      }
+    }
+    loadShop();
+    return () => {
+      active = false;
+    };
+  }, [product]);
   const addToCart = useCartStore((state) => state.addToCart);
   const galleryImages =
     product.images && product.images.length > 0
@@ -422,57 +440,70 @@ export default function ProductDetail({ product, relatedProducts }: ProductDetai
       </div>
 
       {/* Shop Info Banner */}
-      <div className="mb-10 rounded-[1.25rem] border border-outline-variant/30 bg-[#f8fafc] p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full border border-outline-variant/20 shadow-sm bg-white">
-            <Image
-              src={shop.logo}
-              alt={shop.name}
-              fill
-              className="object-cover"
-              sizes="48px"
-            />
+      {shop ? (
+        <div className="mb-10 rounded-[1.25rem] border border-outline-variant/30 bg-[#f8fafc] p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full border border-outline-variant/20 shadow-sm bg-white">
+              <Image
+                src={shop.logo}
+                alt={shop.name}
+                fill
+                className="object-cover"
+                sizes="48px"
+              />
+            </div>
+            <div>
+              <div className="flex items-center flex-wrap gap-2">
+                <Link href={`/shop/${shop.id}`} className="text-base font-bold text-on-surface hover:text-primary transition-colors">
+                  {shop.name}
+                </Link>
+                {shop.verified && (
+                  <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
+                    <span className="material-symbols-outlined text-[10px] font-bold text-emerald-600 [font-variation-settings:'FILL'_1]">check_circle</span>
+                    Đã xác minh
+                  </span>
+                )}
+              </div>
+              
+              <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs font-semibold text-on-surface-variant/80">
+                <div className="flex items-center gap-0.5 text-[#FFB800]">
+                  <span className="material-symbols-outlined text-[14px] [font-variation-settings:'FILL'_1]">star</span>
+                  <span className="text-on-surface font-bold">{shop.rating}</span>
+                </div>
+                <span className="text-on-surface-variant/40">•</span>
+                <span>{shop.reviewCount} đánh giá</span>
+                <span className="text-on-surface-variant/40">•</span>
+                <span>{shop.productCount} sản phẩm</span>
+                <span className="text-on-surface-variant/40">•</span>
+                <div className="flex items-center gap-0.5">
+                  <span className="material-symbols-outlined text-[14px] text-red-500">location_on</span>
+                  <span>{shop.location}</span>
+                </div>
+              </div>
+            </div>
           </div>
-          <div>
-            <div className="flex items-center flex-wrap gap-2">
-              <Link href={`/shop/${shop.id}`} className="text-base font-bold text-on-surface hover:text-primary transition-colors">
-                {shop.name}
-              </Link>
-              {shop.verified && (
-                <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
-                  <span className="material-symbols-outlined text-[10px] font-bold text-emerald-600 [font-variation-settings:'FILL'_1]">check_circle</span>
-                  Đã xác minh
-                </span>
-              )}
-            </div>
-            
-            <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs font-semibold text-on-surface-variant/80">
-              <div className="flex items-center gap-0.5 text-[#FFB800]">
-                <span className="material-symbols-outlined text-[14px] [font-variation-settings:'FILL'_1]">star</span>
-                <span className="text-on-surface font-bold">{shop.rating}</span>
-              </div>
-              <span className="text-on-surface-variant/40">•</span>
-              <span>{shop.reviewCount} đánh giá</span>
-              <span className="text-on-surface-variant/40">•</span>
-              <span>{shop.productCount} sản phẩm</span>
-              <span className="text-on-surface-variant/40">•</span>
-              <div className="flex items-center gap-0.5">
-                <span className="material-symbols-outlined text-[14px] text-red-500">location_on</span>
-                <span>{shop.location}</span>
-              </div>
-            </div>
+          
+          <div className="shrink-0 flex items-center">
+            <Link
+              href={`/shop/${shop.id}`}
+              className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl border border-primary px-5 py-2.5 text-xs font-bold text-primary transition-all hover:bg-primary/5 active:scale-[0.98]"
+            >
+              Xem shop →
+            </Link>
           </div>
         </div>
-        
-        <div className="shrink-0 flex items-center">
-          <Link
-            href={`/shop/${shop.id}`}
-            className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl border border-primary px-5 py-2.5 text-xs font-bold text-primary transition-all hover:bg-primary/5 active:scale-[0.98]"
-          >
-            Xem shop →
-          </Link>
+      ) : (
+        <div className="mb-10 rounded-[1.25rem] border border-outline-variant/30 bg-[#f8fafc] p-5 flex items-center justify-between gap-4 animate-pulse">
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 rounded-full bg-slate-200" />
+            <div className="space-y-2">
+              <div className="h-4 w-32 bg-slate-200 rounded" />
+              <div className="h-3 w-48 bg-slate-200 rounded" />
+            </div>
+          </div>
+          <div className="h-8 w-20 bg-slate-200 rounded-xl" />
         </div>
-      </div>
+      )}
 
       <section className="mt-10">
         <div className="mb-7 flex gap-8 overflow-x-auto border-b border-outline-variant/30">
