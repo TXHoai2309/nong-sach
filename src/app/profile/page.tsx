@@ -76,14 +76,51 @@ export default function ProfilePage() {
     updateAddress,
     deleteAddress,
     setDefaultAddress,
+    registerSeller,
+    approveSeller,
   } = useAuthStore();
   const { addToCart } = useCartStore();
 
   // Navigation tab
-  const [activeTab, setActiveTab] = useState<"info" | "orders" | "addresses" | "password" | "notifications">("info");
+  const [activeTab, setActiveTab] = useState<"info" | "orders" | "addresses" | "password" | "notifications" | "seller">("info");
 
   // Notifications/Toasts
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  // Seller registration form state
+  const [shopName, setShopName] = useState("");
+  const [shopSlogan, setShopSlogan] = useState("");
+  const [shopPhone, setShopPhone] = useState("");
+  const [shopZalo, setShopZalo] = useState("");
+  const [isZaloSame, setIsZaloSame] = useState(false);
+  const [shopDescription, setShopDescription] = useState("");
+  const [shopLogo, setShopLogo] = useState<string | null>(null);
+  const [farmImages, setFarmImages] = useState<string[]>([]);
+  const [selectedMainCategories, setSelectedMainCategories] = useState<string[]>([]);
+  const [farmProvinceCode, setFarmProvinceCode] = useState<number | "">("");
+  const [farmAddress, setFarmAddress] = useState("");
+  const [selectedStandards, setSelectedStandards] = useState<string[]>([]);
+  const [standardsDetail, setStandardsDetail] = useState("");
+  const [idCardNumber, setIdCardNumber] = useState("");
+  const [idCardFront, setIdCardFront] = useState<string | null>(null);
+  const [idCardBack, setIdCardBack] = useState<string | null>(null);
+  const [bankName, setBankName] = useState("Vietcombank");
+  const [bankAccountNumber, setBankAccountNumber] = useState("");
+  const [bankAccountName, setBankAccountName] = useState("");
+
+  // Seller Dashboard products list
+  const [shopProducts, setShopProducts] = useState<any[]>([]);
+  const [isAddProductOpen, setIsAddProductOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<any | null>(null);
+  const [newProdName, setNewProdName] = useState("");
+  const [newProdCategory, setNewProdCategory] = useState("vegetables");
+  const [newProdPrice, setNewProdPrice] = useState("");
+  const [newProdUnit, setNewProdUnit] = useState("kg");
+  const [newProdStock, setNewProdStock] = useState("");
+  const [newProdOrigin, setNewProdOrigin] = useState("");
+  const [newProdDescription, setNewProdDescription] = useState("");
+  const [newProdImage, setNewProdImage] = useState("");
+  const [newProdImages, setNewProdImages] = useState<string[]>([]);
 
   // Profile Form State
   const [fullName, setFullName] = useState("");
@@ -225,6 +262,388 @@ export default function ProfilePage() {
       setOrders(userOrders);
     }
   }, [mounted, currentUser]);
+
+  // Copy phone number to Zalo if checkbox is selected
+  useEffect(() => {
+    if (isZaloSame) {
+      setShopZalo(shopPhone);
+    }
+  }, [isZaloSame, shopPhone]);
+
+  // Load custom products for this seller
+  useEffect(() => {
+    if (!mounted || !currentUser) return;
+    const stored = localStorage.getItem("nong-sach-custom-products");
+    if (stored) {
+      try {
+        const list = JSON.parse(stored);
+        const filteredList = list.filter((p: any) => p.sellerId === currentUser.id);
+        setShopProducts(filteredList);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, [mounted, currentUser, activeTab]);
+
+  // Image compression helper
+  const compressImage = (
+    base64Str: string,
+    maxWidth = 300,
+    maxHeight = 300,
+    quality = 0.7,
+    outputType = "image/jpeg"
+  ): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new window.Image();
+      img.src = base64Str;
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = "high";
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL(outputType, quality));
+        } else {
+          resolve(base64Str);
+        }
+      };
+      img.onerror = () => {
+        resolve(base64Str);
+      };
+    });
+  };
+
+  const readFileAsDataUrl = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => reject(new Error("Khong the doc anh tai len"));
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const getImageDimensions = (src: string): Promise<{ width: number; height: number }> => {
+    return new Promise((resolve, reject) => {
+      const img = new window.Image();
+      img.onload = () => {
+        resolve({
+          width: img.naturalWidth || img.width,
+          height: img.naturalHeight || img.height,
+        });
+      };
+      img.onerror = () => reject(new Error("Khong the lay kich thuoc anh"));
+      img.src = src;
+    });
+  };
+
+  const processProductImage = async (file: File): Promise<string> => {
+    const originalBase64 = await readFileAsDataUrl(file);
+    const { width, height } = await getImageDimensions(originalBase64);
+
+    if (width < 900 || height < 900) {
+      showToast(
+        `Anh ${width}x${height} kha nho. Trang chi tiet se giu dung kich thuoc goc de tranh bi mo.`,
+        "error"
+      );
+    }
+
+    const shouldCompress = file.size > 350 * 1024 || width > 2000 || height > 2000;
+    if (!shouldCompress) {
+      return originalBase64;
+    }
+
+    return compressImage(originalBase64, 2000, 2000, 0.96, "image/webp");
+  };
+
+  // Upload Handlers
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const compressed = await compressImage(reader.result as string, 200, 200);
+        setShopLogo(compressed);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleFarmImagesUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      Array.from(files).forEach((file) => {
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+          const compressed = await compressImage(reader.result as string, 400, 400);
+          setFarmImages((prev) => [...prev, compressed]);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  };
+
+  const handleIdFrontUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const compressed = await compressImage(reader.result as string, 400, 400);
+        setIdCardFront(compressed);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleIdBackUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const compressed = await compressImage(reader.result as string, 400, 400);
+        setIdCardBack(compressed);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleProductImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      void (async () => {
+        try {
+          const finalImage = await processProductImage(file);
+          setNewProdImage(finalImage);
+        } catch {
+          showToast("Khong the xu ly anh san pham nay", "error");
+        }
+      })();
+    }
+    e.target.value = "";
+  };
+
+  const handleProductMultipleImagesUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const remainingCount = 6 - newProdImages.length;
+      if (remainingCount <= 0) {
+        showToast("Tối đa chỉ được tải lên 6 ảnh sản phẩm", "error");
+        return;
+      }
+      
+      const filesArray = Array.from(files).slice(0, remainingCount);
+      void (async () => {
+        for (const file of filesArray) {
+          try {
+            const finalImage = await processProductImage(file);
+            setNewProdImages((prev) => {
+              if (prev.length >= 6) return prev;
+              if (prev.length === 0) {
+                setNewProdImage(finalImage);
+              }
+              return [...prev, finalImage];
+            });
+          } catch {
+            showToast("Co 1 anh khong xu ly duoc va da bi bo qua", "error");
+          }
+        }
+      })();
+    }
+    e.target.value = "";
+  };
+
+  const handleRegisterSellerSubmit = (e: FormEvent) => {
+    e.preventDefault();
+
+    if (!shopName.trim()) {
+      showToast("Vui lòng nhập tên shop", "error");
+      return;
+    }
+    if (!shopPhone.trim() || !/^0\d{9}$/.test(shopPhone.trim().replace(/\s+/g, ""))) {
+      showToast("Số điện thoại shop không hợp lệ", "error");
+      return;
+    }
+    if (!shopZalo.trim() || !/^0\d{9}$/.test(shopZalo.trim().replace(/\s+/g, ""))) {
+      showToast("Số Zalo không hợp lệ", "error");
+      return;
+    }
+    if (!shopDescription.trim()) {
+      showToast("Vui lòng nhập giới thiệu shop", "error");
+      return;
+    }
+    if (selectedMainCategories.length === 0) {
+      showToast("Vui lòng chọn ít nhất một loại nông sản chủ đạo", "error");
+      return;
+    }
+    if (!farmProvinceCode) {
+      showToast("Vui lòng chọn Tỉnh/Thành phố trang trại", "error");
+      return;
+    }
+    if (!farmAddress.trim()) {
+      showToast("Vui lòng nhập địa chỉ cụ thể của trang trại", "error");
+      return;
+    }
+    if (!idCardNumber.trim() || !/^\d{9,12}$/.test(idCardNumber.trim())) {
+      showToast("Số CCCD/CMND không hợp lệ (phải gồm 9 hoặc 12 chữ số)", "error");
+      return;
+    }
+    if (!bankAccountNumber.trim()) {
+      showToast("Vui lòng nhập số tài khoản ngân hàng", "error");
+      return;
+    }
+    if (!bankAccountName.trim()) {
+      showToast("Vui lòng nhập tên chủ tài khoản", "error");
+      return;
+    }
+
+    const selectedProv = provinces.find((p) => p.code === Number(farmProvinceCode));
+
+    registerSeller({
+      shopName: shopName.trim(),
+      slogan: shopSlogan.trim(),
+      shopPhone: shopPhone.trim(),
+      shopZalo: shopZalo.trim(),
+      description: shopDescription.trim(),
+      shopLogo: shopLogo || undefined,
+      farmImages: farmImages.length > 0 ? farmImages : undefined,
+      mainCategories: selectedMainCategories,
+      province: selectedProv?.name || "Lâm Đồng",
+      farmAddress: farmAddress.trim(),
+      farmingStandards: selectedStandards,
+      farmingStandardsDetail: standardsDetail.trim() || undefined,
+      idCardNumber: idCardNumber.trim(),
+      idCardFront: idCardFront || undefined,
+      idCardBack: idCardBack || undefined,
+      bankName,
+      bankAccountNumber: bankAccountNumber.trim(),
+      bankAccountName: bankAccountName.trim().toUpperCase(),
+    });
+
+    showToast("Gửi hồ sơ đăng ký thành công!");
+  };
+
+  const closeProductModal = () => {
+    setIsAddProductOpen(false);
+    setEditingProduct(null);
+    setNewProdName("");
+    setNewProdCategory("vegetables");
+    setNewProdPrice("");
+    setNewProdUnit("kg");
+    setNewProdStock("");
+    setNewProdOrigin("");
+    setNewProdDescription("");
+    setNewProdImage("");
+    setNewProdImages([]);
+  };
+
+  const handleEditProduct = (p: any) => {
+    setEditingProduct(p);
+    setNewProdName(p.name);
+    setNewProdCategory(p.category);
+    setNewProdPrice(p.price.toString());
+    setNewProdUnit(p.unit || "kg");
+    setNewProdStock(p.stock.toString());
+    setNewProdOrigin(p.origin);
+    setNewProdDescription(p.description || "");
+    setNewProdImage(p.image || "");
+    setNewProdImages(p.images || (p.image ? [p.image] : []));
+    setIsAddProductOpen(true);
+  };
+
+  const handleDeleteProduct = (productId: string) => {
+    if (confirm("Bạn có chắc chắn muốn xóa sản phẩm này không? Hành động này không thể hoàn tác.")) {
+      try {
+        const stored = localStorage.getItem("nong-sach-custom-products");
+        if (stored) {
+          const list = JSON.parse(stored);
+          const updated = list.filter((p: any) => p.id !== productId);
+          localStorage.setItem("nong-sach-custom-products", JSON.stringify(updated));
+          setShopProducts((prev) => prev.filter((p) => p.id !== productId));
+          showToast("Đã xóa sản phẩm thành công!");
+        }
+      } catch (err) {
+        showToast("Đã có lỗi xảy ra khi xóa sản phẩm", "error");
+      }
+    }
+  };
+
+  const handleAddProductSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!currentUser) return;
+    if (!newProdName.trim()) {
+      showToast("Vui lòng nhập tên sản phẩm", "error");
+      return;
+    }
+    if (!newProdPrice || Number(newProdPrice) <= 0) {
+      showToast("Giá sản phẩm phải lớn hơn 0", "error");
+      return;
+    }
+    if (!newProdStock || Number(newProdStock) < 0) {
+      showToast("Số lượng tồn kho không hợp lệ", "error");
+      return;
+    }
+    if (!newProdOrigin.trim()) {
+      showToast("Vui lòng nhập nguồn gốc sản phẩm", "error");
+      return;
+    }
+
+    const updatedImages = newProdImages.length > 0 ? newProdImages : (newProdImage ? [newProdImage] : []);
+    const mainImage = newProdImage || (updatedImages.length > 0 ? updatedImages[0] : "https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?w=600&h=600&fit=crop");
+
+    const productData = {
+      id: editingProduct ? editingProduct.id : "prod-custom-" + Date.now(),
+      name: newProdName.trim(),
+      category: newProdCategory,
+      price: Number(newProdPrice),
+      image: mainImage,
+      images: updatedImages,
+      description: newProdDescription.trim() || "Sản phẩm sạch từ trang trại đối tác NôngSạch.",
+      origin: newProdOrigin.trim(),
+      stock: Number(newProdStock),
+      unit: newProdUnit.trim() || "kg",
+      sellerId: currentUser.id,
+      shopName: currentUser.sellerInfo?.shopName || "Trang trại của tôi",
+      isOrganic: selectedStandards.includes("Hữu cơ (Organic)"),
+    };
+
+    try {
+      const stored = localStorage.getItem("nong-sach-custom-products");
+      let list = stored ? JSON.parse(stored) : [];
+
+      if (editingProduct) {
+        list = list.map((p: any) => p.id === editingProduct.id ? productData : p);
+        localStorage.setItem("nong-sach-custom-products", JSON.stringify(list));
+        setShopProducts((prev) => prev.map((p) => p.id === editingProduct.id ? productData : p));
+        showToast("Cập nhật sản phẩm thành công!");
+      } else {
+        list.push(productData);
+        localStorage.setItem("nong-sach-custom-products", JSON.stringify(list));
+        setShopProducts((prev) => [...prev, productData]);
+        showToast("Đăng sản phẩm mới thành công!");
+      }
+
+      closeProductModal();
+    } catch (err) {
+      showToast("Đã có lỗi xảy ra khi lưu sản phẩm", "error");
+    }
+  };
 
   if (!mounted || !currentUser) {
     return (
@@ -438,7 +857,7 @@ export default function ProfilePage() {
         {/* Outer Layout Grid */}
         <div className="flex flex-col gap-6 md:flex-row md:items-start">
           {/* Left Sidebar */}
-          <aside className="w-full shrink-0 md:w-[260px] lg:w-[280px]">
+          <aside className="w-full shrink-0 md:w-[260px] lg:w-[280px] md:sticky md:top-24">
             {/* User Profile Header Box */}
             <section className="mb-4 rounded-3xl border border-[#bbcabf]/30 bg-white p-5 shadow-sm">
               <div className="flex items-center gap-4">
@@ -458,44 +877,71 @@ export default function ProfilePage() {
                 </div>
               </div>
             </section>
-
             {/* Sidebar Navigation */}
             <nav className="rounded-3xl border border-[#bbcabf]/30 bg-white p-2 shadow-sm" aria-label="Menu tài khoản">
               <ul className="space-y-1">
-                {[
-                  { id: "info", label: "Thông tin cá nhân", icon: "person" },
-                  { id: "orders", label: "Đơn hàng của tôi", icon: "shopping_bag" },
-                  { id: "addresses", label: "Địa chỉ giao hàng", icon: "location_on" },
-                  { id: "password", label: "Đổi mật khẩu", icon: "lock" },
-                  { id: "notifications", label: "Thông báo", icon: "notifications" },
-                ].map((item) => {
-                  const isActive = activeTab === item.id;
-                  return (
-                    <li key={item.id}>
-                      <button
-                        onClick={() => {
-                          setActiveTab(item.id as any);
-                          setIsAddressFormOpen(false);
-                        }}
-                        className={`flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left text-sm transition-all ${
-                          isActive
-                            ? "bg-[#e6f4ea] font-bold text-[#006c49]"
-                            : "text-[#3c4a42] hover:bg-[#10b981]/5 font-medium"
-                        }`}
-                      >
-                        <span className="flex items-center gap-3">
-                          <span className={`material-symbols-outlined text-[20px] ${isActive ? "text-[#006c49]" : "text-[#3c4a42]/70"}`}>
-                            {item.icon}
+                {(() => {
+                  const menuItems = [
+                    { id: "info", label: "Thông tin cá nhân", icon: "person" },
+                    { id: "orders", label: "Đơn hàng của tôi", icon: "shopping_bag" },
+                    { id: "addresses", label: "Địa chỉ giao hàng", icon: "location_on" },
+                    { id: "password", label: "Đổi mật khẩu", icon: "lock" },
+                    { id: "notifications", label: "Thông báo", icon: "notifications" },
+                  ];
+
+                  let sellerLabel = "Đăng ký bán hàng";
+                  let sellerIcon = "storefront";
+                  if (currentUser.role === "seller") {
+                    sellerLabel = "Kênh người bán";
+                    sellerIcon = "store";
+                  } else if (currentUser.sellerStatus === "pending") {
+                    sellerLabel = "Đăng ký bán hàng";
+                  }
+
+                  menuItems.push({ id: "seller", label: sellerLabel, icon: sellerIcon });
+
+                  return menuItems.map((item) => {
+                    const isActive = activeTab === item.id;
+                    
+                    let btnClass = "text-[#3c4a42] hover:bg-[#10b981]/5 font-medium";
+                    let iconClass = "text-[#3c4a42]/70";
+                    let chevronClass = "text-[#3c4a42]/40";
+                    
+                    if (isActive) {
+                      if (item.id === "seller") {
+                        btnClass = "bg-[#006c49] font-bold text-white shadow-sm";
+                        iconClass = "text-white";
+                        chevronClass = "text-white/70";
+                      } else {
+                        btnClass = "bg-[#e6f4ea] font-bold text-[#006c49]";
+                        iconClass = "text-[#006c49]";
+                        chevronClass = "text-[#006c49]/60";
+                      }
+                    }
+
+                    return (
+                      <li key={item.id}>
+                        <button
+                          onClick={() => {
+                            setActiveTab(item.id as any);
+                            setIsAddressFormOpen(false);
+                          }}
+                          className={`flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left text-sm transition-all ${btnClass}`}
+                        >
+                          <span className="flex items-center gap-3">
+                            <span className={`material-symbols-outlined text-[20px] ${iconClass}`}>
+                              {item.icon}
+                            </span>
+                            {item.label}
                           </span>
-                          {item.label}
-                        </span>
-                        <span className="material-symbols-outlined text-sm text-[#3c4a42]/40">
-                          chevron_right
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })}
+                          <span className={`material-symbols-outlined text-sm ${chevronClass}`}>
+                            chevron_right
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  });
+                })()}
                 <li>
                   <button
                     onClick={() => {
@@ -512,6 +958,24 @@ export default function ProfilePage() {
                 </li>
               </ul>
             </nav>
+
+            {/* Promo Card: Trở thành đối tác */}
+            <div className="mt-4 rounded-3xl bg-[#00422b] p-6 text-white text-center shadow-sm relative overflow-hidden">
+              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/leaves.png')] opacity-5 pointer-events-none" />
+              <h4 className="text-sm font-bold mb-2">Trở thành đối tác</h4>
+              <p className="text-[11px] opacity-80 leading-relaxed mb-4">
+                Cùng NôngSạch mang sản phẩm hữu cơ tốt nhất đến tay người tiêu dùng.
+              </p>
+              <button 
+                type="button"
+                onClick={() => {
+                  router.push("/contact?subject=cooperate");
+                }}
+                className="w-full rounded-2xl border border-white/50 py-2.5 text-xs font-semibold text-white hover:bg-white/10 transition-all text-center"
+              >
+                Hỗ trợ đối tác
+              </button>
+            </div>
           </aside>
 
           {/* Right Main viewport content */}
@@ -1134,6 +1598,899 @@ export default function ProfilePage() {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* 6. SELLER REGISTRATION & CHANNEL TAB */}
+            {activeTab === "seller" && (
+              <div className="space-y-6">
+                {/* Steps indicator */}
+                {currentUser.role !== "seller" && (
+                  <div className="mb-6 flex justify-center gap-2 sm:gap-4 rounded-2xl bg-gray-100 p-1.5 text-xs font-bold w-fit mx-auto">
+                    <span className={`rounded-xl px-4 py-2 transition-all ${
+                      !currentUser.sellerStatus 
+                        ? "bg-[#006c49] text-white shadow-sm" 
+                        : "text-gray-500 bg-transparent"
+                    }`}>
+                      State 1: Form
+                    </span>
+                    <span className={`rounded-xl px-4 py-2 transition-all ${
+                      currentUser.sellerStatus === "pending"
+                        ? "bg-amber-500 text-white shadow-sm animate-pulse"
+                        : "text-gray-500 bg-transparent"
+                    }`}>
+                      State 2: Pending
+                    </span>
+                    <span className="rounded-xl px-4 py-2 transition-all text-gray-500 bg-transparent">
+                      State 3: Verified
+                    </span>
+                  </div>
+                )}
+
+                {/* State 1: Form UI */}
+                {!currentUser.sellerStatus && (
+                  <div>
+                    {/* Header Banner */}
+                    <div className="mb-6 text-center sm:text-left">
+                      <h3 className="text-xl font-extrabold text-[#006c49]">Đăng ký bán hàng</h3>
+                      <p className="text-xs text-[#3c4a42]/70 mt-1">Bổ sung thông tin để trở thành đối tác của NôngSạch</p>
+                    </div>
+
+                    {/* Three Feature Cards */}
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-6">
+                      <div className="flex flex-col items-center justify-center rounded-2xl bg-[#f0f3ff] p-5 text-center border border-[#bbcabf]/20 shadow-sm">
+                        <span className="text-3xl mb-2">💰</span>
+                        <span className="text-xs font-bold text-[#006c49]">Không phí đăng ký</span>
+                      </div>
+                      <div className="flex flex-col items-center justify-center rounded-2xl bg-[#f0f3ff] p-5 text-center border border-[#bbcabf]/20 shadow-sm">
+                        <span className="text-3xl mb-2">🚚</span>
+                        <span className="text-xs font-bold text-[#006c49]">NôngSạch lo vận chuyển</span>
+                      </div>
+                      <div className="flex flex-col items-center justify-center rounded-2xl bg-[#f0f3ff] p-5 text-center border border-[#bbcabf]/20 shadow-sm">
+                        <span className="text-3xl mb-2">⭐</span>
+                        <span className="text-xs font-bold text-[#006c49]">Thu nhập minh bạch</span>
+                      </div>
+                    </div>
+
+                    <form onSubmit={handleRegisterSellerSubmit} className="space-y-6">
+                      {/* Section 1: Thông tin cửa hàng */}
+                      <section className="rounded-3xl border border-[#bbcabf]/30 bg-white p-6 shadow-sm">
+                        <h4 className="mb-5 text-sm font-bold text-[#006c49] flex items-center gap-2">
+                          <span className="material-symbols-outlined text-base">storefront</span>
+                          Thông tin cửa hàng
+                        </h4>
+
+                        {/* Logo upload */}
+                        <div className="flex flex-col items-center justify-center mb-6">
+                          <label className="flex h-24 w-24 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#bbcabf]/50 bg-gray-50/50 hover:bg-gray-50 transition-all overflow-hidden relative">
+                            {shopLogo ? (
+                              <img src={shopLogo} alt="Logo preview" className="h-full w-full object-cover" />
+                            ) : (
+                              <>
+                                <span className="material-symbols-outlined text-[28px] text-[#3c4a42]/40">image</span>
+                                <span className="text-[10px] font-bold text-[#3c4a42]/60 mt-1">Tải ảnh đại diện</span>
+                              </>
+                            )}
+                            <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
+                          </label>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          {/* Shop Name */}
+                          <div>
+                            <label className="block text-[11px] font-bold text-[#3c4a42]/70 mb-1.5">
+                              Tên shop *
+                            </label>
+                            <input
+                              type="text"
+                              value={shopName}
+                              onChange={(e) => setShopName(e.target.value)}
+                              placeholder="Ví dụ: Farm Tươi Mỗi Ngày"
+                              className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-3 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                              required
+                            />
+                          </div>
+                          {/* Slogan */}
+                          <div>
+                            <label className="block text-[11px] font-bold text-[#3c4a42]/70 mb-1.5">
+                              Slogan
+                            </label>
+                            <input
+                              type="text"
+                              value={shopSlogan}
+                              onChange={(e) => setShopSlogan(e.target.value)}
+                              placeholder="Slogan của cửa hàng..."
+                              className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-3 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mt-4">
+                          {/* Shop Phone */}
+                          <div>
+                            <label className="block text-[11px] font-bold text-[#3c4a42]/70 mb-1.5">
+                              Số điện thoại *
+                            </label>
+                            <input
+                              type="tel"
+                              value={shopPhone}
+                              onChange={(e) => setShopPhone(e.target.value)}
+                              placeholder="09xx xxx xxx"
+                              className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-3 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                              required
+                            />
+                          </div>
+                          {/* Shop Zalo */}
+                          <div>
+                            <div className="flex justify-between items-center mb-1.5">
+                              <label className="block text-[11px] font-bold text-[#3c4a42]/70">
+                                Số Zalo *
+                              </label>
+                              <label className="flex items-center gap-1.5 cursor-pointer text-[10px] text-[#3c4a42]/60 font-semibold">
+                                <input
+                                  type="checkbox"
+                                  checked={isZaloSame}
+                                  onChange={(e) => setIsZaloSame(e.target.checked)}
+                                  className="h-3 w-3 rounded text-[#006c49] focus:ring-[#006c49]"
+                                />
+                                Giống số điện thoại
+                              </label>
+                            </div>
+                            <input
+                              type="tel"
+                              value={shopZalo}
+                              onChange={(e) => setShopZalo(e.target.value)}
+                              placeholder="09xx xxx xxx"
+                              disabled={isZaloSame}
+                              className={`w-full rounded-xl border-none px-3.5 py-3 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49] ${
+                                isZaloSame ? "bg-[#eef2f6] text-[#3c4a42]/60 cursor-not-allowed" : "bg-[#f4f6fa]"
+                              }`}
+                              required
+                            />
+                          </div>
+                        </div>
+
+                        {/* Shop Description */}
+                        <div className="mt-4">
+                          <label className="block text-[11px] font-bold text-[#3c4a42]/70 mb-1.5">
+                            Giới thiệu shop *
+                          </label>
+                          <textarea
+                            value={shopDescription}
+                            onChange={(e) => setShopDescription(e.target.value)}
+                            placeholder="Chia sẻ câu chuyện và cam kết chất lượng của bạn..."
+                            rows={4}
+                            className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-3 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                            required
+                          />
+                        </div>
+
+                        {/* Farm photos */}
+                        <div className="mt-4">
+                          <label className="block text-[11px] font-bold text-[#3c4a42]/70 mb-1.5">
+                            Ảnh thực tế trong trang trại *
+                          </label>
+                          <div className="flex flex-wrap gap-3 items-center">
+                            <label className="flex h-16 w-16 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#bbcabf]/50 bg-gray-50/50 hover:bg-gray-50 transition-all text-gray-400">
+                              <span className="material-symbols-outlined text-lg">add_a_photo</span>
+                              <span className="text-[8px] font-bold mt-0.5">+ Thêm ảnh</span>
+                              <input type="file" multiple accept="image/*" onChange={handleFarmImagesUpload} className="hidden" />
+                            </label>
+
+                            {farmImages.map((img, idx) => (
+                              <div key={idx} className="relative h-16 w-16 rounded-xl overflow-hidden border border-[#bbcabf]/20">
+                                <img src={img} alt="Farm preview" className="h-full w-full object-cover" />
+                                <button
+                                  type="button"
+                                  onClick={() => setFarmImages((prev) => prev.filter((_, i) => i !== idx))}
+                                  className="absolute top-0.5 right-0.5 h-4.5 w-4.5 rounded-full bg-red-500 text-white flex items-center justify-center text-[10px] hover:bg-red-600 transition"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                          <p className="text-[10px] text-[#006c49] font-medium mt-2">
+                            Để đảm bảo độ tin cậy cao, vui lòng đăng ảnh thực tế của trang trại, không đăng ảnh trên mạng.
+                          </p>
+                        </div>
+                      </section>
+
+                      {/* Section 2: Thông tin trang trại */}
+                      <section className="rounded-3xl border border-[#bbcabf]/30 bg-white p-6 shadow-sm">
+                        <h4 className="mb-5 text-sm font-bold text-[#006c49] flex items-center gap-2">
+                          <span className="material-symbols-outlined text-base">eco</span>
+                          Thông tin trang trại
+                        </h4>
+
+                        {/* Main category selection */}
+                        <div className="mb-4">
+                          <span className="block text-[11px] font-bold text-[#3c4a42]/70 mb-2">Loại nông sản chủ đạo</span>
+                          <div className="flex flex-wrap gap-2">
+                            {[
+                              { id: "vegetables", label: "Rau củ" },
+                              { id: "fruits", label: "Trái cây" },
+                              { id: "grains", label: "Ngũ cốc" },
+                              { id: "herbs", label: "Thảo mộc" },
+                              { id: "other", label: "Khác" }
+                            ].map((cat) => {
+                              const isSelected = selectedMainCategories.includes(cat.label);
+                              return (
+                                <button
+                                  key={cat.id}
+                                  type="button"
+                                  onClick={() => {
+                                    if (isSelected) {
+                                      setSelectedMainCategories((prev) => prev.filter((c) => c !== cat.label));
+                                    } else {
+                                      setSelectedMainCategories((prev) => [...prev, cat.label]);
+                                    }
+                                  }}
+                                  className={`rounded-full px-4 py-1.5 text-xs font-bold border transition-all duration-200 ${
+                                    isSelected
+                                      ? "bg-[#e6f4ea] border-[#006c49] text-[#006c49] shadow-sm"
+                                      : "bg-white border-[#bbcabf]/50 text-[#3c4a42] hover:bg-gray-50"
+                                  }`}
+                                >
+                                  {cat.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mt-4">
+                          {/* Province select */}
+                          <div>
+                            <label className="block text-[11px] font-bold text-[#3c4a42]/70 mb-1.5">
+                              Tỉnh / Thành phố
+                            </label>
+                            <select
+                              value={farmProvinceCode}
+                              onChange={(e) => setFarmProvinceCode(Number(e.target.value))}
+                              className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-3 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                              required
+                            >
+                              <option value="">Chọn Tỉnh/Thành phố</option>
+                              {provinces.map((prov) => (
+                                <option key={prov.code} value={prov.code}>
+                                  {prov.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          {/* Specific farm address */}
+                          <div>
+                            <label className="block text-[11px] font-bold text-[#3c4a42]/70 mb-1.5">
+                              Địa chỉ cụ thể trang trại
+                            </label>
+                            <input
+                              type="text"
+                              value={farmAddress}
+                              onChange={(e) => setFarmAddress(e.target.value)}
+                              placeholder="Số nhà, đường, xã/phường..."
+                              className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-3 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                              required
+                            />
+                          </div>
+                        </div>
+
+                        {/* Farming standards checkboxes */}
+                        <div className="mt-4">
+                          <span className="block text-[11px] font-bold text-[#3c4a42]/70 mb-2">Tiêu chuẩn canh tác</span>
+                          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                            {["VietGAP", "GlobalGAP", "Hữu cơ (Organic)", "Chưa có", "Khác"].map((std) => {
+                              const isChecked = selectedStandards.includes(std);
+                              return (
+                                <label key={std} className="flex items-center gap-2 cursor-pointer text-xs text-[#3c4a42] font-semibold">
+                                  <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    onChange={(e) => {
+                                      if (e.target.checked) {
+                                        setSelectedStandards((prev) => [...prev, std]);
+                                      } else {
+                                        setSelectedStandards((prev) => prev.filter((s) => s !== std));
+                                      }
+                                    }}
+                                    className="h-4.5 w-4.5 rounded text-[#006c49] focus:ring-[#006c49]"
+                                  />
+                                  {std}
+                                </label>
+                              );
+                            })}
+                          </div>
+
+                          <div className="mt-3">
+                            <input
+                              type="text"
+                              value={standardsDetail}
+                              onChange={(e) => setStandardsDetail(e.target.value)}
+                              placeholder="Vui lòng ghi rõ thông tin chi tiết tiêu chuẩn khác..."
+                              className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-3 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                            />
+                          </div>
+                        </div>
+                      </section>
+
+                      {/* Section 3: Xác minh danh tính */}
+                      <section className="rounded-3xl border border-[#bbcabf]/30 bg-white p-6 shadow-sm">
+                        <h4 className="mb-1 text-sm font-bold text-[#006c49] flex items-center gap-2">
+                          <span className="material-symbols-outlined text-base">verified_user</span>
+                          Xác minh danh tính
+                        </h4>
+                        <p className="text-[10px] text-[#3c4a42]/60 mb-5 font-semibold">Thông tin chỉ dùng để xác minh, không hiển thị công khai</p>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-[#3c4a42]/70 mb-1.5">
+                            Số CCCD / CMND *
+                          </label>
+                          <input
+                            type="text"
+                            value={idCardNumber}
+                            onChange={(e) => setIdCardNumber(e.target.value)}
+                            placeholder="Nhập số định danh..."
+                            className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-3 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                            required
+                          />
+                        </div>
+
+                        {/* ID Photos */}
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mt-4">
+                          <div>
+                            <span className="block text-[11px] font-bold text-[#3c4a42]/70 mb-1.5">Mặt trước CCCD *</span>
+                            <label className="flex h-28 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#bbcabf]/50 bg-gray-50/50 hover:bg-gray-50 transition-all overflow-hidden relative">
+                              {idCardFront ? (
+                                <img src={idCardFront} alt="CCCD Front preview" className="h-full w-full object-cover" />
+                              ) : (
+                                <>
+                                  <span className="material-symbols-outlined text-[24px] text-gray-400">photo_camera</span>
+                                  <span className="text-[10px] font-bold text-gray-500 mt-1">Tải lên mặt trước</span>
+                                </>
+                              )}
+                              <input type="file" accept="image/*" onChange={handleIdFrontUpload} className="hidden" />
+                            </label>
+                          </div>
+                          <div>
+                            <span className="block text-[11px] font-bold text-[#3c4a42]/70 mb-1.5">Mặt sau CCCD *</span>
+                            <label className="flex h-28 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#bbcabf]/50 bg-gray-50/50 hover:bg-gray-50 transition-all overflow-hidden relative">
+                              {idCardBack ? (
+                                <img src={idCardBack} alt="CCCD Back preview" className="h-full w-full object-cover" />
+                              ) : (
+                                <>
+                                  <span className="material-symbols-outlined text-[24px] text-gray-400">photo_camera</span>
+                                  <span className="text-[10px] font-bold text-gray-500 mt-1">Tải lên mặt sau</span>
+                                </>
+                              )}
+                              <input type="file" accept="image/*" onChange={handleIdBackUpload} className="hidden" />
+                            </label>
+                          </div>
+                        </div>
+
+                        <p className="text-[9px] text-[#3c4a42]/50 font-medium mt-2">Ảnh rõ nét, không che góc, dung lượng tối đa 5MB</p>
+
+                        {/* Callout */}
+                        <div className="mt-4 flex gap-2.5 rounded-2xl bg-amber-50 border border-amber-200/50 p-4.5 text-xs text-amber-800 font-medium">
+                          <span className="material-symbols-outlined text-[18px] text-amber-600 shrink-0">security</span>
+                          <p className="leading-5">Thông tin CCCD được mã hóa và bảo mật tuyệt đối phục vụ xác minh danh tính.</p>
+                        </div>
+                      </section>
+
+                      {/* Section 4: Thông tin thanh toán */}
+                      <section className="rounded-3xl border border-[#bbcabf]/30 bg-white p-6 shadow-sm">
+                        <h4 className="mb-5 text-sm font-bold text-[#006c49] flex items-center gap-2">
+                          <span className="material-symbols-outlined text-base">payments</span>
+                          Thông tin thanh toán
+                        </h4>
+
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                          {/* Bank Name */}
+                          <div>
+                            <label className="block text-[11px] font-bold text-[#3c4a42]/70 mb-1.5">
+                              Ngân hàng
+                            </label>
+                            <select
+                              value={bankName}
+                              onChange={(e) => setBankName(e.target.value)}
+                              className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-3 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                              required
+                            >
+                              {["Vietcombank", "Agribank", "BIDV", "Techcombank", "VietinBank", "MB Bank"].map((bank) => (
+                                <option key={bank} value={bank}>{bank}</option>
+                              ))}
+                            </select>
+                          </div>
+                          {/* Account Number */}
+                          <div>
+                            <label className="block text-[11px] font-bold text-[#3c4a42]/70 mb-1.5">
+                              Số tài khoản *
+                            </label>
+                            <input
+                              type="text"
+                              value={bankAccountNumber}
+                              onChange={(e) => setBankAccountNumber(e.target.value)}
+                              placeholder="Nhập số tài khoản..."
+                              className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-3 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                              required
+                            />
+                          </div>
+                          {/* Account Name */}
+                          <div>
+                            <label className="block text-[11px] font-bold text-[#3c4a42]/70 mb-1.5">
+                              Tên chủ tài khoản *
+                            </label>
+                            <input
+                              type="text"
+                              value={bankAccountName}
+                              onChange={(e) => setBankAccountName(e.target.value.toUpperCase())}
+                              placeholder="TÊN CHỦ TÀI KHOẢN VIẾT HOA..."
+                              className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-3 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                              required
+                            />
+                          </div>
+                        </div>
+                      </section>
+
+                      {/* Submit */}
+                      <div className="text-center pt-2">
+                        <button
+                          type="submit"
+                          className="w-full rounded-2xl bg-[#006c49] py-4 text-sm font-bold text-white transition hover:opacity-90 shadow-md flex items-center justify-center gap-2"
+                        >
+                          Gửi đăng ký 🍃
+                        </button>
+                        <p className="text-[10px] text-gray-500 font-semibold mt-3 flex items-center justify-center gap-1">
+                          <span className="material-symbols-outlined text-xs">lock</span>
+                          Thông tin bảo mật — NôngSạch xét duyệt trong 1–3 ngày làm việc
+                        </p>
+                      </div>
+                    </form>
+                  </div>
+                )}
+
+                {/* State 2: Pending Approval UI */}
+                {currentUser.sellerStatus === "pending" && (
+                  <div className="rounded-3xl border border-[#bbcabf]/30 bg-white p-6 shadow-sm text-center max-w-[580px] mx-auto py-10">
+                    <div className="w-16 h-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mb-6 mx-auto border border-amber-200">
+                      <span className="material-symbols-outlined text-[36px] animate-pulse">hourglass_empty</span>
+                    </div>
+
+                    <h3 className="text-lg font-bold text-amber-700">Hồ sơ đang được xét duyệt</h3>
+                    <p className="text-xs text-[#3c4a42]/70 mt-2 leading-relaxed max-w-[400px] mx-auto">
+                      Cảm ơn bạn đã đăng ký đối tác! Hồ sơ của bạn đang được ban quản trị NôngSạch kiểm duyệt. Kết quả sẽ được cập nhật trong 1–3 ngày làm việc.
+                    </p>
+
+                    {/* Summary Card */}
+                    <div className="my-6 border-t border-b border-[#bbcabf]/20 py-4.5 text-left text-xs space-y-2 text-[#3c4a42]/80">
+                      <p className="font-bold text-[#006c49] mb-3 text-sm flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-base">storefront</span>
+                        Hồ sơ đã gửi:
+                      </p>
+                      <p><strong>Tên cửa hàng:</strong> {currentUser.sellerInfo?.shopName}</p>
+                      {currentUser.sellerInfo?.slogan && <p><strong>Slogan:</strong> {currentUser.sellerInfo?.slogan}</p>}
+                      <p><strong>Số điện thoại:</strong> {currentUser.sellerInfo?.shopPhone}</p>
+                      <p><strong>Địa chỉ trang trại:</strong> {currentUser.sellerInfo?.farmAddress}, {currentUser.sellerInfo?.province}</p>
+                      <p><strong>Nông sản chính:</strong> {currentUser.sellerInfo?.mainCategories.join(", ")}</p>
+                      <p><strong>CCCD số:</strong> {currentUser.sellerInfo?.idCardNumber.substring(0, 3)}*********</p>
+                      <p><strong>Ngân hàng thụ hưởng:</strong> {currentUser.sellerInfo?.bankName} - {currentUser.sellerInfo?.bankAccountNumber}</p>
+                    </div>
+
+                    {/* Simulation helper */}
+                    <div className="mt-8 rounded-2xl bg-[#e6f4ea] border border-[#006c49]/20 p-5">
+                      <p className="text-xs text-[#006c49] font-bold mb-3 flex items-center justify-center gap-1.5">
+                        <span className="material-symbols-outlined text-base">build</span>
+                        Khu vực thử nghiệm (Demo Helper)
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          approveSeller(currentUser.id);
+                          showToast("Chúc mừng! Cửa hàng đã được phê duyệt thành công.");
+                        }}
+                        className="rounded-full bg-[#006c49] px-6 py-2.5 text-xs font-bold text-white shadow hover:opacity-90 transition-all flex items-center gap-1.5 mx-auto"
+                      >
+                        <span className="material-symbols-outlined text-sm">done</span>
+                        Phê duyệt hồ sơ ngay (Demo/Test)
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* State 3: Approved Seller Channel / Dashboard */}
+                {currentUser.role === "seller" && (
+                  <div className="space-y-6">
+                    {/* Header */}
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white border border-[#bbcabf]/30 rounded-3xl p-5 shadow-sm">
+                      <div className="flex items-center gap-4">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e6f4ea] text-[#006c49]">
+                          <span className="material-symbols-outlined text-[28px]">store</span>
+                        </div>
+                        <div>
+                          <h3 className="text-base font-extrabold text-[#3c4a42]">{currentUser.sellerInfo?.shopName || "Cửa hàng của tôi"}</h3>
+                          <p className="text-[11px] text-[#3c4a42]/70 font-semibold flex items-center gap-1.5 mt-0.5">
+                            <span>SĐT: {currentUser.sellerInfo?.shopPhone}</span>
+                            <span>•</span>
+                            <span>{currentUser.sellerInfo?.farmAddress}, {currentUser.sellerInfo?.province}</span>
+                          </p>
+                        </div>
+                      </div>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-[#e6f4ea] px-3 py-1 text-[10px] font-extrabold text-[#006c49] tracking-wide border border-[#006c49]/10">
+                        <span className="h-1.5 w-1.5 rounded-full bg-[#006c49]"></span>
+                        ĐỐI TÁC CHÍNH THỨC
+                      </span>
+                    </div>
+
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                      {[
+                        { title: "Doanh thu tạm tính", value: "0 ₫", icon: "payments", color: "text-blue-600 bg-blue-50 border-blue-100" },
+                        { title: "Đơn hàng mới", value: "0", icon: "inventory_2", color: "text-amber-600 bg-amber-50 border-amber-100" },
+                        { title: "Sản phẩm đang bán", value: String(shopProducts.length), icon: "shopping_basket", color: "text-[#006c49] bg-[#e6f4ea]/40 border-[#006c49]/10" },
+                        { title: "Đánh giá shop", value: "5.0 ⭐", icon: "star", color: "text-red-600 bg-red-50 border-red-100" }
+                      ].map((stat, idx) => (
+                        <div key={idx} className={`p-4.5 rounded-2xl border shadow-sm flex items-center justify-between bg-white`}>
+                          <div>
+                            <p className="text-[10px] font-bold text-[#3c4a42]/60 uppercase tracking-wide">{stat.title}</p>
+                            <p className="text-lg font-extrabold text-[#3c4a42] mt-1">{stat.value}</p>
+                          </div>
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${stat.color}`}>
+                            <span className="material-symbols-outlined text-xl">{stat.icon}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Products Management List */}
+                    <div className="rounded-3xl border border-[#bbcabf]/30 bg-white p-6 shadow-sm">
+                      <div className="flex justify-between items-center mb-6">
+                        <h4 className="text-sm font-bold text-[#006c49] flex items-center gap-2">
+                          <span className="material-symbols-outlined text-base">list_alt</span>
+                          Sản phẩm của tôi
+                        </h4>
+                        <button
+                          type="button"
+                          onClick={() => setIsAddProductOpen(true)}
+                          className="rounded-full bg-[#006c49] px-4 py-2 text-xs font-bold text-white shadow-sm hover:opacity-90 transition-all flex items-center gap-1"
+                        >
+                          <span className="material-symbols-outlined text-sm">add</span>
+                          Đăng sản phẩm mới
+                        </button>
+                      </div>
+
+                      {shopProducts.length === 0 ? (
+                        <div className="py-14 text-center text-[#3c4a42]/60">
+                          <span className="material-symbols-outlined mb-2 text-[48px] text-[#3c4a42]/30">
+                            inventory
+                          </span>
+                          <p className="text-xs font-bold">Cửa hàng chưa có sản phẩm nào đăng bán.</p>
+                          <p className="text-[10px] text-[#3c4a42]/50 mt-1">Bấm nút "Đăng sản phẩm mới" ở trên để đưa nông sản của bạn lên cửa hàng nhé.</p>
+                        </div>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left text-xs border-collapse">
+                            <thead>
+                              <tr className="border-b border-[#bbcabf]/25 text-[#3c4a42]/50 font-bold">
+                                <th className="pb-3 pr-2">Ảnh</th>
+                                <th className="pb-3 pr-2">Tên sản phẩm</th>
+                                <th className="pb-3 pr-2">Danh mục</th>
+                                <th className="pb-3 pr-2">Giá bán</th>
+                                <th className="pb-3 pr-2">Tồn kho</th>
+                                <th className="pb-3 pr-2">Nguồn gốc</th>
+                                <th className="pb-3 pr-2 text-right">Thao tác</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-[#bbcabf]/15">
+                              {shopProducts.map((p) => (
+                                <tr key={p.id} className="text-[#3c4a42]">
+                                  <td className="py-3 pr-2">
+                                    <div className="relative h-10 w-10 overflow-hidden rounded-lg border border-gray-100">
+                                      <Image
+                                        src={p.image}
+                                        alt={p.name}
+                                        fill
+                                        className="object-cover"
+                                        sizes="40px"
+                                      />
+                                    </div>
+                                  </td>
+                                  <td className="py-3 pr-2 font-bold">{p.name}</td>
+                                  <td className="py-3 pr-2 font-semibold">
+                                    {p.category === "vegetables" && "Rau củ"}
+                                    {p.category === "fruits" && "Trái cây"}
+                                    {p.category === "grains" && "Ngũ cốc"}
+                                    {p.category === "roots" && "Củ quả"}
+                                    {p.category === "herbs" && "Thảo mộc"}
+                                    {p.category === "other" && "Khác"}
+                                  </td>
+                                  <td className="py-3 pr-2 font-extrabold text-[#006c49]">
+                                    {formatCurrency(p.price)}/{p.unit}
+                                  </td>
+                                  <td className="py-3 pr-2 font-semibold">{p.stock} {p.unit}</td>
+                                  <td className="py-3 pr-2 font-semibold">{p.origin}</td>
+                                  <td className="py-3 pr-2 text-right space-x-1.5 whitespace-nowrap">
+                                    <Link
+                                      href={`/products/${p.id}`}
+                                      target="_blank"
+                                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-gray-50 text-gray-500 hover:bg-gray-100 transition-colors"
+                                      title="Xem chi tiết"
+                                    >
+                                      <span className="material-symbols-outlined text-[16px]">visibility</span>
+                                    </Link>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleEditProduct(p)}
+                                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors"
+                                      title="Chỉnh sửa"
+                                    >
+                                      <span className="material-symbols-outlined text-[16px]">edit</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteProduct(p.id)}
+                                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                                      title="Xóa"
+                                    >
+                                      <span className="material-symbols-outlined text-[16px]">delete</span>
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Add Product Modal Dialog */}
+                    {isAddProductOpen && (
+                      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                        <div className="w-full max-w-[500px] rounded-3xl bg-white p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+                          <div className="flex justify-between items-center border-b border-[#bbcabf]/20 pb-3">
+                            <h4 className="text-sm font-bold text-[#006c49] flex items-center gap-1.5">
+                              <span className="material-symbols-outlined text-base">
+                                {editingProduct ? "edit" : "add_circle"}
+                              </span>
+                              {editingProduct ? "Chỉnh sửa sản phẩm nông sản" : "Đăng bán sản phẩm nông sản"}
+                            </h4>
+                            <button
+                              type="button"
+                              onClick={closeProductModal}
+                              className="text-gray-400 hover:text-gray-600 flex h-7 w-7 items-center justify-center rounded-full hover:bg-gray-100"
+                            >
+                              ✕
+                            </button>
+                          </div>
+
+                          <form onSubmit={handleAddProductSubmit} className="space-y-4 text-left">
+                            {/* Product Name */}
+                            <div>
+                              <label className="block text-[11px] font-bold text-[#3c4a42]/70 mb-1">
+                                Tên sản phẩm *
+                              </label>
+                              <input
+                                type="text"
+                                value={newProdName}
+                                onChange={(e) => setNewProdName(e.target.value)}
+                                placeholder="Ví dụ: Cà chua chuỗi ngọc, Rau cải bó xôi..."
+                                className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-2.5 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                                required
+                              />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                              {/* Category selection */}
+                              <div>
+                                <label className="block text-[11px] font-bold text-[#3c4a42]/70 mb-1">
+                                  Danh mục *
+                                </label>
+                                <select
+                                  value={newProdCategory}
+                                  onChange={(e) => setNewProdCategory(e.target.value)}
+                                  className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-2.5 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                                  required
+                                >
+                                  <option value="vegetables">Rau củ</option>
+                                  <option value="fruits">Trái cây</option>
+                                  <option value="grains">Ngũ cốc</option>
+                                  <option value="roots">Củ quả</option>
+                                  <option value="herbs">Thảo mộc</option>
+                                  <option value="other">Khác</option>
+                                </select>
+                              </div>
+                              {/* Unit */}
+                              <div>
+                                <label className="block text-[11px] font-bold text-[#3c4a42]/70 mb-1">
+                                  Đơn vị tính *
+                                </label>
+                                <select
+                                  value={["kg", "bó", "hộp", "túi", "trái", "khay"].includes(newProdUnit) ? newProdUnit : "khác"}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (val === "khác") {
+                                      setNewProdUnit("");
+                                    } else {
+                                      setNewProdUnit(val);
+                                    }
+                                  }}
+                                  className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-2.5 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                                  required
+                                >
+                                  <option value="kg">kg</option>
+                                  <option value="bó">bó</option>
+                                  <option value="hộp">hộp</option>
+                                  <option value="túi">túi</option>
+                                  <option value="trái">trái (quả)</option>
+                                  <option value="khay">khay</option>
+                                  <option value="khác">Khác...</option>
+                                </select>
+                                {!["kg", "bó", "hộp", "túi", "trái", "khay"].includes(newProdUnit) && (
+                                  <input
+                                    type="text"
+                                    value={newProdUnit}
+                                    onChange={(e) => setNewProdUnit(e.target.value)}
+                                    placeholder="Nhập đơn vị tính..."
+                                    className="mt-2 w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-2 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                                    required
+                                  />
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                              {/* Price */}
+                              <div>
+                                <label className="block text-[11px] font-bold text-[#3c4a42]/70 mb-1">
+                                  Giá bán (đ/đơn vị) *
+                                </label>
+                                <input
+                                  type="number"
+                                  value={newProdPrice}
+                                  onChange={(e) => setNewProdPrice(e.target.value)}
+                                  placeholder="Ví dụ: 35000"
+                                  className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-2.5 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                                  required
+                                />
+                              </div>
+                              {/* Stock */}
+                              <div>
+                                <label className="block text-[11px] font-bold text-[#3c4a42]/70 mb-1">
+                                  Số lượng tồn kho *
+                                </label>
+                                <input
+                                  type="number"
+                                  value={newProdStock}
+                                  onChange={(e) => setNewProdStock(e.target.value)}
+                                  placeholder="Ví dụ: 100"
+                                  className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-2.5 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                                  required
+                                />
+                              </div>
+                            </div>
+
+                            {/* Origin */}
+                            <div>
+                              <label className="block text-[11px] font-bold text-[#3c4a42]/70 mb-1">
+                                Nguồn gốc xuất xứ *
+                              </label>
+                              <input
+                                type="text"
+                                value={newProdOrigin}
+                                onChange={(e) => setNewProdOrigin(e.target.value)}
+                                placeholder="Ví dụ: Đà Lạt, Hưng Yên..."
+                                className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-2.5 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                                required
+                              />
+                            </div>
+
+                            {/* Product Images Upload */}
+                            <div>
+                              <label className="block text-[11px] font-bold text-[#3c4a42]/70 mb-1.5">
+                                Hình ảnh sản phẩm (Tối đa 6 ảnh) *
+                              </label>
+                              <div className="flex flex-wrap gap-2 items-center">
+                                {newProdImages.length < 6 && (
+                                  <label className="flex h-16 w-16 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#bbcabf]/50 bg-gray-50/50 hover:bg-gray-50 transition-all shrink-0">
+                                    <span className="material-symbols-outlined text-lg text-gray-400">add_a_photo</span>
+                                    <span className="text-[8px] font-bold text-gray-500 mt-0.5">Thêm ảnh</span>
+                                    <input
+                                      type="file"
+                                      multiple
+                                      accept="image/*"
+                                      onChange={handleProductMultipleImagesUpload}
+                                      className="hidden"
+                                    />
+                                  </label>
+                                )}
+                                
+                                {newProdImages.map((img, idx) => {
+                                  const isMain = idx === 0;
+                                  return (
+                                    <div key={idx} className={`relative h-16 w-16 rounded-xl overflow-hidden border-2 ${isMain ? 'border-[#006c49] shadow-sm' : 'border-gray-200'} shrink-0 group`}>
+                                      <img src={img} alt={`Product preview ${idx}`} className="h-full w-full object-cover" />
+                                      {isMain && (
+                                        <div className="absolute top-0 left-0 bg-[#006c49] text-white text-[8px] font-bold px-1.5 py-0.5 rounded-br-lg">
+                                          Bìa
+                                        </div>
+                                      )}
+                                      
+                                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-1">
+                                        {/* Delete Button */}
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const updated = newProdImages.filter((_, i) => i !== idx);
+                                            setNewProdImages(updated);
+                                            if (isMain) {
+                                              setNewProdImage(updated[0] || "");
+                                            }
+                                          }}
+                                          className="text-white hover:text-red-400 text-right text-[10px] font-bold self-end"
+                                        >
+                                          ✕
+                                        </button>
+                                        
+                                        {/* Set Main Button */}
+                                        {!isMain && (
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              const selected = newProdImages[idx];
+                                              const remaining = newProdImages.filter((_, i) => i !== idx);
+                                              const updated = [selected, ...remaining];
+                                              setNewProdImages(updated);
+                                              setNewProdImage(selected);
+                                            }}
+                                            className="bg-[#006c49] text-white text-[8px] font-bold py-0.5 rounded text-center hover:opacity-90"
+                                          >
+                                            Đặt làm bìa
+                                          </button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                              <p className="text-[9px] text-[#3c4a42]/50 font-medium mt-1.5">
+                                Ảnh đầu tiên sẽ là ảnh đại diện (Ảnh bìa). Nhấp "Đặt làm bìa" để thay đổi.
+                              </p>
+                            </div>
+
+                            {/* Product Description */}
+                            <div>
+                              <label className="block text-[11px] font-bold text-[#3c4a42]/70 mb-1">
+                                Mô tả chi tiết sản phẩm
+                              </label>
+                              <textarea
+                                value={newProdDescription}
+                                onChange={(e) => setNewProdDescription(e.target.value)}
+                                placeholder="Ghi thêm thông tin mô tả chi tiết nông sản (cách chăm sóc, chất lượng, cách ăn)..."
+                                rows={3}
+                                className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-2.5 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                              />
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex justify-end gap-2 pt-2 border-t border-[#bbcabf]/15">
+                              <button
+                                type="button"
+                                onClick={closeProductModal}
+                                className="rounded-full border border-[#bbcabf] px-5 py-2 text-xs font-bold text-[#3c4a42] transition hover:bg-[#f4f6fa]"
+                              >
+                                Hủy bỏ
+                              </button>
+                              <button
+                                type="submit"
+                                className="rounded-full bg-[#006c49] px-6 py-2 text-xs font-bold text-white transition hover:opacity-90 shadow-sm"
+                              >
+                                {editingProduct ? "Cập nhật sản phẩm" : "Đăng sản phẩm"}
+                              </button>
+                            </div>
+                          </form>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </section>

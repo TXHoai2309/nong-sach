@@ -5,12 +5,12 @@
 | Thông tin         | Chi tiết                                    |
 | ----------------- | ------------------------------------------- |
 | Tên dự án         | NôngSạch — Nền tảng giao dịch nông sản sạch |
-| Phiên bản         | MVP v0.3.6                                  |
+| Phiên bản         | MVP v0.4.0                                  |
 | Ngày tạo          | 03/06/2026                                  |
-| Cập nhật lần cuối | 04/06/2026                                  |
+| Cập nhật lần cuối | 05/06/2026                                  |
 | Nhóm              | NôngSạch Team                               |
 | Môn học           | Vibe Coding Thực Chiến — Buổi 3             |
-| Trạng thái        | ✅ Hoàn thành Sprint 1, Sprint 2 & Sprint 3  |
+| Trạng thái        | ✅ Hoàn thành Sprint 1, Sprint 2, Sprint 3 & Sprint 4 |
 
 ---
 
@@ -63,8 +63,11 @@ Người tiêu dùng ngày càng lo ngại về an toàn thực phẩm, đặc b
 | F-07 | Đăng nhập          | Xác thực local, lưu phiên localStorage                      | P1      | ✅ Done     |
 | F-08 | Trang Giới thiệu   | Brand story, sứ mệnh, tầm nhìn, 4 giá trị cốt lõi           | P2      | ✅ Done     |
 | F-09 | Trang Liên hệ      | Form liên hệ, thông tin hỗ trợ, bản đồ, newsletter          | P2      | ✅ Done     |
+| F-10 | Đăng ký người bán  | Đăng ký 4 bước (Cửa hàng, Địa chỉ/Tiêu chuẩn, CMND/CCCD, Ngân hàng) | P1      | ✅ Done     |
+| F-11 | Kênh bán hàng      | Dashboard thống kê, danh sách đơn hàng và quản lý sản phẩm tự đăng | P1      | ✅ Done     |
+| F-12 | Quản lý sản phẩm   | CRUD: Thêm mới (kèm upload 6 ảnh bìa/phụ), Sửa thông tin, Xóa sản phẩm | P1      | ✅ Done     |
 
-> **Ghi chú cho team:** F-09 hiện đã có giao diện hoàn chỉnh theo Stitch HTML tại route `/contact`. Form liên hệ đang ở mức UI/UX MVP; nếu cần gửi dữ liệu thật, cần bổ sung API/Firebase handler ở Phase 2.
+> **Ghi chú cho team:** F-09 hiện đã có giao diện hoàn chỉnh theo Stitch HTML tại route `/contact`. Form liên hệ đang ở mức UI/UX MVP; nếu cần gửi dữ liệu thật, cần bổ sung API/Firebase handler ở Phase 2. Kênh bán hàng (F-11) và Quản lý sản phẩm (F-12) hiện được lưu động tại `localStorage` phía client của từng người dùng để mô phỏng tính năng thực tế.
 
 ## 2.2. Ngoài phạm vi MVP
 
@@ -242,6 +245,58 @@ Quy trình dưới đây là định hướng phát triển sau MVP, khi hệ th
 * Các page chính dùng chuẩn content width `1120px`; không tự đặt nhiều `max-w` khác nhau trừ khi là card/form nhỏ bên trong.
 * UI có hiệu ứng nhẹ: page enter, reveal up và card hover; phải tôn trọng `prefers-reduced-motion`.
 
+## 3.2.2. Kênh bán hàng & Quản lý sản phẩm của Người bán (Seller Dashboard & CRUD)
+
+### US-10: Đăng ký trở thành người bán (Seller Registration)
+
+**Là** người mua đã đăng ký tài khoản, **tôi muốn** đăng ký trở thành người bán, **để** có thể đăng bán sản phẩm nông trại của mình trực tiếp trên hệ thống.
+
+#### Acceptance Criteria
+* **Biểu mẫu đăng ký 4 bước**:
+  1. *Bước 1 (Thông tin cửa hàng)*: Nhập tên shop (*), khẩu hiệu shop, SĐT shop (*), Zalo shop (*), mô tả và logo shop.
+  2. *Bước 2 (Địa chỉ & Tiêu chuẩn)*: Chọn Tỉnh/Thành phố động từ API (*), địa chỉ chi tiết nông trại (*), tiêu chuẩn canh tác (VietGAP, GlobalGAP, Hữu cơ, Khác) và mô tả chi tiết quy trình.
+  3. *Bước 3 (Xác minh danh tính)*: Nhập Số CMND/CCCD (*), tải lên ảnh mặt trước (*) và mặt sau (*) của CMND/CCCD.
+  4. *Bước 4 (Thông tin tài khoản)*: Chọn Tên ngân hàng (*), Số tài khoản (*), Tên chủ tài khoản (*).
+* **Mô phỏng phê duyệt hồ sơ**: Sau khi người dùng nhấn "Đăng ký bán hàng", hệ thống tự động đổi trạng thái hồ sơ người bán thành `approved` và cập nhật quyền hạn tài khoản lên `seller` (không bắt buộc admin duyệt thủ công trong MVP).
+* **Ẩn giao diện đăng ký**: Khi tài khoản đã được nâng cấp thành công lên người bán, giao diện đăng ký (State 1-2-3) sẽ được ẩn hoàn toàn, thay thế bằng giao diện Kênh bán hàng (Dashboard).
+
+### US-11: Quản lý Kênh bán hàng (Seller Dashboard)
+
+**Là** một người bán hàng, **tôi muốn** xem bảng điều khiển tổng quan và danh sách đơn hàng/sản phẩm của mình, **để** quản lý hoạt động kinh doanh nông sản hiệu quả.
+
+#### Acceptance Criteria
+* **Bảng thống kê nhanh**: Hiển thị 4 chỉ số chính: Tổng doanh thu (VND), Số đơn hàng, Đánh giá cửa hàng, Tổng sản phẩm.
+* **Đơn hàng của shop**: Danh sách các đơn hàng đặt mua sản phẩm của shop (hiển thị thông tin khách hàng, số điện thoại, địa chỉ, tổng tiền và trạng thái).
+* **Quản lý sản phẩm**: Hiển thị danh sách các sản phẩm do chính người bán đăng lên kèm hình ảnh, tên, danh mục, giá bán, số lượng tồn kho và các nút chức năng: Thêm sản phẩm, Chỉnh sửa, Xóa.
+
+### US-12: Quản lý thông tin sản phẩm (Product CRUD)
+
+**Là** một người bán hàng, **tôi muốn** thêm mới, cập nhật hoặc xóa các sản phẩm của mình, **để** duy trì danh mục sản phẩm chính xác trên cửa hàng.
+
+#### Acceptance Criteria
+* **Thêm mới sản phẩm**:
+  * Biểu mẫu nhập liệu đầy đủ: Tên (*), Danh mục (*), Đơn giá VND (*), Tồn kho (*), Đơn vị tính (kg, hộp, túi,...), Nguồn gốc (*), Mô tả sản phẩm.
+  * Hỗ trợ tải lên tối đa 6 ảnh từ thiết bị cục bộ. Cho phép tích chọn ảnh bìa (Cover Image) trực quan.
+  * Tích hợp xử lý ảnh thông minh: hệ thống đọc kích thước ảnh thật trước khi lưu, cảnh báo khi ảnh quá nhỏ (khuyến nghị tối thiểu khoảng `900x900px`), giữ dữ liệu gốc cho ảnh nhỏ và nén ảnh lớn sang WebP chất lượng cao với cạnh dài tối đa khoảng 2000px.
+  * Sản phẩm sau khi thêm thành công sẽ hiển thị ngay trong danh sách sản phẩm của Kênh bán hàng và trang Cửa hàng công khai.
+* **Cập nhật sản phẩm (Sửa)**:
+  * Hộp thoại chỉnh sửa tự động tải sẵn (prefilled) các trường dữ liệu và danh sách ảnh cũ của sản phẩm đó.
+  * Cho phép chỉnh sửa bất kỳ thông tin nào hoặc thay đổi/bổ sung ảnh đại diện/bìa.
+* **Xóa sản phẩm**:
+  * Nút xóa sản phẩm tự đăng yêu cầu xác nhận trước khi thực hiện.
+  * Xóa hoàn toàn sản phẩm khỏi `localStorage` và tự động cập nhật lại danh sách trên giao diện.
+
+### US-13: Trải nghiệm album ảnh sản phẩm (Product Gallery Optimization)
+
+**Là** khách mua hàng, **tôi muốn** xem album ảnh của sản phẩm một cách sắc nét và linh hoạt, **để** có cái nhìn chính xác nhất về sản phẩm.
+
+#### Acceptance Criteria
+* **Số lượng ảnh động**: Thanh hiển thị thumbnail hiển thị đúng số lượng ảnh thực tế của sản phẩm (nếu có 1 ảnh hiện 1, có 5 ảnh hiện 5).
+* **Khung ảnh tối ưu**:
+  * Ô thumbnail hiển thị dưới dạng flex-wrap với kích thước cố định `w-16 h-16` bo góc để giao diện không bị méo lệch khi số lượng ảnh ít hoặc nhiều.
+  * Khung chứa ảnh đại diện lớn lấy kích thước tự nhiên của ảnh đang chọn, hiển thị bằng `object-contain`, bỏ tối ưu lại không cần thiết đối với ảnh base64 và phóng ảnh nhỏ có kiểm soát để tránh bị mờ.
+  * Khi ảnh có độ phân giải thấp, gallery dùng nền radial và lớp ảnh mờ phía sau để lấp khoảng trống thị giác, giúp bố cục vẫn đầy đặn nhưng ảnh chính không bị kéo căng quá mức.
+
 ## 3.3. Thông tin thương hiệu & hỗ trợ khách hàng
 
 ### US-08: Xem trang giới thiệu
@@ -290,12 +345,52 @@ interface Product {
   category: ProductCategory;
   price: number;
   image: string;
+  images?: string[]; // Danh sách ảnh phụ (tối đa 6 ảnh)
   description: string;
   origin: string;
   stock: number;
   isOrganic?: boolean;
   isFeatured?: boolean;
   unit?: string;
+}
+```
+
+## 4.1.B. User & SellerInfo Interface
+
+```ts
+interface User {
+  id: string;
+  email: string;
+  fullName: string;
+  phone?: string;
+  birthDate?: string;
+  gender?: "Nam" | "Nữ" | "Khác" | "";
+  memberSince?: string;
+  addresses?: UserAddress[];
+  role?: "buyer" | "seller";
+  sellerStatus?: "pending" | "approved";
+  sellerInfo?: SellerInfo;
+}
+
+interface SellerInfo {
+  shopName: string;
+  slogan?: string;
+  shopPhone: string;
+  shopZalo: string;
+  description: string;
+  shopLogo?: string;
+  farmImages?: string[];
+  mainCategories: string[];
+  province: string;
+  farmAddress: string;
+  farmingStandards: string[];
+  farmingStandardsDetail?: string;
+  idCardNumber: string;
+  idCardFront?: string;
+  idCardBack?: string;
+  bankName: string;
+  bankAccountNumber: string;
+  bankAccountName: string;
 }
 ```
 
@@ -418,6 +513,20 @@ interface ContactMessage {
 | T-23 | Header cleanup + contact layout compact fix    | 1  | ✅      |
 | T-24 | Checkout compact layout + Province API          | 2  | ✅      |
 | T-25 | Account Profile Dashboard page                 | 3  | ✅      |
+
+## Sprint 4 — Seller Registration, CRUD & Optimization (✅ Hoàn thành)
+
+| ID   | Task                                           | SP | Status |
+| ---- | ---------------------------------------------- | -- | ------ |
+| T-26 | Biểu mẫu đăng ký người bán 4 bước chi tiết     | 3  | ✅      |
+| T-27 | Phê duyệt & Nâng cấp phân quyền tự động (`seller`) | 2  | ✅      |
+| T-28 | Kênh bán hàng (Dashboard) và Thống kê tổng quan| 3  | ✅      |
+| T-29 | CRUD Sản phẩm tự đăng (Thêm, Sửa, Xóa)          | 4  | ✅      |
+| T-30 | Upload nhiều ảnh sản phẩm (tối đa 6 ảnh)        | 3  | ✅      |
+| T-31 | Xử lý nén ảnh canvas thông minh (Hybrid)       | 2  | ✅      |
+| T-32 | Tối ưu hóa bộ sưu tập thumbnail & độ sắc nét   | 2  | ✅      |
+| T-33 | Tích hợp Zustand partialize ngăn QuotaExceeded | 2  | ✅      |
+| T-34 | Khắc phục Hydration mismatch trên các trang sản phẩm | 2  | ✅      |
 
 ## Backlog Phase 2 (Tương lai)
 

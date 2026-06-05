@@ -25,6 +25,7 @@ export interface Product {
   category: ProductCategory;
   price: number; // VND
   image: string;
+  images?: string[];
   description: string;
   origin: string;
   stock: number;

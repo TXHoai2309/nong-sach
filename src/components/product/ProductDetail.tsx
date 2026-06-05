@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import { useCartStore } from "@/store/cart-store";
 import { useAuthStore } from "@/store/auth-store";
@@ -51,21 +51,58 @@ const fallbackGalleryImages = [
   "https://images.unsplash.com/photo-1506806732259-39c2d0268443?w=900&h=700&fit=crop",
 ];
 
+const defaultSelectedImageSize = { width: 1200, height: 900 };
+
 export default function ProductDetail({ product, relatedProducts }: ProductDetailProps) {
   const router = useRouter();
   const { currentUser } = useAuthStore();
   const addToCart = useCartStore((state) => state.addToCart);
-  const galleryImages = [
-    product.image,
-    ...(categoryGalleryImages[product.category] ?? fallbackGalleryImages),
-  ].slice(0, 4);
-  const [selectedImage, setSelectedImage] = useState(product.image);
+  const galleryImages =
+    product.images && product.images.length > 0
+      ? product.images
+      : [
+          product.image,
+          ...(categoryGalleryImages[product.category] ?? fallbackGalleryImages),
+        ];
+  const [selectedImage, setSelectedImage] = useState(
+    product.images && product.images.length > 0 ? product.images[0] : product.image
+  );
+  const [selectedImageSize, setSelectedImageSize] = useState(defaultSelectedImageSize);
+  const isInlineSelectedImage = selectedImage.startsWith("data:");
   const [quantity, setQuantity] = useState(Math.min(2, Math.max(1, product.stock)));
   const [activeTab, setActiveTab] = useState<TabKey>("description");
 
   const isOutOfStock = product.stock === 0;
+  const smallestSelectedSide = Math.min(selectedImageSize.width, selectedImageSize.height);
+  const isSmallSelectedImage = smallestSelectedSide < 700;
+  const selectedImageDisplayWidth = isSmallSelectedImage
+    ? Math.min(520, Math.max(360, Math.round(selectedImageSize.width * 1.45)))
+    : selectedImageSize.width;
   const originText = product.origin.includes("Việt Nam") ? product.origin : `${product.origin}, Việt Nam`;
-  const galleryObjectPositions = ["center", "top", "bottom", "left"];
+
+  useEffect(() => {
+    let isActive = true;
+    const img = new window.Image();
+
+    img.onload = () => {
+      if (!isActive) return;
+      setSelectedImageSize({
+        width: img.naturalWidth || defaultSelectedImageSize.width,
+        height: img.naturalHeight || defaultSelectedImageSize.height,
+      });
+    };
+
+    img.onerror = () => {
+      if (!isActive) return;
+      setSelectedImageSize(defaultSelectedImageSize);
+    };
+
+    img.src = selectedImage;
+
+    return () => {
+      isActive = false;
+    };
+  }, [selectedImage]);
 
   function addSelectedQuantity() {
     if (isOutOfStock) return;
@@ -102,30 +139,49 @@ export default function ProductDetail({ product, relatedProducts }: ProductDetai
 
       <div className="mb-10 grid grid-cols-1 gap-8 lg:grid-cols-[0.95fr_1.05fr]">
         <div className="space-y-4">
-          <div className="page-card group relative aspect-[4/3] overflow-hidden rounded-3xl bg-surface-container">
-            <Image
-              src={selectedImage}
-              alt={product.name}
-              fill
-              priority
-              sizes="(min-width: 1024px) 460px, 100vw"
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
-            />
+          <div className="page-card group relative aspect-[4/3] overflow-hidden rounded-3xl bg-surface-container-low">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,rgba(255,255,255,0.98),rgba(231,238,255,0.72)_58%,rgba(216,227,251,0.46))]" />
+            {isSmallSelectedImage && (
+              <Image
+                src={selectedImage}
+                alt=""
+                fill
+                sizes="(min-width: 1280px) 640px, (min-width: 1024px) 48vw, 100vw"
+                unoptimized={isInlineSelectedImage}
+                className="scale-110 object-cover opacity-20 blur-2xl"
+                aria-hidden="true"
+              />
+            )}
+            <div className="absolute inset-6 rounded-[1.4rem] border border-white/70 bg-white/45 shadow-inner shadow-white/40" />
+            <div className="relative flex h-full w-full items-center justify-center p-8 sm:p-10">
+              <Image
+                src={selectedImage}
+                alt={product.name}
+                width={selectedImageSize.width}
+                height={selectedImageSize.height}
+                priority
+                sizes="(min-width: 1280px) 640px, (min-width: 1024px) 48vw, 100vw"
+                quality={95}
+                unoptimized={isInlineSelectedImage}
+                className="relative h-auto max-h-full max-w-full rounded-2xl object-contain shadow-[0_18px_45px_rgba(17,28,45,0.12)] transition-transform duration-500 group-hover:scale-[1.02]"
+                style={{ width: selectedImageDisplayWidth }}
+              />
+            </div>
             <div className="absolute left-4 top-4 flex items-center gap-1 rounded-full bg-primary px-4 py-1 text-xs font-semibold leading-4 tracking-wide text-white shadow-md">
               <span className="material-symbols-outlined text-[14px] [font-variation-settings:'FILL'_1]">eco</span>
               Hữu cơ
             </div>
           </div>
 
-          <div className="grid grid-cols-4 gap-3">
+          <div className="flex flex-wrap gap-2.5">
             {galleryImages.map((image, index) => (
               <button
                 key={`${image}-${index}`}
                 onClick={() => setSelectedImage(image)}
                 className={[
-                  "relative aspect-square overflow-hidden rounded-xl transition-colors",
+                  "relative aspect-square w-16 h-16 overflow-hidden rounded-xl transition-all shadow-sm shrink-0",
                   selectedImage === image
-                    ? "border-2 border-primary ring-2 ring-primary/20"
+                    ? "border-2 border-primary ring-2 ring-primary/20 scale-95"
                     : "border border-outline-variant/30 hover:border-primary",
                 ].join(" ")}
                 type="button"
@@ -134,9 +190,9 @@ export default function ProductDetail({ product, relatedProducts }: ProductDetai
                   src={image}
                   alt={`${product.name} ${index + 1}`}
                   fill
-                  sizes="25vw"
+                  sizes="64px"
+                  unoptimized={image.startsWith("data:")}
                   className="object-cover"
-                  style={{ objectPosition: galleryObjectPositions[index] }}
                 />
               </button>
             ))}

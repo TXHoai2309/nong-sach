@@ -6,6 +6,89 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
 
 ---
 
+## [0.4.1] - 2026-06-05
+
+### Sprint 4.1 — Cải thiện chất lượng ảnh upload & UX khung ảnh sản phẩm
+
+### Fixed
+
+#### Upload ảnh sản phẩm mới (`src/app/profile/page.tsx`)
+* Sửa hiện tượng ảnh sản phẩm mới bị mờ sau khi tải lên do ảnh bị nén/resize chưa phù hợp rồi hiển thị trong khung lớn.
+* Bổ sung luồng đọc kích thước ảnh thật trước khi xử lý, giúp hệ thống nhận biết ảnh có độ phân giải thấp.
+* Chỉ nén ảnh sản phẩm khi file quá nặng hoặc kích thước vượt ngưỡng lớn; ảnh nhỏ được giữ gần với dữ liệu gốc để hạn chế mất nét.
+* Chuyển nén ảnh sản phẩm lớn sang WebP chất lượng cao, giới hạn cạnh dài tối đa khoảng 2000px để cân bằng giữa độ nét và dung lượng localStorage.
+* Bổ sung cảnh báo khi ảnh tải lên nhỏ hơn khuyến nghị, giúp người bán hiểu vì sao ảnh có thể không sắc nét khi xem ở trang chi tiết.
+
+#### Khung ảnh chi tiết sản phẩm (`src/components/product/ProductDetail.tsx`)
+* Sửa cách hiển thị ảnh upload base64 trong trang chi tiết sản phẩm để tránh bị Next Image tối ưu lại không cần thiết.
+* Lấy kích thước tự nhiên của ảnh đang chọn trước khi render ảnh chính, giúp ảnh hiển thị đúng tỉ lệ và hạn chế méo/mờ.
+* Thay thế cách phóng ảnh kín khung bằng cơ chế phóng có kiểm soát: ảnh nhỏ được tăng kích thước vừa phải nhưng không bị kéo căng quá mức.
+* Cải thiện UX khung ảnh bằng nền radial, lớp ảnh mờ phía sau cho ảnh nhỏ, và lớp nền trong suốt ở giữa để bố cục không còn bị trống/rời rạc.
+* Giữ thanh thumbnail linh hoạt theo số lượng ảnh thực tế và hỗ trợ dữ liệu ảnh upload từ localStorage.
+
+### Notes
+
+* Các ảnh sản phẩm đã upload trước khi sửa vẫn đang lưu trong `localStorage`; nếu ảnh cũ đã bị lưu ở chất lượng thấp, cần chỉnh sửa sản phẩm và upload lại ảnh gốc để thấy cải thiện rõ nhất.
+* Khuyến nghị ảnh sản phẩm nên có kích thước tối thiểu khoảng 900x900px, tốt hơn là 1200x1200px trở lên, để hiển thị đẹp trong khung chi tiết.
+
+---
+
+## [0.4.0] - 2026-06-05
+
+### Sprint 4.0 — Đăng Ký Người Bán (Seller Registration), Kênh Bán Hàng (Seller Dashboard), Quản Lý Sản Phẩm (Product CRUD) & Tối Ưu Bộ Sưu Tập Ảnh
+
+### Added
+
+#### Đăng ký Người bán & Kênh bán hàng (`src/app/profile/page.tsx`)
+* Triển khai biểu mẫu đăng ký người bán 4 bước chi tiết:
+  * **Bước 1: Thông tin cửa hàng**: Tên cửa hàng, Slogan, Số điện thoại shop, Số Zalo shop, Mô tả cửa hàng, Ảnh đại diện/Logo shop.
+  * **Bước 2: Địa chỉ & Tiêu chuẩn**: Tỉnh/Thành phố (dùng API động), Địa chỉ cụ thể nông trại, Tiêu chuẩn canh tác (VietGAP, GlobalGAP, Hữu cơ, Khác) kèm chi tiết tiêu chuẩn.
+  * **Bước 3: Xác minh danh tính**: Số CMND/CCCD, Ảnh chụp CMND/CCCD mặt trước & mặt sau.
+  * **Bước 4: Thông tin tài khoản ngân hàng**: Tên ngân hàng, Số tài khoản, Tên chủ tài khoản.
+* Triển khai cơ chế mô phỏng phê duyệt hồ sơ người bán trực tuyến: Sau khi bấm "Đăng ký bán hàng", hồ sơ được đổi sang trạng thái duyệt tự động nhanh, nâng cấp phân quyền tài khoản từ người mua (`buyer`) sang người bán (`seller`).
+* Ẩn các bước đăng ký (State 1-2-3) sau khi người bán đã đăng ký thành công và được phê duyệt.
+* Tích hợp **Kênh bán hàng (Seller Dashboard)** toàn diện:
+  * Thống kê tổng quan: Tổng doanh thu, Số đơn hàng, Đánh giá cửa hàng, Tổng sản phẩm.
+  * Danh sách đơn hàng cần xử lý dành riêng cho người bán.
+  * Danh sách quản lý sản phẩm do người bán tự đăng.
+  * Tích hợp chức năng CRUD hoàn chỉnh cho sản phẩm.
+
+#### Quản lý Sản phẩm CRUD (Thêm, Đọc, Sửa, Xóa)
+* **Thêm mới sản phẩm**: Form nhập Tên, Danh mục, Giá, Số lượng tồn kho, Đơn vị tính, Nguồn gốc, Mô tả, và tải lên tối đa 6 ảnh từ thiết bị. Cho phép tích chọn để thay đổi ảnh bìa (Cover Image).
+* **Đọc/Xem chi tiết sản phẩm**: Khi nhấp vào tên sản phẩm ở Cửa hàng hoặc Kênh bán hàng, chuyển hướng động đến route `/products/[id]`, hiển thị đầy đủ thông tin của sản phẩm tự đăng và album ảnh thực tế.
+* **Cập nhật sản phẩm (Sửa)**: Hộp thoại modal tải sẵn (prefilled) toàn bộ thông tin sản phẩm cũ để người dùng chỉnh sửa và cập nhật lại vào bộ nhớ.
+* **Xóa sản phẩm**: Xóa sản phẩm tự đăng khỏi hệ thống và đồng bộ tức thời với giao diện.
+* **Tải lên & Xử lý Ảnh Hybrid thông minh**:
+  * Tối ưu hóa dung lượng lưu trữ: Nếu file ảnh tải lên có dung lượng nhỏ hơn 300KB, hệ thống giữ nguyên định dạng base64 chất lượng gốc để giữ độ nét tuyệt đối cho các ảnh tài liệu/ảnh chụp cận cảnh.
+  * Nếu file ảnh lớn hơn 300KB, tiến hành nén canvas thông minh về kích thước tối đa 1200px ở chất lượng JPEG 92% để giảm thiểu dung lượng lưu trữ cục bộ nhưng vẫn đảm bảo hiển thị sắc nét vượt trội.
+  * Lọc ảnh thông tin nhạy cảm ở store Zustand: Sử dụng cơ chế `partialize` của Zustand middleware để loại bỏ các ảnh base64 dung lượng cao (ảnh CMND/CCCD mặt trước/sau, ảnh nông trại, logo cửa hàng) ra khỏi khóa `nong-sach-auth` trước khi lưu vào `localStorage`, ngăn chặn triệt để lỗi tràn bộ nhớ trình duyệt (`QuotaExceededError`).
+
+#### Bộ sưu tập ảnh & Trải nghiệm người dùng (Dynamic Image Gallery)
+* **Bộ sưu tập co giãn động**: Thanh hiển thị ảnh phụ chỉ hiển thị số lượng ảnh thực tế được tải lên thay vì luôn cố định 4 ảnh (1 ảnh hiện 1, 5 ảnh hiện 5).
+* **Căn chỉnh khung ảnh**: Thay thế layout grid co kéo bằng flex-wrap với các ô thumbnail cố định `w-16 h-16` giúp giao diện cân đối khi số lượng ảnh ít.
+* **Cải thiện độ sắc nét (Sharpness)**: Chuyển đổi khung chứa ảnh đại diện lớn từ `object-cover` sang `object-contain p-2 bg-slate-50 border rounded-xl` đảm bảo ảnh hiển thị đầy đủ các chi tiết, không bị mờ nhòe hay méo hình do bị kéo giãn.
+
+### Changed
+
+#### `src/types/product.ts`
+* Thêm trường tùy chọn `images?: string[]` để lưu giữ danh sách album ảnh phụ cho sản phẩm (hỗ trợ hiển thị nhiều ảnh).
+
+#### `src/lib/products.ts`
+* Cập nhật hàm `getAllProducts()`, `getProductById()`, `getProductsByCategory()`, `searchProducts()`, `getAvailableCategories()` để tự động đọc cả dữ liệu sản phẩm tĩnh lẫn dữ liệu sản phẩm tự đăng của người bán từ khóa `nong-sach-custom-products` trong `localStorage`.
+
+#### `src/app/products/page.tsx`
+* Chuyển đổi sang Client Component hoàn toàn và tích hợp logic dùng `mounted` state và `useMemo` để tải dữ liệu sản phẩm tự đăng từ `localStorage` đồng bộ sau khi trang tải xong phía client, loại bỏ hoàn toàn lỗi bất đối xứng Hydration Next.js.
+
+#### `src/app/products/[id]/page.tsx`
+* Tái cấu trúc trang chi tiết sản phẩm thành Client Component để đảm bảo có thể đọc thông tin sản phẩm tự tạo từ `localStorage` ở phía client một cách mượt mà và an toàn.
+
+#### `src/store/auth-store.ts`
+* Mở rộng cấu trúc dữ liệu người dùng chứa thông tin người bán (`role?: "buyer" | "seller"`, `sellerStatus?: "pending" | "approved"`, `sellerInfo?: SellerInfo`).
+* Thêm các hàm `registerSeller` và `approveSeller` để xử lý đăng ký và cấp quyền người bán.
+* Tích hợp hàm lọc `partialize` loại bỏ dữ liệu ảnh base64 cồng kềnh trong `sellerInfo` trước khi lưu vào Local Storage.
+
+---
+
 ## [0.3.9] - 2026-06-04
 
 ### Sprint 3.9 — Thiết kế Trang Quản Lý Tài Khoản (Profile Page) & Ràng Buộc Đăng Nhập (Authorization)

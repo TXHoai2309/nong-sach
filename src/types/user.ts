@@ -19,6 +19,30 @@ export interface User {
   gender?: "Nam" | "Nữ" | "Khác" | "";
   memberSince?: string;
   addresses?: UserAddress[];
+  role?: "buyer" | "seller";
+  sellerStatus?: "pending" | "approved";
+  sellerInfo?: SellerInfo;
+}
+
+export interface SellerInfo {
+  shopName: string;
+  slogan?: string;
+  shopPhone: string;
+  shopZalo: string;
+  description: string;
+  shopLogo?: string;
+  farmImages?: string[];
+  mainCategories: string[];
+  province: string;
+  farmAddress: string;
+  farmingStandards: string[];
+  farmingStandardsDetail?: string;
+  idCardNumber: string;
+  idCardFront?: string;
+  idCardBack?: string;
+  bankName: string;
+  bankAccountNumber: string;
+  bankAccountName: string;
 }
 
 export interface RegisteredUser extends User {

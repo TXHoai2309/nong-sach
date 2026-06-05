@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { User, RegisteredUser, UserAddress } from "@/types/user";
+import { User, RegisteredUser, UserAddress, SellerInfo } from "@/types/user";
 
 interface AuthState {
   currentUser: User | null;
@@ -14,6 +14,8 @@ interface AuthState {
   updateAddress: (id: string, address: Partial<UserAddress>) => void;
   deleteAddress: (id: string) => void;
   setDefaultAddress: (id: string) => void;
+  registerSeller: (info: SellerInfo) => void;
+  approveSeller: (userId: string) => void;
 }
 
 const DEFAULT_USERS: RegisteredUser[] = [
@@ -39,6 +41,7 @@ const DEFAULT_USERS: RegisteredUser[] = [
       },
     ],
     passwordHash: "12345678",
+    role: "buyer",
   },
 ];
 
@@ -64,6 +67,9 @@ export const useAuthStore = create<AuthState>()(
             gender: matchedUser.gender || "",
             memberSince: matchedUser.memberSince || "06/2024",
             addresses: matchedUser.addresses || [],
+            role: matchedUser.role || "buyer",
+            sellerStatus: matchedUser.sellerStatus,
+            sellerInfo: matchedUser.sellerInfo,
           };
           set({ currentUser: userObj });
           return { success: true, message: "Đăng nhập thành công!" };
@@ -92,6 +98,7 @@ export const useAuthStore = create<AuthState>()(
           memberSince: new Date().toLocaleDateString("vi-VN", { month: "2-digit", year: "numeric" }),
           addresses: [],
           passwordHash: password,
+          role: "buyer",
         };
 
         set({
@@ -135,6 +142,46 @@ export const useAuthStore = create<AuthState>()(
 
         set({ registeredUsers });
         return { success: true, message: "Cập nhật mật khẩu thành công!" };
+      },
+
+      registerSeller: (info) => {
+        const currentUser = get().currentUser;
+        if (!currentUser) return;
+
+        const updatedProfile = {
+          sellerStatus: "pending" as const,
+          sellerInfo: info,
+        };
+
+        const updatedUser = { ...currentUser, ...updatedProfile };
+        const registeredUsers = get().registeredUsers.map((user) =>
+          user.id === currentUser.id ? { ...user, ...updatedProfile } : user
+        );
+
+        set({
+          currentUser: updatedUser,
+          registeredUsers,
+        });
+      },
+
+      approveSeller: (userId) => {
+        const currentUser = get().currentUser;
+        const isSelf = currentUser && currentUser.id === userId;
+
+        const updatedProfile = {
+          role: "seller" as const,
+          sellerStatus: "approved" as const,
+        };
+
+        const registeredUsers = get().registeredUsers.map((user) =>
+          user.id === userId ? { ...user, ...updatedProfile } : user
+        );
+
+        const newSet: any = { registeredUsers };
+        if (isSelf) {
+          newSet.currentUser = { ...currentUser, ...updatedProfile };
+        }
+        set(newSet);
       },
 
       addAddress: (address) => {
@@ -207,6 +254,22 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "nong-sach-auth",
+      partialize: (state) => {
+        const sanitizeUser = (user: any) => {
+          if (!user) return user;
+          if (!user.sellerInfo) return user;
+          const { idCardFront, idCardBack, farmImages, shopLogo, ...restInfo } = user.sellerInfo;
+          return {
+            ...user,
+            sellerInfo: restInfo,
+          };
+        };
+
+        return {
+          currentUser: sanitizeUser(state.currentUser),
+          registeredUsers: state.registeredUsers.map(sanitizeUser),
+        } as any;
+      },
     }
   )
 );

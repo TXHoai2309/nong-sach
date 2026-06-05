@@ -1,10 +1,10 @@
 # 🛡️ VIBE PROCESS VERIFICATION
 
-> **Tài liệu chứng minh quy trình phát triển và kiểm định chất lượng sản phẩm (Plan — Doc — Build — Test) trước khi xuất xưởng (Ship) phiên bản NôngSạch MVP v0.3.9.**
+> **Tài liệu chứng minh quy trình phát triển và kiểm định chất lượng sản phẩm (Plan — Doc — Build — Test) trước khi xuất xưởng (Ship) phiên bản NôngSạch MVP v0.4.0.**
 > 
 > * **Dự án**: NôngSạch — Nền tảng giao dịch nông sản sạch
-> * **Phiên bản**: v0.3.9
-> * **Ngày xác nhận**: 04/06/2026
+> * **Phiên bản**: v0.4.0
+> * **Ngày xác nhận**: 05/06/2026
 > * **Quy trình áp dụng**: Vibe Coding Standard (Plan ➔ Doc ➔ Build ➔ Test)
 > * **Trạng thái**: ✅ **ĐÃ THÔNG QUA (PASSED) & SẴN SÀNG SHIP**
 
@@ -22,7 +22,7 @@
 
 ## 1. Giai đoạn 1: PLAN (Lập kế hoạch & Thiết kế)
 
-Trước khi thực hiện bất kỳ thay đổi nào trong mã nguồn, hệ thống luôn thiết lập một kế hoạch cụ thể tại [implementation_plan.md](file:///C:/Users/User/.gemini/antigravity-ide/brain/0d7f1d01-b77d-4a97-8795-e660695951bf/implementation_plan.md) để phân tích yêu cầu từ bản phác thảo (mockup) của người dùng:
+Trước khi thực hiện bất kỳ thay đổi nào trong mã nguồn, hệ thống luôn thiết lập một kế hoạch cụ thể tại [implementation_plan.md](file:///C:/Users/User/.gemini/antigravity-ide/brain/af28e59d-c257-4c02-a003-5303f58ae5bc/implementation_plan.md) để phân tích yêu cầu từ bản phác thảo (mockup) của người dùng:
 
 - **Phân tích yêu cầu**:
   - **Giỏ hàng (Cart)**: Chuyển đổi giao diện cũ sang giao diện hiện đại có nhãn xuất xứ, cảnh báo số lượng tồn kho thấp, mã giảm giá động `NONGSACK` và sidebar bo góc `#f0f3ff`.
@@ -30,6 +30,10 @@ Trước khi thực hiện bất kỳ thay đổi nào trong mã nguồn, hệ t
   - **Đặt hàng thành công**: Thiết kế lại biểu mẫu chi tiết đơn hàng dạng 2 cột, tích hợp in hóa đơn PDF, copy mã đơn hàng và thanh tiến độ Stepper 4 bước.
   - **Trang cá nhân (Profile Dashboard)**: Thiết kế trang quản lý tài khoản với 5 tab (Thông tin cá nhân, Đơn hàng của tôi, Sổ địa chỉ, Đổi mật khẩu có thanh đo độ mạnh, Thông báo) và cơ chế **"Mua lại" (Re-order)**.
   - **Layout & Typo**: Xử lý lỗi trôi chữ ở Header khi đăng nhập (thêm `whitespace-nowrap`), sửa lỗi co giãn cột ở About CTA và trang Liên hệ.
+  - **Đăng ký Người bán & Dashboard (Sprint 4.0)**: Biểu mẫu đăng ký 4 bước (Shop, Địa chỉ/Tiêu chuẩn, Xác minh CMND, Ngân hàng). Tự động duyệt và nâng cấp quyền `seller`. Ẩn các bước đăng ký (State 1-2-3) sau khi duyệt thành công và hiển thị kênh bán hàng (Dashboard) với các thống kê nhanh.
+  - **CRUD Sản phẩm tự đăng (Sprint 4.0)**: Form thêm sản phẩm hỗ trợ upload tối đa 6 ảnh sản phẩm và click chọn ảnh bìa trực quan. Modal sửa sản phẩm (prefilled dữ liệu cũ). Chức năng xóa sản phẩm.
+  - **Tối ưu ảnh & Album (Sprint 4.0)**: Nén canvas thông minh (Hybrid) đối với ảnh >300KB xuống JPEG 92% để tiết kiệm bộ nhớ Local Storage, giữ nguyên chất lượng base64 đối với ảnh <300KB để duy trì độ sắc nét cực cao.
+  - **Tránh lỗi bộ nhớ & Hydration Mismatch (Sprint 4.0)**: Tích hợp `partialize` của Zustand để loại bỏ ảnh base64 CMND/nông trại/logo cồng kềnh trước khi lưu vào `nong-sach-auth` tránh lỗi `QuotaExceededError`. Chuyển đổi trang danh sách sản phẩm `/products` và chi tiết `/products/[id]` sang Client Component với `mounted` state guard để giải quyết lỗi bất đồng bộ SSR/Hydration.
 
 ---
 
@@ -38,13 +42,13 @@ Trước khi thực hiện bất kỳ thay đổi nào trong mã nguồn, hệ t
 Tất cả các thay đổi về logic, cấu trúc dữ liệu và giao diện đều được cập nhật vào hệ thống tài liệu chính thức của dự án:
 
 1. **Cập nhật Đặc tả tính năng ([SPEC.md](file:///d:/Th%E1%BB%B1c%20t%E1%BA%ADp/Buoi3/nong-sach/docs/SPEC.md))**:
-   - Ghi nhận đầy đủ mô tả chi tiết, tiêu chí nghiệm thu (Acceptance Criteria) cho các tính năng mới ở **Sprint 3.4 đến 3.9** (bao gồm Trang cá nhân, API Địa chỉ, Đổi mật khẩu và Mua lại đơn hàng).
+   - Ghi nhận đầy đủ mô tả chi tiết, tiêu chí nghiệm thu (Acceptance Criteria) cho các tính năng mới ở **Sprint 3.4 đến 4.0** (bao gồm Trang cá nhân, API Địa chỉ, Đổi mật khẩu, Mua lại đơn hàng, Đăng ký Người bán, Dashboard và CRUD Sản phẩm).
 2. **Cập nhật Kiến trúc hệ thống ([ARCHITECTURE.md](file:///d:/Th%E1%BB%B1c%20t%E1%BA%ADp/Buoi3/nong-sach/docs/ARCHITECTURE.md))**:
-   - Làm rõ cấu trúc các store trạng thái Zustand (`cartStore` và `authStore`), cơ chế đồng bộ dữ liệu vào `localStorage` của trình duyệt và cách thức xử lý luồng dữ liệu khi người dùng bấm nút **Mua lại**.
+   - Làm rõ cấu trúc các store trạng thái Zustand (`cartStore` và `authStore`), cơ chế lọc ảnh `partialize` để tránh tràn bộ nhớ, giải thuật nén ảnh Hybrid và cách thức xử lý luồng dữ liệu khi người bán quản lý sản phẩm CRUD.
 3. **Cập nhật Lịch sử thay đổi ([CHANGELOG.md](file:///d:/Th%E1%BB%B1c%20t%E1%BA%ADp/Buoi3/nong-sach/docs/CHANGELOG.md))**:
-   - Ghi lại chi tiết từng tệp tin được thêm mới, sửa đổi hoặc sửa lỗi (fix bug) qua từng sprint cùng mốc thời gian hoàn thành cụ thể.
-4. **Cập nhật Hướng dẫn sử dụng ([README.md](file:///d:/Th%E1%BB%B1c%20t%E1%BA%ADp/Buoi3/nong-sach/README.md))**:
-   - Viết lại toàn bộ hướng dẫn khởi chạy dự án, tài khoản demo kiểm thử nhanh và mô tả chi tiết cách tương tác với các tính năng mới bằng tiếng Việt.
+   - Ghi lại chi tiết từng tệp tin được thêm mới, sửa đổi hoặc sửa lỗi (fix bug) qua từng sprint (đặc biệt là các chỉnh sửa ở Sprint 4.0) cùng mốc thời gian hoàn thành cụ thể.
+4. **Cập nhật Hướng dẫn sử dụng ([guideline.md](file:///d:/Th%E1%BB%B1c%20t%E1%BA%ADp/Buoi3/nong-sach/docs/guideline.md))**:
+   - Viết lại toàn bộ hướng dẫn khởi chạy dự án, tài khoản demo kiểm thử nhanh, mô tả chi tiết cách tương tác với các tính năng đăng ký người bán, quản lý sản phẩm CRUD và các album ảnh động sắc nét.
 
 ---
 
@@ -128,12 +132,20 @@ Các ảnh chụp màn hình và video kiểm thử được lưu trữ trực t
 | **TC-07: Sửa lỗi vỡ giao diện** | Kiểm tra màn hình máy tính trung bình khi đăng nhập tài khoản. | Tất cả liên kết, nút bấm trên Header được căn chỉnh thẳng hàng trên một dòng duy nhất mà không bị vỡ thành 2 hàng. | ✅ Pass |
 | **TC-08: Ràng buộc giỏ hàng & thanh toán khi chưa đăng nhập** | Thử click "Thêm giỏ" ở Trang chủ/Cửa hàng hoặc "Thêm vào giỏ" / "Mua ngay" ở trang Chi tiết khi chưa đăng nhập. | Hiển thị thông báo yêu cầu đăng nhập và chuyển hướng sang `/login?redirect=...` lưu lại đường dẫn gốc. | ✅ Pass |
 | **TC-09: Tự động chuyển hướng sau đăng nhập** | Đăng nhập tài khoản kiểm thử sau khi bị chuyển hướng từ trang Giỏ hàng `/cart` hoặc Thanh toán `/checkout`. | Đăng nhập thành công và tự động chuyển hướng đúng về trang đích ban đầu thay vì trang chủ `/`. | ✅ Pass |
+| **TC-10: Đăng ký Người bán 4 bước** | Nhập đầy đủ thông tin biểu mẫu qua 4 bước (Cửa hàng, Nông trại, CMND, Tài khoản ngân hàng). | Điền thông tin hợp lệ ở từng bước, nhấn Hoàn tất chuyển đổi phân quyền tài khoản thành công. | ✅ Pass |
+| **TC-11: Tự động duyệt hồ sơ & Phân quyền** | Bấm "Đăng ký bán hàng" sau bước 4. | Hệ thống đổi vai trò sang `seller` tức thì mà không cần quản trị viên duyệt thủ công. | ✅ Pass |
+| **TC-12: Ẩn các bước đăng ký sau thành công** | Kiểm tra tab Kênh bán hàng khi tài khoản đã có phân quyền `seller`. | Các bước đăng ký (State 1-2-3) bị ẩn hoàn toàn, giao diện hiển thị trực tiếp bảng thống kê Dashboard và bảng sản phẩm. | ✅ Pass |
+| **TC-13: CRUD Sản phẩm tự đăng** | Thực hiện Thêm sản phẩm mới, Chỉnh sửa thông tin qua modal, và Xóa sản phẩm. | Sản phẩm thêm mới hiển thị ngay lập tức, sửa đổi dữ liệu cập nhật chính xác, xóa sản phẩm làm sạch khỏi danh sách và localStorage. | ✅ Pass |
+| **TC-14: Upload album nhiều ảnh (tối đa 6 ảnh)** | Tải lên cùng lúc nhiều ảnh trong form và tích chọn thay đổi ảnh bìa. | Gallery hiển thị đủ số ảnh đã tải, lưu đúng ảnh được chỉ định làm ảnh bìa. | ✅ Pass |
+| **TC-15: Tối ưu dung lượng & Canvas Hybrid** | Tải lên ảnh dung lượng nhỏ (<300KB) và ảnh dung lượng lớn (>300KB). | Ảnh nhỏ được giữ nguyên base64 gốc sắc nét. Ảnh lớn (>300KB) tự động nén canvas xuống JPEG 92% để tránh lỗi đầy localStorage. | ✅ Pass |
+| **TC-16: Tránh QuotaExceededError qua Zustand partialize** | Đăng ký người bán (chứa nhiều ảnh base64 nặng của CMND/logo) và reload trang. | Zustand partialize tự động lọc các ảnh base64 cồng kềnh trước khi ghi vào localStorage, đăng ký thành công không lỗi tràn bộ nhớ. | ✅ Pass |
+| **TC-17: Khắc phục Hydration mismatch** | Reload trực tiếp các route danh sách `/products` và chi tiết `/products/[id]`. | Nhờ Client Component và `mounted` state guard, trang hiển thị đồng bộ cả dữ liệu tĩnh và custom động từ client-side localStorage mà không bị lỗi hydration. | ✅ Pass |
 
 ---
 
 ## 5. Kết luận nghiệm thu
 
-Mọi hoạt động phát triển của phiên bản MVP v0.3.9 đều tuân thủ chặt chẽ quy trình **PLAN - DOC - BUILD - TEST**. Các tệp tin tài liệu được đồng bộ hóa hoàn toàn, mã nguồn được build thành công không lỗi, và các tính năng tương tác được kiểm thử trực quan trên trình duyệt trước khi giao.
+Mọi hoạt động phát triển của phiên bản MVP v0.4.0 đều tuân thủ chặt chẽ quy trình **PLAN - DOC - BUILD - TEST**. Các tệp tin tài liệu được đồng bộ hóa hoàn toàn, mã nguồn được build thành công không lỗi, và các tính năng tương tác được kiểm thử trực quan trên trình duyệt trước khi giao.
 
 Dự án đã sẵn sàng triển khai chính thức!
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import Container from "@/components/layout/Container";
@@ -25,9 +25,18 @@ const SORT_LABELS: Record<SortOption, string> = {
   "price-desc": "Giá giảm dần",
 };
 
-const allProducts = getAllProducts();
-
 export default function ProductsPage() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const allProducts = useMemo(() => {
+    return getAllProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted]);
+
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] =
     useState<ProductCategory | "all">("all");

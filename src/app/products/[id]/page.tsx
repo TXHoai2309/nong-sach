@@ -1,3 +1,6 @@
+"use client";
+
+import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { AlertCircle } from "lucide-react";
 import Breadcrumb from "@/components/layout/Breadcrumb";
@@ -9,8 +12,22 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-export default async function ProductDetailPage({ params }: PageProps) {
-  const { id } = await params;
+export default function ProductDetailPage({ params }: PageProps) {
+  const { id } = use(params);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="page-surface min-h-screen py-12 flex items-center justify-center">
+        <p className="text-xs font-bold text-[#3c4a42]/60 animate-pulse">Đang tải chi tiết sản phẩm...</p>
+      </div>
+    );
+  }
+
   const product = getProductById(id);
   const relatedProducts = getAllProducts()
     .filter((item) => item.id !== id)

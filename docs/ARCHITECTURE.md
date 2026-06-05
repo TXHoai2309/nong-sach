@@ -188,6 +188,7 @@ interface Product {
   category: ProductCategory
   price: number
   image: string
+  images?: string[] // Danh sách album ảnh thực tế (tối đa 6 ảnh)
   description: string
   origin: string
   stock: number
@@ -290,6 +291,8 @@ addAddress()
 updateAddress()
 deleteAddress()
 setDefaultAddress()
+registerSeller()
+approveSeller()
 ```
 
 ### Business Rules
@@ -298,6 +301,7 @@ setDefaultAddress()
 * Email phải duy nhất
 * Đăng ký thành công → Auto Login
 * Logout → Clear Session
+* **Tránh lỗi QuotaExceededError (Zustand Partialize)**: Sử dụng middleware `partialize` của Zustand để lọc bỏ các trường ảnh base64 dung lượng cao (như logo shop, ảnh nông trại, ảnh CMND mặt trước và sau) ra khỏi đối tượng `sellerInfo` trước khi lưu xuống bộ nhớ đệm `localStorage`. Chỉ lưu giữ thông tin văn bản thuần túy của tài khoản.
 
 ---
 
@@ -306,36 +310,52 @@ setDefaultAddress()
 ## Product Flow
 
 ```text
-products.ts
-    │
-    ▼
-app/products/[id]/page.tsx
-    │
-    ├── getProductById(id)
-    ├── getAllProducts() → relatedProducts
-    │
-    ▼
-ProductDetail Client Component
-    │
-    ▼
-Gallery + Tabs + Quantity + Add To Cart
+Static mock data (products.ts) ──┐
+                                  ├──> getAllProducts() (lib/products.ts)
+Custom localStorage products ────┘
+              │
+              ▼
+    app/products/page.tsx (Client Component) & app/products/[id]/page.tsx
+              │
+              ├── [id]/page.tsx: getProductById(id)
+              ├── relatedProducts: getProductsByCategory()
+              │
+              ▼
+    ProductDetail Client Component
+              │
+              ▼
+    Gallery + Tabs + Quantity + Add To Cart
 ```
 
 ## Product Detail Gallery Flow
 
 ```text
-product.image
-    │
-    ├── Main image
-    └── First thumbnail
+Has custom images? (product.images) ───[Yes]──> Display all custom uploaded images
+              │
+             [No]
+              │
+              ▼
+    product.image (Main)
+              │
+              ├── First thumbnail (product.image)
+              └── Other thumbnails (categoryGalleryImages[category])
+```
 
-product.category
-    │
-    ▼
-categoryGalleryImages[category]
-    │
-    ▼
-Remaining gallery thumbnails
+## Image Upload & Hybrid Compression Flow
+
+```text
+User selects image files
+              │
+              ▼
+File size check:
+   ├── Size < 300KB ───────> Save raw Base64 string directly (Maintain 100% sharpness)
+   └── Size >= 300KB ──────> Draw on Canvas (Max 1200px dimension) -> Compress as JPEG 92%
+              │
+              ▼
+Store in local array of images (up to 6 images)
+              │
+              ▼
+Save to localStorage under 'nong-sach-custom-products'
 ```
 
 ## Cart Flow
@@ -442,7 +462,7 @@ Clear Session
 | -------------------------- | ------ | ----------------- |
 | app/page.tsx               | Server | SEO + Static Data |
 | app/products/page.tsx      | Client | Search, Filter, Sort |
-| app/products/[id]/page.tsx | Server | Dynamic Product   |
+| app/products/[id]/page.tsx | Client | Dynamic Product & Custom Products from Local Storage (Avoid Hydration Mismatch) |
 | app/contact/page.tsx       | Server | Static Contact UI |
 | Header.tsx                 | Client | Zustand State     |
 | Breadcrumb.tsx             | Server | Static Navigation |
