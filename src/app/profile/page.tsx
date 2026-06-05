@@ -15,6 +15,7 @@ import { OrderStatus } from "@/types/order";
 import { Product, ProductCategory } from "@/types/product";
 import { UserAddress, User } from "@/types/user";
 import CoverImageCropper from "@/components/ui/CoverImageCropper";
+import { getAllProducts, addProduct, deleteProduct } from "@/lib/products";
 
 const PROVINCES_API = "https://provinces.open-api.vn/api/v1/?depth=2";
 
@@ -248,20 +249,20 @@ function ProfileContent() {
     }
   }, [isZaloSame, shopPhone]);
 
-  // Load custom products for this seller
+  // Load custom products for this seller from Firestore
   useEffect(() => {
     if (!mounted || !currentUser) return;
-    const stored = localStorage.getItem("nong-sach-custom-products");
-    if (stored) {
+    async function loadCustomProducts() {
+      if (!currentUser) return;
       try {
-        const list = JSON.parse(stored) as ShopProduct[];
-        const filteredList = list.filter((p) => p.sellerId === currentUser.id);
-        const timer = window.setTimeout(() => setShopProducts(filteredList), 0);
-        return () => window.clearTimeout(timer);
+        const list = await getAllProducts();
+        const filteredList = list.filter((p) => p.sellerId === currentUser.id) as ShopProduct[];
+        setShopProducts(filteredList);
       } catch (e) {
         console.error(e);
       }
     }
+    loadCustomProducts();
   }, [mounted, currentUser, activeTab]);
 
   // Image compression helper
@@ -649,24 +650,20 @@ function ProfileContent() {
     setIsAddProductOpen(true);
   };
 
-  const handleDeleteProduct = (productId: string) => {
+  const handleDeleteProduct = async (productId: string) => {
     if (confirm("Bạn có chắc chắn muốn xóa sản phẩm này không? Hành động này không thể hoàn tác.")) {
       try {
-        const stored = localStorage.getItem("nong-sach-custom-products");
-        if (stored) {
-          const list = JSON.parse(stored) as ShopProduct[];
-          const updated = list.filter((p) => p.id !== productId);
-          localStorage.setItem("nong-sach-custom-products", JSON.stringify(updated));
-          setShopProducts((prev) => prev.filter((p) => p.id !== productId));
-          showToast("Đã xóa sản phẩm thành công!");
-        }
-      } catch {
+        await deleteProduct(productId);
+        setShopProducts((prev) => prev.filter((p) => p.id !== productId));
+        showToast("Đã xóa sản phẩm thành công!");
+      } catch (error) {
+        console.error(error);
         showToast("Đã có lỗi xảy ra khi xóa sản phẩm", "error");
       }
     }
   };
 
-  const handleAddProductSubmit = (e: FormEvent) => {
+  const handleAddProductSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!currentUser) return;
     if (!newProdName.trim()) {
@@ -706,23 +703,19 @@ function ProfileContent() {
     };
 
     try {
-      const stored = localStorage.getItem("nong-sach-custom-products");
-      let list = stored ? (JSON.parse(stored) as ShopProduct[]) : [];
+      await addProduct(productData);
 
       if (editingProduct) {
-        list = list.map((p) => p.id === editingProduct.id ? productData : p);
-        localStorage.setItem("nong-sach-custom-products", JSON.stringify(list));
         setShopProducts((prev) => prev.map((p) => p.id === editingProduct.id ? productData : p));
         showToast("Cập nhật sản phẩm thành công!");
       } else {
-        list.push(productData);
-        localStorage.setItem("nong-sach-custom-products", JSON.stringify(list));
         setShopProducts((prev) => [...prev, productData]);
         showToast("Đăng sản phẩm mới thành công!");
       }
 
       closeProductModal();
-    } catch {
+    } catch (error) {
+      console.error(error);
       showToast("Đã có lỗi xảy ra khi lưu sản phẩm", "error");
     }
   };

@@ -46,8 +46,9 @@ const categories: { key: ProductCategory; emoji: string }[] = [
 ];
 
 // ── Page ───────────────────────────────────────────────────────────────────────
-export default function HomePage() {
-  const featuredProducts = getAllProducts().slice(0, 8);
+export default async function HomePage() {
+  const allProducts = await getAllProducts();
+  const featuredProducts = allProducts.slice(0, 8);
 
   return (
     <main>

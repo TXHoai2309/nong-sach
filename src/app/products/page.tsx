@@ -6,8 +6,7 @@ import Breadcrumb from "@/components/layout/Breadcrumb";
 import Container from "@/components/layout/Container";
 import ProductGrid from "@/components/product/ProductGrid";
 import { getAllProducts } from "@/lib/products";
-import { products as staticProducts } from "@/data/products";
-import { ProductCategory, CATEGORY_LABELS } from "@/types/product";
+import { Product, ProductCategory, CATEGORY_LABELS } from "@/types/product";
 
 const ALL_CATEGORIES: ProductCategory[] = [
   "vegetables",
@@ -25,13 +24,21 @@ const SORT_LABELS: Record<SortOption, string> = {
   "price-asc": "Giá tăng dần",
   "price-desc": "Giá giảm dần",
 };
-
 export default function ProductsPage() {
-  const [allProducts, setAllProducts] = useState(staticProducts);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setAllProducts(getAllProducts()), 0);
-    return () => window.clearTimeout(timer);
+    setMounted(true);
+    async function load() {
+      try {
+        const data = await getAllProducts();
+        setAllProducts(data);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    load();
   }, []);
 
   const [search, setSearch] = useState("");

@@ -184,8 +184,21 @@ export default function ShopDetailPage({ params }: PageProps) {
     load();
   }, [mounted]);
 
-  // ── Resolve all products (reactive: re-reads from localStorage each render) ─
-  const allProducts = mounted ? getAllProducts() : [];
+  // ── Resolve all products (reactive: reads from Firestore asynchronously) ────
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    if (!mounted) return;
+    async function loadProducts() {
+      try {
+        const data = await getAllProducts();
+        setAllProducts(data);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    loadProducts();
+  }, [mounted]);
 
   // ── Fetch external custom shop from Firestore ─────────────────────────────
   useEffect(() => {

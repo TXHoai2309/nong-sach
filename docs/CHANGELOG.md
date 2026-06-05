@@ -6,6 +6,36 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
 
 ---
 
+## [0.4.5] - 2026-06-05
+
+### Sprint 4.5 — Di chuyển Cơ sở dữ liệu Sản phẩm lên Firestore & Trang Khởi tạo Dữ liệu (Seed)
+
+### Added
+
+#### Khởi tạo dữ liệu mẫu lên Cloud Firestore (`src/lib/seed.ts` & `src/app/seed/page.tsx`)
+* Thiết lập file khởi tạo [seed.ts](file:///d:/Thực tập/Buoi3/nong-sach/src/lib/seed.ts) để ghi toàn bộ dữ liệu tĩnh của sản phẩm (từ `src/data/products.ts`) và cửa hàng (từ `src/lib/shops.ts`) lên collections `products` và `shops` trên Firestore.
+* Bổ sung cơ chế an toàn `runSeed()` tự động kiểm tra xem sản phẩm có id `1` đã tồn tại chưa để tránh ghi đè dữ liệu nếu hệ thống đã được seed trước đó.
+* Tạo mới route trang `/seed` với thiết kế giao diện Material Design 3, cung cấp nút nhấn "Chạy Seed Dữ Liệu", hiệu ứng spinner khi đang tải và hiển thị thông báo kết quả.
+
+#### Tích hợp Firestore CRUD cho Sản phẩm (`src/lib/products.ts`)
+* Viết lại toàn bộ thư viện helper products sang bất đồng bộ (`async`) đọc ghi trực tiếp Firestore: `getAllProducts()`, `getProductById()`, `getProductsByCategory()`, `searchProducts()`, `getAvailableCategories()`.
+* Bổ sung hàm `addProduct(product)` (`setDoc`) và `deleteProduct(id)` (`deleteDoc`) phục vụ CRUD.
+* Loại bỏ hoàn toàn logic đọc ghi từ `localStorage` với khóa `nong-sach-custom-products` và việc import dữ liệu tĩnh từ `src/data/products.ts`.
+
+### Changed
+
+#### Đồng bộ hóa call sites
+* **Trang chủ (`src/app/page.tsx`)**: Chuyển đổi sang async Server Component và `await` hàm `getAllProducts()`.
+* **Trang cửa hàng (`src/app/products/page.tsx`)**: Load sản phẩm bất đồng bộ từ Firestore bên trong client `useEffect` và quản lý thông qua state.
+* **Trang chi tiết sản phẩm (`src/app/products/[id]/page.tsx`)**: Fetch thông tin sản phẩm và danh sách sản phẩm tương tự song song bằng `await` trong Client Effect.
+* **Trang chi tiết shop (`src/app/shop/[id]/page.tsx`)**: Load sản phẩm bất đồng bộ để đồng bộ hóa số lượng sản phẩm của shop.
+* **Kênh người bán (`src/app/profile/page.tsx`)**: Di chuyển toàn bộ tính năng quản lý sản phẩm (thêm mới, chỉnh sửa, xóa) trong Seller Dashboard từ `localStorage` sang gọi Firestore `addProduct()` và `deleteProduct()`. Sửa lỗi compile TypeScript liên quan đến type checking của `ShopProduct` và kiểm tra an toàn `currentUser`.
+
+### Verification
+
+* Chạy `npx tsc --noEmit` hoàn thành thành công, đạt 0 lỗi biên dịch.
+* Chạy `npm run build` biên dịch và tối ưu hóa dự án Next.js thành công.
+
 ## [0.4.4] - 2026-06-05
 
 ### Sprint 4.4 — Tích hợp Firebase Auth & Cloud Firestore cho Hệ thống Xác thực và Dữ liệu Cửa hàng

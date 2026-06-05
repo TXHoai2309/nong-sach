@@ -8,6 +8,8 @@ import Container from "@/components/layout/Container";
 import ProductDetail from "@/components/product/ProductDetail";
 import { getAllProducts, getProductById } from "@/lib/products";
 
+import { Product } from "@/types/product";
+
 interface PageProps {
   params: Promise<{ id: string }>;
 }
@@ -15,24 +17,36 @@ interface PageProps {
 export default function ProductDetailPage({ params }: PageProps) {
   const { id } = use(params);
   const [mounted, setMounted] = useState(false);
+  const [product, setProduct] = useState<Product | undefined>(undefined);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setMounted(true), 0);
-    return () => window.clearTimeout(timer);
-  }, []);
+    setMounted(true);
+    async function loadData() {
+      try {
+        const p = await getProductById(id);
+        setProduct(p);
 
-  if (!mounted) {
+        const all = await getAllProducts();
+        const related = all.filter((item) => item.id !== id).slice(0, 4);
+        setRelatedProducts(related);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, [id]);
+
+  if (!mounted || loading) {
     return (
       <div className="page-surface min-h-screen py-12 flex items-center justify-center">
         <p className="text-xs font-bold text-[#3c4a42]/60 animate-pulse">Đang tải chi tiết sản phẩm...</p>
       </div>
     );
   }
-
-  const product = getProductById(id);
-  const relatedProducts = getAllProducts()
-    .filter((item) => item.id !== id)
-    .slice(0, 4);
 
   if (!product) {
     return (
