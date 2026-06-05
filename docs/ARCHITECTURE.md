@@ -48,14 +48,15 @@ Mục tiêu của kiến trúc MVP:
 └──────────┬──────────┘
            │
            ▼
-┌─────────────────────┐
-│ Zustand Stores      │
-│ Cart + Auth         │
-└──────────┬──────────┘
+┌──────────────────────┐
+│    Zustand Stores    │
+│ Auth, Cart, Order,   │
+│ Notification, Report │
+└──────────┬───────────┘
            │
            ▼
 ┌─────────────────────┐
-│ localStorage        │
+│    localStorage     │
 └─────────────────────┘
 ```
 
@@ -126,10 +127,16 @@ nong-sach/
 │
 │   ├── store/
 │   │   ├── cart-store.ts
-│   │   └── auth-store.ts
+│   │   ├── auth-store.ts
+│   │   ├── order-store.ts
+│   │   ├── notification-store.ts
+│   │   └── report-store.ts
 │
 │   ├── types/
-│   └── lib/
+│   │   ├── order.ts
+│   │   ├── notification.ts
+│   │   ├── report.ts
+│   │   └── ...
 │
 ├── public/
 ├── .env.example

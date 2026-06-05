@@ -32,18 +32,24 @@ Tại trang chi tiết sản phẩm, người dùng có thể:
 5. Xem các tab `Mô tả`, `Thông tin`, `Đánh giá`.
 6. Xem danh sách sản phẩm tương tự ở cuối trang.
 7. Xem Banner thông tin nhà vườn/shop bán sản phẩm (với logo, đánh giá, vị trí). Bấm `Xem shop →` hoặc nhấp vào tên shop để truy cập trang chi tiết Cửa hàng.
+8. **Menu Tiện ích (`...`)**: Nằm ở góc trên bên phải ảnh sản phẩm, cung cấp các lối tắt:
+   - **Chia sẻ sản phẩm**: Gửi link sản phẩm qua mạng xã hội hoặc sao chép.
+   - **Sao chép liên kết**: Lưu URL vào bộ nhớ tạm.
+   - **Báo cáo sản phẩm**: Mở hộp thoại báo cáo vi phạm với lý do cụ thể.
+   - **Bạn cần giúp đỡ?**: Hiển thị hotline hỗ trợ nhanh.
 
 ## 4. Xem chi tiết Cửa hàng (Shop Profile)
 
 Tại trang chi tiết cửa hàng (`/shop/[id]`), người dùng có thể:
 
 1. Xem ảnh bìa, logo đại diện, tên cửa hàng, slogan, địa điểm và các tiêu chuẩn chất lượng (như VietGAP, USDA Organic).
-2. Bấm nút `+ Theo dõi` để theo dõi cửa hàng (trạng thái chuyển sang `Đang theo dõi` và thay đổi màu sắc).
+2. **Theo dõi cửa hàng**: Bấm nút `+ Theo dõi` để theo dõi cửa hàng (số lượng "Người theo dõi" sẽ tự động tăng lên và nút chuyển sang `Đang theo dõi`).
 3. Bấm `Nhắn tin` để kích hoạt mô phỏng hộp thoại trò chuyện với chủ vườn.
 4. Xem tab `Sản phẩm`: Lọc sản phẩm theo danh mục của shop, tìm kiếm sản phẩm trong shop, và sắp xếp theo giá cả hoặc tên gọi.
 5. Xem tab `Đánh giá`: Xem các đánh giá chi tiết từ khách hàng cũ về nhà vườn.
 6. Xem tab `Giới thiệu`: Xem quy trình trồng trọt, ảnh album thực địa, thông tin liên lạc và thông tin thanh toán tài khoản ngân hàng của chủ vườn (tự động cập nhật cho cả người bán tự đăng ký).
 7. Xem danh sách `Cửa hàng tương tự` ở chân trang để khám phá các nhà vườn liên kết khác.
+8. **Báo cáo cửa hàng**: Nằm trong menu `...` ở góc trên bên phải ảnh bìa, cho phép gửi khiếu nại về nhà vườn.
 
 ## 5. Quản lý giỏ hàng
 
@@ -123,9 +129,33 @@ Khi người dùng đã đăng nhập tài khoản, họ có thể đăng ký n�
    - **Bước 3: Xác minh danh tính**: Nhập Số CMND/CCCD (*) và tải ảnh chụp mặt trước/sau (*) của thẻ.
    - **Bước 4: Tài khoản ngân hàng**: Nhập tên ngân hàng (*), số tài khoản (*) và tên chủ tài khoản (*).
 4. Bấm `Đăng ký bán hàng` ở bước cuối cùng. Hệ thống sẽ tự động phê duyệt nhanh và nâng cấp tài khoản sang vai trò `seller`.
-5. Sau khi nâng cấp thành công, giao diện đăng ký 4 bước biến mất hoàn toàn. Thay vào đó, hệ thống hiển thị **Kênh bán hàng (Dashboard)** với các thống kê doanh số, sản phẩm, và danh sách đơn hàng/sản phẩm của riêng shop.
+5. Sau khi nâng cấp thành công, giao diện đăng ký 4 bước biến mất hoàn toàn. Thay vào đó, hệ thống hiển thị **Kênh bán hàng (Dashboard)** với các thống kê doanh số, sản phẩm, và quản lý riêng biệt:
+   - **Tab Sản phẩm của tôi**: Quản lý danh sách, thêm, sửa, xóa sản phẩm.
+   - **Tab Đơn hàng của shop**: Xem danh sách các đơn hàng khách đã đặt mua từ shop mình.
 
-## 12. Quản lý sản phẩm tự đăng (CRUD)
+## 12. Quản lý Đơn hàng cho Người bán
+
+Tại tab `Đơn hàng của shop`, người bán có thể:
+
+1. **Theo dõi đơn mới**: Hệ thống tự động tách đơn (nếu khách mua từ nhiều shop) và gửi riêng về dashboard của shop liên quan.
+2. **Cập nhật trạng thái**: Bấm các nút thao tác nhanh để thay đổi trạng thái đơn hàng:
+   - `Xác nhận đơn`: Sau khi kiểm tra hàng.
+   - `Bắt đầu giao`: Khi đơn hàng đã giao cho vận chuyển.
+   - `Hoàn tất giao`: Khi khách đã nhận hàng thành công.
+   - `Hủy`: Nếu hết hàng hoặc sự cố khác.
+3. **Xem chi tiết**: Bấm `Xem` để xem lại đầy đủ thông tin khách hàng và danh sách món hàng trong đơn.
+
+## 13. Hệ thống Thông báo (Notifications)
+
+Ứng dụng cung cấp thông báo thời gian thực giúp kết nối người mua và người bán:
+
+1. **Vị trí**: Biểu tượng chuông trên Header hiển thị số thông báo chưa đọc.
+2. **Loại thông báo**:
+   - **Đối với người bán**: Thông báo khi có đơn hàng mới từ khách hàng.
+   - **Đối với người mua**: Thông báo khi đơn hàng được người bán cập nhật trạng thái (xác nhận, đang giao,...).
+3. **Quản lý**: Vào trang `Tài khoản` -> Tab `Thông báo` để xem toàn bộ lịch sử và đánh giá tất cả là đã đọc.
+
+## 14. Quản lý sản phẩm tự đăng (CRUD)
 
 Tại giao diện Kênh bán hàng (Dashboard), người bán có thể quản lý danh sách sản phẩm của mình:
 

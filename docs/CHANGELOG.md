@@ -45,6 +45,7 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
     - Gửi thông báo đến người mua khi trạng thái đơn hàng thay đổi.
     - Badge hiển thị số lượng thông báo chưa đọc trên Header.
     - Tab quản lý thông báo chi tiết trong trang Profile.
+  * **Tương tác Shop**: Nâng cấp tính năng Follow shop với số lượng "Người theo dõi" tự động tăng/giảm và định dạng thông minh (ví dụ: 2.4K) ngay khi người dùng nhấn nút.
 
 ### Changed
 
