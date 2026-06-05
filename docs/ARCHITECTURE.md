@@ -152,6 +152,7 @@ nong-sach/
 | /about         | About           |
 | /contact       | Contact         |
 | /profile       | Trang cá nhân   |
+| /shop/[id]      | Trang chi tiết Shop/Cửa hàng |
 
 ## Navigation Rules
 
@@ -473,6 +474,7 @@ Clear Session
 | login/page.tsx             | Client | Auth State        |
 | register/page.tsx          | Client | Auth State        |
 | profile/page.tsx           | Client | Tab navigation, Profile & Address updates |
+| app/shop/[id]/page.tsx     | Client | Shop Details, Follow and Products Filter & Sort |
 
 ---
 

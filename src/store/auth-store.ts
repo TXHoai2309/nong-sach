@@ -16,6 +16,7 @@ interface AuthState {
   setDefaultAddress: (id: string) => void;
   registerSeller: (info: SellerInfo) => void;
   approveSeller: (userId: string) => void;
+  updateSellerInfo: (info: SellerInfo) => void;
 }
 
 const DEFAULT_USERS: RegisteredUser[] = [
@@ -182,6 +183,25 @@ export const useAuthStore = create<AuthState>()(
           newSet.currentUser = { ...currentUser, ...updatedProfile };
         }
         set(newSet);
+      },
+
+      updateSellerInfo: (info) => {
+        const currentUser = get().currentUser;
+        if (!currentUser) return;
+
+        const updatedProfile = {
+          sellerInfo: info,
+        };
+
+        const updatedUser = { ...currentUser, ...updatedProfile };
+        const registeredUsers = get().registeredUsers.map((user) =>
+          user.id === currentUser.id ? { ...user, ...updatedProfile } : user
+        );
+
+        set({
+          currentUser: updatedUser,
+          registeredUsers,
+        });
       },
 
       addAddress: (address) => {

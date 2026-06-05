@@ -29,6 +29,8 @@ export function getAllProducts(): Product[] {
         stock: p.stock,
         unit: p.unit || "kg",
         isOrganic: p.isOrganic || false,
+        sellerId: p.sellerId,
+        shopName: p.shopName,
       }));
       return [...staticProducts, ...mappedCustom];
     } catch {

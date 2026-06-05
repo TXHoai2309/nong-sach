@@ -29,6 +29,10 @@ export interface Product {
   description: string;
   origin: string;
   stock: number;
+  sellerId?: string;
+  shopName?: string;
+  isOrganic?: boolean;
+  unit?: string;
 }
 
 export interface CartItem {

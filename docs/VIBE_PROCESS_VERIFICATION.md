@@ -1,9 +1,9 @@
 # 🛡️ VIBE PROCESS VERIFICATION
 
-> **Tài liệu chứng minh quy trình phát triển và kiểm định chất lượng sản phẩm (Plan — Doc — Build — Test) trước khi xuất xưởng (Ship) phiên bản NôngSạch MVP v0.4.0.**
+> **Tài liệu chứng minh quy trình phát triển và kiểm định chất lượng sản phẩm (Plan — Doc — Build — Test) trước khi xuất xưởng (Ship) phiên bản NôngSạch MVP v0.4.2.**
 > 
 > * **Dự án**: NôngSạch — Nền tảng giao dịch nông sản sạch
-> * **Phiên bản**: v0.4.0
+> * **Phiên bản**: v0.4.2
 > * **Ngày xác nhận**: 05/06/2026
 > * **Quy trình áp dụng**: Vibe Coding Standard (Plan ➔ Doc ➔ Build ➔ Test)
 > * **Trạng thái**: ✅ **ĐÃ THÔNG QUA (PASSED) & SẴN SÀNG SHIP**
@@ -34,6 +34,8 @@ Trước khi thực hiện bất kỳ thay đổi nào trong mã nguồn, hệ t
   - **CRUD Sản phẩm tự đăng (Sprint 4.0)**: Form thêm sản phẩm hỗ trợ upload tối đa 6 ảnh sản phẩm và click chọn ảnh bìa trực quan. Modal sửa sản phẩm (prefilled dữ liệu cũ). Chức năng xóa sản phẩm.
   - **Tối ưu ảnh & Album (Sprint 4.0)**: Nén canvas thông minh (Hybrid) đối với ảnh >300KB xuống JPEG 92% để tiết kiệm bộ nhớ Local Storage, giữ nguyên chất lượng base64 đối với ảnh <300KB để duy trì độ sắc nét cực cao.
   - **Tránh lỗi bộ nhớ & Hydration Mismatch (Sprint 4.0)**: Tích hợp `partialize` của Zustand để loại bỏ ảnh base64 CMND/nông trại/logo cồng kềnh trước khi lưu vào `nong-sach-auth` tránh lỗi `QuotaExceededError`. Chuyển đổi trang danh sách sản phẩm `/products` và chi tiết `/products/[id]` sang Client Component với `mounted` state guard để giải quyết lỗi bất đồng bộ SSR/Hydration.
+  - **Banner thông tin Shop & Trang chi tiết Shop (Sprint 4.2)**: Triển khai Banner thông tin shop trên trang chi tiết sản phẩm hiển thị logo, đánh giá, số sản phẩm, vị trí, và nút xem shop. Thiết kế trang chi tiết cửa hàng `/shop/[id]` với cover, avatar, mô tả nông trại, nút theo dõi động, nút nhắn tin, tabs bộ lọc sản phẩm, đánh giá và giới thiệu chi tiết.
+  - **Cải thiện giao diện Ảnh bìa Shop (UX Polish)**: Thu ngắn chiều cao banner, áp dụng thiết kế bo góc dưới (`rounded-b-3xl`) và giới hạn chiều rộng trong `site-container` để tăng tính thẩm mỹ và sự đồng bộ toàn trang.
 
 ---
 
@@ -42,13 +44,13 @@ Trước khi thực hiện bất kỳ thay đổi nào trong mã nguồn, hệ t
 Tất cả các thay đổi về logic, cấu trúc dữ liệu và giao diện đều được cập nhật vào hệ thống tài liệu chính thức của dự án:
 
 1. **Cập nhật Đặc tả tính năng ([SPEC.md](file:///d:/Th%E1%BB%B1c%20t%E1%BA%ADp/Buoi3/nong-sach/docs/SPEC.md))**:
-   - Ghi nhận đầy đủ mô tả chi tiết, tiêu chí nghiệm thu (Acceptance Criteria) cho các tính năng mới ở **Sprint 3.4 đến 4.0** (bao gồm Trang cá nhân, API Địa chỉ, Đổi mật khẩu, Mua lại đơn hàng, Đăng ký Người bán, Dashboard và CRUD Sản phẩm).
+   - Ghi nhận đầy đủ mô tả chi tiết, tiêu chí nghiệm thu (Acceptance Criteria) cho các tính năng mới ở **Sprint 3.4 đến 4.2** (bao gồm Trang cá nhân, API Địa chỉ, Đổi mật khẩu, Mua lại đơn hàng, Đăng ký Người bán, Dashboard, CRUD Sản phẩm, Banner thông tin Shop và Trang chi tiết Shop).
 2. **Cập nhật Kiến trúc hệ thống ([ARCHITECTURE.md](file:///d:/Th%E1%BB%B1c%20t%E1%BA%ADp/Buoi3/nong-sach/docs/ARCHITECTURE.md))**:
-   - Làm rõ cấu trúc các store trạng thái Zustand (`cartStore` và `authStore`), cơ chế lọc ảnh `partialize` để tránh tràn bộ nhớ, giải thuật nén ảnh Hybrid và cách thức xử lý luồng dữ liệu khi người bán quản lý sản phẩm CRUD.
+   - Làm rõ cấu trúc các store trạng thái Zustand (`cartStore` và `authStore`), cơ chế lọc ảnh `partialize` để tránh tràn bộ nhớ, giải thuật nén ảnh Hybrid, cách thức xử lý luồng dữ liệu khi người bán quản lý sản phẩm CRUD và luồng điều hướng/phân quyền cửa hàng.
 3. **Cập nhật Lịch sử thay đổi ([CHANGELOG.md](file:///d:/Th%E1%BB%B1c%20t%E1%BA%ADp/Buoi3/nong-sach/docs/CHANGELOG.md))**:
-   - Ghi lại chi tiết từng tệp tin được thêm mới, sửa đổi hoặc sửa lỗi (fix bug) qua từng sprint (đặc biệt là các chỉnh sửa ở Sprint 4.0) cùng mốc thời gian hoàn thành cụ thể.
+   - Ghi lại chi tiết từng tệp tin được thêm mới, sửa đổi hoặc sửa lỗi (fix bug) qua từng sprint (đặc biệt là các chỉnh sửa ở Sprint 4.0 và 4.2) cùng mốc thời gian hoàn thành cụ thể.
 4. **Cập nhật Hướng dẫn sử dụng ([guideline.md](file:///d:/Th%E1%BB%B1c%20t%E1%BA%ADp/Buoi3/nong-sach/docs/guideline.md))**:
-   - Viết lại toàn bộ hướng dẫn khởi chạy dự án, tài khoản demo kiểm thử nhanh, mô tả chi tiết cách tương tác với các tính năng đăng ký người bán, quản lý sản phẩm CRUD và các album ảnh động sắc nét.
+   - Viết lại toàn bộ hướng dẫn khởi chạy dự án, tài khoản demo kiểm thử nhanh, mô tả chi tiết cách tương tác với các tính năng đăng ký người bán, quản lý sản phẩm CRUD, banner thông tin shop và các thao tác trên trang cửa hàng tương tác.
 
 ---
 
@@ -114,6 +116,11 @@ Các ảnh chụp màn hình và video kiểm thử được lưu trữ trực t
   - Tab Sổ địa chỉ nhận hàng: [profile_page_shipping_address_1780554826072.png](file:///C:/Users/User/.gemini/antigravity-ide/brain/0d7f1d01-b77d-4a97-8795-e660695951bf/profile_page_shipping_address_1780554826072.png)
   - Tab Đổi mật khẩu: [profile_page_change_password_1780554840674.png](file:///C:/Users/User/.gemini/antigravity-ide/brain/0d7f1d01-b77d-4a97-8795-e660695951bf/profile_page_change_password_1780554840674.png)
   - Tab Thông báo hệ thống: [profile_page_notifications_1780554854646.png](file:///C:/Users/User/.gemini/antigravity-ide/brain/0d7f1d01-b77d-4a97-8795-e660695951bf/profile_page_notifications_1780554854646.png)
+* 📸 **Giao diện Banner Shop & Chi tiết Cửa hàng (`/shop/[id]`) (Sprint 4.2)**:
+  - Banner thông tin shop trên trang chi tiết: [shop_info_banner_1780629916555.png](file:///C:/Users/User/.gemini/antigravity-ide/brain/af28e59d-c257-4c02-a003-5303f58ae5bc/shop_info_banner_1780629916555.png)
+  - Trang chi tiết cửa hàng (Tab Sản phẩm): [shop_details_page_1780629942949.png](file:///C:/Users/User/.gemini/antigravity-ide/brain/af28e59d-c257-4c02-a003-5303f58ae5bc/shop_details_page_1780629942949.png)
+  - Tab Giới thiệu của cửa hàng: [shop_gioi_thieu_tab_1780629966140.png](file:///C:/Users/User/.gemini/antigravity-ide/brain/af28e59d-c257-4c02-a003-5303f58ae5bc/shop_gioi_thieu_tab_1780629966140.png)
+  - Tìm kiếm sản phẩm trong shop: [shop_search_results_1780630002998.png](file:///C:/Users/User/.gemini/antigravity-ide/brain/af28e59d-c257-4c02-a003-5303f58ae5bc/shop_search_results_1780630002998.png)
 * 🎥 **Video ghi lại toàn bộ luồng tương tác thực tế của người dùng trên trình duyệt**:
   - Video kiểm định Tab cá nhân và tương tác: [profile_page_check_1780554649802.webp](file:///C:/Users/User/.gemini/antigravity-ide/brain/0d7f1d01-b77d-4a97-8795-e660695951bf/profile_page_check_1780554649802.webp)
 
@@ -140,12 +147,21 @@ Các ảnh chụp màn hình và video kiểm thử được lưu trữ trực t
 | **TC-15: Tối ưu dung lượng & Canvas Hybrid** | Tải lên ảnh dung lượng nhỏ (<300KB) và ảnh dung lượng lớn (>300KB). | Ảnh nhỏ được giữ nguyên base64 gốc sắc nét. Ảnh lớn (>300KB) tự động nén canvas xuống JPEG 92% để tránh lỗi đầy localStorage. | ✅ Pass |
 | **TC-16: Tránh QuotaExceededError qua Zustand partialize** | Đăng ký người bán (chứa nhiều ảnh base64 nặng của CMND/logo) và reload trang. | Zustand partialize tự động lọc các ảnh base64 cồng kềnh trước khi ghi vào localStorage, đăng ký thành công không lỗi tràn bộ nhớ. | ✅ Pass |
 | **TC-17: Khắc phục Hydration mismatch** | Reload trực tiếp các route danh sách `/products` và chi tiết `/products/[id]`. | Nhờ Client Component và `mounted` state guard, trang hiển thị đồng bộ cả dữ liệu tĩnh và custom động từ client-side localStorage mà không bị lỗi hydration. | ✅ Pass |
+| **TC-18: Banner thông tin Shop** | Mở trang chi tiết sản phẩm tĩnh hoặc động bất kỳ. | Banner hiển thị đẹp ở giữa trang chứa logo, tên shop, badge xác minh, vị trí và sao đánh giá. | ✅ Pass |
+| **TC-19: Chuyển hướng xem chi tiết Shop** | Click nút "Xem shop →" hoặc nhấp vào tên shop trên banner. | Chuyển hướng thành công tới route `/shop/[id]` tương ứng. | ✅ Pass |
+| **TC-20: Tương tác theo dõi cửa hàng** | Bấm nút "+ Theo dõi" trên trang chi tiết shop. | Nút chuyển đổi trạng thái thành "Đang theo dõi" và đổi màu nền xám nhạt mượt mà. | ✅ Pass |
+| **TC-21: Nhắn tin mô phỏng** | Bấm nút "Nhắn tin" ở thẻ thông tin shop. | Hiển thị thông báo alert mô phỏng trò chuyện thành công. | ✅ Pass |
+| **TC-22: Tabs Sản phẩm của shop** | Thử các chức năng lọc danh mục, tìm kiếm trong shop, và sắp xếp theo giá/tên. | Dòng sản phẩm lọc/tìm kiếm phản hồi tức thì và hiển thị đúng kết quả, không lỗi. | ✅ Pass |
+| **TC-23: Tabs Đánh giá & Giới thiệu** | Chuyển đổi qua lại giữa tab Đánh giá và Giới thiệu. | Tab Đánh giá hiển thị bình luận khách hàng cũ. Tab Giới thiệu hiển thị câu chuyện, tiêu chuẩn, địa chỉ cụ thể và tài khoản ngân hàng của custom seller. | ✅ Pass |
+| **TC-24: Đề xuất cửa hàng tương tự** | Cuộn xuống chân trang chi tiết shop, click "Xem cửa hàng" ở card shop tương tự. | Điều hướng mượt mà và load chính xác dữ liệu của cửa hàng được click. | ✅ Pass |
+| **TC-25: Xem shop tự tạo của custom seller** | Đăng ký người bán, đăng sản phẩm, click xem shop từ trang chi tiết sản phẩm tự đăng. | Trang `/shop/[userId]` load động toàn bộ thông tin đã đăng ký ở hồ sơ (tên, tiêu chuẩn, địa chỉ cụ thể, tài khoản ngân hàng, sản phẩm tự đăng). | ✅ Pass |
+| **TC-26: Cải thiện giao diện Ảnh bìa Shop** | Truy cập trang chi tiết shop, kiểm tra chiều cao và bo góc banner. | Ảnh bìa thu ngắn lại, không tràn viền, bo góc dưới và phẳng góc trên đồng bộ với thẻ thông tin shop. | ✅ Pass |
 
 ---
 
 ## 5. Kết luận nghiệm thu
 
-Mọi hoạt động phát triển của phiên bản MVP v0.4.0 đều tuân thủ chặt chẽ quy trình **PLAN - DOC - BUILD - TEST**. Các tệp tin tài liệu được đồng bộ hóa hoàn toàn, mã nguồn được build thành công không lỗi, và các tính năng tương tác được kiểm thử trực quan trên trình duyệt trước khi giao.
+Mọi hoạt động phát triển của phiên bản MVP v0.4.2 đều tuân thủ chặt chẽ quy trình **PLAN - DOC - BUILD - TEST**. Các tệp tin tài liệu được đồng bộ hóa hoàn toàn, mã nguồn được build thành công không lỗi, và các tính năng tương tác được kiểm thử trực quan trên trình duyệt trước khi giao.
 
 Dự án đã sẵn sàng triển khai chính thức!
 

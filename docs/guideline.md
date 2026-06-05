@@ -31,8 +31,21 @@ Tại trang chi tiết sản phẩm, người dùng có thể:
 4. Bấm `Mua ngay` để thêm sản phẩm và chuyển thẳng sang trang thanh toán.
 5. Xem các tab `Mô tả`, `Thông tin`, `Đánh giá`.
 6. Xem danh sách sản phẩm tương tự ở cuối trang.
+7. Xem Banner thông tin nhà vườn/shop bán sản phẩm (với logo, đánh giá, vị trí). Bấm `Xem shop →` hoặc nhấp vào tên shop để truy cập trang chi tiết Cửa hàng.
 
-## 4. Quản lý giỏ hàng
+## 4. Xem chi tiết Cửa hàng (Shop Profile)
+
+Tại trang chi tiết cửa hàng (`/shop/[id]`), người dùng có thể:
+
+1. Xem ảnh bìa, logo đại diện, tên cửa hàng, slogan, địa điểm và các tiêu chuẩn chất lượng (như VietGAP, USDA Organic).
+2. Bấm nút `+ Theo dõi` để theo dõi cửa hàng (trạng thái chuyển sang `Đang theo dõi` và thay đổi màu sắc).
+3. Bấm `Nhắn tin` để kích hoạt mô phỏng hộp thoại trò chuyện với chủ vườn.
+4. Xem tab `Sản phẩm`: Lọc sản phẩm theo danh mục của shop, tìm kiếm sản phẩm trong shop, và sắp xếp theo giá cả hoặc tên gọi.
+5. Xem tab `Đánh giá`: Xem các đánh giá chi tiết từ khách hàng cũ về nhà vườn.
+6. Xem tab `Giới thiệu`: Xem quy trình trồng trọt, ảnh album thực địa, thông tin liên lạc và thông tin thanh toán tài khoản ngân hàng của chủ vườn (tự động cập nhật cho cả người bán tự đăng ký).
+7. Xem danh sách `Cửa hàng tương tự` ở chân trang để khám phá các nhà vườn liên kết khác.
+
+## 5. Quản lý giỏ hàng
 
 1. Chọn menu `Giỏ hàng`.
 2. Kiểm tra danh sách sản phẩm đã thêm.
@@ -41,7 +54,7 @@ Tại trang chi tiết sản phẩm, người dùng có thể:
 5. Nhập mã giảm giá nếu có.
 6. Bấm `Tiến hành đặt hàng` để chuyển sang trang thanh toán.
 
-## 5. Thanh toán
+## 6. Thanh toán
 
 1. Điền thông tin giao hàng:
    - Họ và tên
@@ -59,7 +72,7 @@ Tại trang chi tiết sản phẩm, người dùng có thể:
 
 Lưu ý: Danh sách tỉnh/thành phố và quận/huyện được lấy từ API `provinces.open-api.vn`. Nếu API lỗi mạng, ứng dụng dùng dữ liệu dự phòng để người dùng vẫn có thể đặt hàng.
 
-## 6. Đăng ký tài khoản
+## 7. Đăng ký tài khoản
 
 1. Chọn menu `Tài khoản`.
 2. Chọn liên kết đăng ký nếu chưa có tài khoản.
@@ -72,7 +85,7 @@ Lưu ý: Danh sách tỉnh/thành phố và quận/huyện được lấy từ A
 4. Bấm `Tạo tài khoản`.
 5. Sau khi đăng ký thành công, hệ thống chuyển sang trang đăng nhập.
 
-## 7. Đăng nhập
+## 8. Đăng nhập
 
 1. Chọn menu `Tài khoản`.
 2. Nhập email và mật khẩu.
@@ -86,19 +99,19 @@ Email: admin@nongsach.vn
 Mật khẩu: 12345678
 ```
 
-## 8. Trang giới thiệu
+## 9. Trang giới thiệu
 
 1. Chọn menu `Về chúng tôi`.
 2. Xem câu chuyện thương hiệu, giá trị cốt lõi, đội ngũ sáng lập và lời kêu gọi hành động.
 
-## 9. Trang liên hệ
+## 10. Trang liên hệ
 
 1. Chọn menu `Liên hệ`.
 2. Điền form liên hệ gồm họ tên, email, số điện thoại, chủ đề và nội dung.
 3. Xem thông tin liên hệ, hotline, email và giờ làm việc. Lưu ý: Form liên hệ hiện là giao diện MVP. Chức năng gửi dữ liệu thật sẽ được bổ sung ở giai đoạn backend/Firebase.
 4. Có thể nhập email ở khu vực đăng ký nhận bản tin.
 
-## 10. Đăng ký bán hàng & Quản lý Kênh bán hàng
+## 11. Đăng ký bán hàng & Quản lý Kênh bán hàng
 
 Khi người dùng đã đăng nhập tài khoản, họ có thể đăng ký nâng cấp tài khoản thành Người bán:
 
@@ -112,7 +125,7 @@ Khi người dùng đã đăng nhập tài khoản, họ có thể đăng ký n�
 4. Bấm `Đăng ký bán hàng` ở bước cuối cùng. Hệ thống sẽ tự động phê duyệt nhanh và nâng cấp tài khoản sang vai trò `seller`.
 5. Sau khi nâng cấp thành công, giao diện đăng ký 4 bước biến mất hoàn toàn. Thay vào đó, hệ thống hiển thị **Kênh bán hàng (Dashboard)** với các thống kê doanh số, sản phẩm, và danh sách đơn hàng/sản phẩm của riêng shop.
 
-## 11. Quản lý sản phẩm tự đăng (CRUD)
+## 12. Quản lý sản phẩm tự đăng (CRUD)
 
 Tại giao diện Kênh bán hàng (Dashboard), người bán có thể quản lý danh sách sản phẩm của mình:
 
@@ -130,7 +143,7 @@ Tại giao diện Kênh bán hàng (Dashboard), người bán có thể quản l
    - Bấm nút `Xóa` (icon thùng rác) bên cạnh sản phẩm.
    - Xác nhận xóa trong hộp thoại cảnh báo. Sản phẩm sẽ được xóa khỏi bộ nhớ đệm và giao diện cập nhật ngay lập tức.
 
-## 12. Ghi chú sử dụng
+## 13. Ghi chú sử dụng
 
 - Website có thể chạy tốt trên desktop, tablet và mobile.
 - Giỏ hàng được lưu bằng localStorage nên vẫn giữ dữ liệu sau khi tải lại trang.
@@ -138,7 +151,7 @@ Tại giao diện Kênh bán hàng (Dashboard), người bán có thể quản l
 - Khi thêm sản phẩm mới hoặc đăng ký người bán, ảnh được lưu trữ dưới dạng base64. Để tránh lỗi đầy bộ nhớ Local Storage (`QuotaExceededError`), hệ thống đã triển khai cơ chế lọc `partialize` loại bỏ ảnh nặng trong Auth store và sử dụng giải thuật nén ảnh canvas/WebP Hybrid trước khi lưu. Ảnh sản phẩm cũ đã lưu mờ trong localStorage cần được upload lại từ ảnh gốc để cải thiện chất lượng.
 - Khi build production trong project này, script đang dùng `next build --webpack` để tránh lỗi Turbopack với đường dẫn tiếng Việt.
 
-## 13. Quy trình nghiệp vụ tổng thể trong tương lai (Phase 2)
+## 14. Quy trình nghiệp vụ tổng thể trong tương lai (Phase 2)
 
 Phần này mô tả quy trình nghiệp vụ định hướng cho các phiên bản tiếp theo của NôngSạch khi kết nối với Server/Database thực tế.
 

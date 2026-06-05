@@ -5,12 +5,12 @@
 | Thông tin         | Chi tiết                                    |
 | ----------------- | ------------------------------------------- |
 | Tên dự án         | NôngSạch — Nền tảng giao dịch nông sản sạch |
-| Phiên bản         | MVP v0.4.0                                  |
+| Phiên bản         | MVP v0.4.2                                  |
 | Ngày tạo          | 03/06/2026                                  |
 | Cập nhật lần cuối | 05/06/2026                                  |
 | Nhóm              | NôngSạch Team                               |
 | Môn học           | Vibe Coding Thực Chiến — Buổi 3             |
-| Trạng thái        | ✅ Hoàn thành Sprint 1, Sprint 2, Sprint 3 & Sprint 4 |
+| Trạng thái        | ✅ Hoàn thành Sprint 1, Sprint 2, Sprint 3, Sprint 4 & Sprint 4.2 |
 
 ---
 
@@ -66,8 +66,10 @@ Người tiêu dùng ngày càng lo ngại về an toàn thực phẩm, đặc b
 | F-10 | Đăng ký người bán  | Đăng ký 4 bước (Cửa hàng, Địa chỉ/Tiêu chuẩn, CMND/CCCD, Ngân hàng) | P1      | ✅ Done     |
 | F-11 | Kênh bán hàng      | Dashboard thống kê, danh sách đơn hàng và quản lý sản phẩm tự đăng | P1      | ✅ Done     |
 | F-12 | Quản lý sản phẩm   | CRUD: Thêm mới (kèm upload 6 ảnh bìa/phụ), Sửa thông tin, Xóa sản phẩm | P1      | ✅ Done     |
+| F-13 | Banner thông tin Shop | Banner hiển thị logo, tên shop, đánh giá, vị trí trên trang chi tiết sản phẩm | P1      | ✅ Done     |
+| F-14 | Trang chi tiết Shop   | Trang thông tin shop (/shop/[id]) với cover, avatar, mô tả, tab sản phẩm, đánh giá và giới thiệu | P1      | ✅ Done     |
 
-> **Ghi chú cho team:** F-09 hiện đã có giao diện hoàn chỉnh theo Stitch HTML tại route `/contact`. Form liên hệ đang ở mức UI/UX MVP; nếu cần gửi dữ liệu thật, cần bổ sung API/Firebase handler ở Phase 2. Kênh bán hàng (F-11) và Quản lý sản phẩm (F-12) hiện được lưu động tại `localStorage` phía client của từng người dùng để mô phỏng tính năng thực tế.
+> **Ghi chú cho team:** F-09 hiện đã có giao diện hoàn chỉnh theo Stitch HTML tại route `/contact`. Form liên hệ đang ở mức UI/UX MVP; nếu cần gửi dữ liệu thật, cần bổ sung API/Firebase handler ở Phase 2. Kênh bán hàng (F-11), Quản lý sản phẩm (F-12) và Trang chi tiết shop (F-14) hiện được lưu động tại `localStorage` phía client của từng người dùng để mô phỏng tính năng thực tế.
 
 ## 2.2. Ngoài phạm vi MVP
 
@@ -527,6 +529,19 @@ interface ContactMessage {
 | T-32 | Tối ưu hóa bộ sưu tập thumbnail & độ sắc nét   | 2  | ✅      |
 | T-33 | Tích hợp Zustand partialize ngăn QuotaExceeded | 2  | ✅      |
 | T-34 | Khắc phục Hydration mismatch trên các trang sản phẩm | 2  | ✅      |
+
+## Sprint 4.2 — Banner thông tin Shop & Trang chi tiết cửa hàng tương tác (✅ Hoàn thành)
+
+| ID   | Task                                           | SP | Status |
+| ---- | ---------------------------------------------- | -- | ------ |
+| T-35 | Expose sellerId, shopName, unit, isOrganic trên Product type | 1  | ✅      |
+| T-36 | Tạo Banner thông tin Shop trên trang chi tiết sản phẩm | 3  | ✅      |
+| T-37 | Xây dựng tệp tin dữ liệu & helper resolver shops.ts | 2  | ✅      |
+| T-38 | Thiết kế trang chi tiết Shop (/shop/[id]) với cover, avatar và stats | 4  | ✅      |
+| T-39 | Tích hợp tính năng Theo dõi (Follow) trạng thái động | 2  | ✅      |
+| T-40 | Tabs Sản phẩm có bộ lọc danh mục, tìm kiếm trong shop và sắp xếp | 3  | ✅      |
+| T-41 | Tabs Đánh giá & Giới thiệu (hiển thị tài khoản thanh toán ngân hàng) | 3  | ✅      |
+| T-42 | Section các cửa hàng tương tự ở chân trang | 2  | ✅      |
 
 ## Backlog Phase 2 (Tương lai)
 

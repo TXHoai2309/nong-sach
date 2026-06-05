@@ -6,6 +6,55 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
 
 ---
 
+## [0.4.2] - 2026-06-05
+
+### Sprint 4.2 — Banner thông tin Shop & Trang chi tiết cửa hàng tương tác
+
+### Added
+
+#### Banner thông tin Shop (`src/components/product/ProductDetail.tsx`)
+* Triển khai Banner thông tin Shop nằm giữa phần hình ảnh/thông số sản phẩm chính và các tab chi tiết sản phẩm.
+* Hiển thị đầy đủ logo đại diện, tên cửa hàng (kèm badge Đã xác minh), xếp hạng sao vàng (`⭐`), số lượng đánh giá, tổng số lượng sản phẩm của cửa hàng và vị trí địa lý nông trại (`📍`).
+* Nút "Xem shop →" liên kết động tới trang chi tiết của shop tương ứng.
+
+#### Trang chi tiết Cửa hàng (`src/app/shop/[id]/page.tsx` & `src/lib/shops.ts`)
+* Thiết kế và triển khai trang chi tiết shop tại route `/shop/[id]`:
+  * **Ảnh bìa đại diện**: Hình ảnh phong cảnh nông trại hữu cơ trải dài.
+  * **Thẻ hồ sơ cửa hàng**: Avatar bo tròn có viền trắng, badge Đã xác minh màu xanh lá, tên shop, tiêu chuẩn chất lượng (VietGAP, USDA Organic), slogan và vị trí.
+  * **Thống kê chi tiết**: Bảng điểm rating, số sản phẩm, số đơn hàng hoàn thành và mốc tham gia hệ thống.
+  * **Tương tác**: Nút "+ Theo dõi" đổi trạng thái sang "Đang theo dõi" kèm thay đổi màu sắc trực quan; nút "Nhắn tin" mô phỏng; nút chia sẻ.
+  * **Giới thiệu tóm tắt**: Khung giới thiệu ngắn về nông trại đi kèm icon Material.
+  * **Tab Sản phẩm**: 
+    - Lọc sản phẩm theo danh mục động có trong shop.
+    - Tìm kiếm sản phẩm trực tiếp trong cửa hàng theo tên/mô tả.
+    - Sắp xếp sản phẩm theo giá tăng/giảm dần, tên A-Z hoặc độ phổ biến.
+    - Grid sản phẩm hiển thị đầy đủ hình ảnh, badge hữu cơ, icon yêu thích, xuất xứ, đánh giá và nút thêm vào giỏ hàng nhanh.
+  * **Tab Đánh giá**: Danh sách phản hồi và đánh giá từ khách hàng cũ (sao vàng, bình luận, thời gian).
+  * **Tab Giới thiệu**: Chi tiết quy trình canh tác nông trại, danh mục, địa chỉ, ảnh bộ sưu tập nông trại và **thông tin thanh toán ngân hàng** (tự động load động từ `localStorage` nếu là shop tự đăng của custom seller).
+  * **Cửa hàng tương tự**: Đề xuất các shop khác ở chân trang có nút liên kết điều hướng mượt mà.
+
+### Changed
+
+#### `src/types/product.ts`
+* Bổ sung các trường tùy chọn `sellerId?: string`, `shopName?: string`, `isOrganic?: boolean`, `unit?: string` vào interface `Product` để đồng bộ dữ liệu.
+
+#### `src/lib/products.ts`
+* Đọc và map chính xác các trường `sellerId` và `shopName` đối với các sản phẩm tự tạo từ `localStorage`.
+
+### Fixed
+
+#### Giao diện Trang chi tiết Shop (`src/app/shop/[id]/page.tsx`)
+* Tối ưu hóa ảnh bìa cửa hàng (Cover Image): Thu ngắn chiều cao từ `380px` xuống `300px` (desktop) và từ `280px` xuống `200px` (mobile) giúp giao diện gọn gàng, tập trung hơn vào nội dung chính.
+* Cải thiện UX với thiết kế bo góc: Áp dụng bo góc dưới (`rounded-b-3xl`) cho cả ảnh bìa và thẻ thông tin shop, đồng thời bỏ bo góc trên để tạo sự liền mạch, chuyên nghiệp.
+* Giới hạn chiều rộng: Bọc toàn bộ phần banner vào `.site-container` thay vì tràn viền, giúp bố cục trang đồng nhất và dễ nhìn hơn trên màn hình lớn.
+* Tinh chỉnh vị trí các thành phần: Căn chỉnh lại Breadcrumb và nút chỉnh sửa (More) để hiển thị cân đối trong khung banner mới.
+
+#### Bố cục Stats Box & Nút tùy chọn (`src/app/shop/[id]/page.tsx`)
+* Khắc phục lỗi co rút giao diện (khiến font chữ/nhãn thông tin bị đè và chồng chéo lên nhau) tại ô thống kê cửa hàng khi ngày tham gia của nhà vườn dài (ví dụ: `tháng 06, 2026`). Áp dụng giới hạn độ rộng tối thiểu an toàn `minWidth: min(100%, 420px)` và tinh chỉnh font size hợp lý.
+* Di chuyển nút tùy chọn ba chấm (`...`) từ bảng thông tin phía dưới lên góc trên cùng bên phải của ảnh bìa (Cover Image), thiết kế lại theo phong cách kính mờ (glassmorphism) hiện đại, tinh gọn và dễ tương tác.
+
+---
+
 ## [0.4.1] - 2026-06-05
 
 ### Sprint 4.1 — Cải thiện chất lượng ảnh upload & UX khung ảnh sản phẩm

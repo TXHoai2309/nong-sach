@@ -9,6 +9,7 @@ import { formatCurrency } from "@/lib/format";
 import { useAuthStore } from "@/store/auth-store";
 import { useCartStore } from "@/store/cart-store";
 import { UserAddress } from "@/types/user";
+import CoverImageCropper from "@/components/ui/CoverImageCropper";
 
 const PROVINCES_API = "https://provinces.open-api.vn/api/v1/?depth=2";
 
@@ -78,6 +79,7 @@ export default function ProfilePage() {
     setDefaultAddress,
     registerSeller,
     approveSeller,
+    updateSellerInfo,
   } = useAuthStore();
   const { addToCart } = useCartStore();
 
@@ -95,6 +97,9 @@ export default function ProfilePage() {
   const [isZaloSame, setIsZaloSame] = useState(false);
   const [shopDescription, setShopDescription] = useState("");
   const [shopLogo, setShopLogo] = useState<string | null>(null);
+  const [shopCoverImage, setShopCoverImage] = useState<string>("");
+  const [shopCoverUrl, setShopCoverUrl] = useState("");
+  const [shopCropSrc, setShopCropSrc] = useState<string | null>(null);
   const [farmImages, setFarmImages] = useState<string[]>([]);
   const [selectedMainCategories, setSelectedMainCategories] = useState<string[]>([]);
   const [farmProvinceCode, setFarmProvinceCode] = useState<number | "">("");
@@ -111,6 +116,7 @@ export default function ProfilePage() {
   // Seller Dashboard products list
   const [shopProducts, setShopProducts] = useState<any[]>([]);
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
+  const [isEditShopOpen, setIsEditShopOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any | null>(null);
   const [newProdName, setNewProdName] = useState("");
   const [newProdCategory, setNewProdCategory] = useState("vegetables");
@@ -539,6 +545,102 @@ export default function ProfilePage() {
     showToast("Gửi hồ sơ đăng ký thành công!");
   };
 
+  const openEditShopModal = () => {
+    if (currentUser && currentUser.sellerInfo) {
+      const info = currentUser.sellerInfo;
+      setShopName(info.shopName || "");
+      setShopSlogan(info.slogan || "");
+      setShopPhone(info.shopPhone || "");
+      setShopZalo(info.shopZalo || "");
+      setIsZaloSame(info.shopZalo === info.shopPhone);
+      setShopDescription(info.description || "");
+      setShopLogo(info.shopLogo || null);
+      setShopCoverImage(info.coverImage || "");
+      setShopCoverUrl(info.coverImage || "");
+      setFarmImages(info.farmImages || []);
+      setSelectedMainCategories(info.mainCategories || []);
+      
+      const prov = provinces.find((p) => p.name === info.province);
+      setFarmProvinceCode(prov ? prov.code : "");
+      
+      setFarmAddress(info.farmAddress || "");
+      setSelectedStandards(info.farmingStandards || []);
+      setStandardsDetail(info.farmingStandardsDetail || "");
+      setBankName(info.bankName || "Vietcombank");
+      setBankAccountNumber(info.bankAccountNumber || "");
+      setBankAccountName(info.bankAccountName || "");
+    }
+    setIsEditShopOpen(true);
+  };
+
+  const handleEditShopSubmit = (e: FormEvent) => {
+    e.preventDefault();
+
+    if (!shopName.trim()) {
+      showToast("Vui lòng nhập tên shop", "error");
+      return;
+    }
+    if (!shopPhone.trim() || !/^0\d{9}$/.test(shopPhone.trim().replace(/\s+/g, ""))) {
+      showToast("Số điện thoại shop không hợp lệ", "error");
+      return;
+    }
+    if (!shopZalo.trim() || !/^0\d{9}$/.test(shopZalo.trim().replace(/\s+/g, ""))) {
+      showToast("Số Zalo không hợp lệ", "error");
+      return;
+    }
+    if (!shopDescription.trim()) {
+      showToast("Vui lòng nhập giới thiệu shop", "error");
+      return;
+    }
+    if (selectedMainCategories.length === 0) {
+      showToast("Vui lòng chọn ít nhất một loại nông sản chủ đạo", "error");
+      return;
+    }
+    if (!farmProvinceCode) {
+      showToast("Vui lòng chọn Tỉnh/Thành phố trang trại", "error");
+      return;
+    }
+    if (!farmAddress.trim()) {
+      showToast("Vui lòng nhập địa chỉ cụ thể của trang trại", "error");
+      return;
+    }
+    if (!bankAccountNumber.trim()) {
+      showToast("Vui lòng nhập số tài khoản ngân hàng", "error");
+      return;
+    }
+    if (!bankAccountName.trim()) {
+      showToast("Vui lòng nhập tên chủ tài khoản", "error");
+      return;
+    }
+
+    const selectedProv = provinces.find((p) => p.code === Number(farmProvinceCode));
+
+    updateSellerInfo({
+      shopName: shopName.trim(),
+      slogan: shopSlogan.trim(),
+      shopPhone: shopPhone.trim(),
+      shopZalo: shopZalo.trim(),
+      description: shopDescription.trim(),
+      shopLogo: shopLogo || undefined,
+      coverImage: shopCoverImage || undefined,
+      farmImages: farmImages.length > 0 ? farmImages : undefined,
+      mainCategories: selectedMainCategories,
+      province: selectedProv?.name || "Lâm Đồng",
+      farmAddress: farmAddress.trim(),
+      farmingStandards: selectedStandards,
+      farmingStandardsDetail: standardsDetail.trim() || undefined,
+      idCardNumber: currentUser?.sellerInfo?.idCardNumber || "",
+      idCardFront: currentUser?.sellerInfo?.idCardFront,
+      idCardBack: currentUser?.sellerInfo?.idCardBack,
+      bankName,
+      bankAccountNumber: bankAccountNumber.trim(),
+      bankAccountName: bankAccountName.trim().toUpperCase(),
+    });
+
+    showToast("Cập nhật thông tin cửa hàng thành công!");
+    setIsEditShopOpen(false);
+  };
+
   const closeProductModal = () => {
     setIsAddProductOpen(false);
     setEditingProduct(null);
@@ -830,7 +932,8 @@ export default function ProfilePage() {
   const formDistrictOptions = currentSelectedProvObj?.districts ?? [];
 
   return (
-    <main className="bg-[#f9f9ff] px-4 py-8 sm:px-6 md:py-10">
+    <>
+      <main className="bg-[#f9f9ff] px-4 py-8 sm:px-6 md:py-10">
       <div className="mx-auto max-w-[1040px]">
         {/* Toast Toast notification */}
         {toast && (
@@ -2114,10 +2217,20 @@ export default function ProfilePage() {
                           </p>
                         </div>
                       </div>
-                      <span className="inline-flex items-center gap-1 rounded-full bg-[#e6f4ea] px-3 py-1 text-[10px] font-extrabold text-[#006c49] tracking-wide border border-[#006c49]/10">
-                        <span className="h-1.5 w-1.5 rounded-full bg-[#006c49]"></span>
-                        ĐỐI TÁC CHÍNH THỨC
-                      </span>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={openEditShopModal}
+                          className="rounded-full border border-[#bbcabf]/50 bg-white hover:bg-gray-50 px-4 py-2 text-xs font-bold text-[#3c4a42] shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined text-sm text-[#006c49]">edit_note</span>
+                          Chỉnh sửa Shop
+                        </button>
+                        <span className="inline-flex items-center gap-1 rounded-full bg-[#e6f4ea] px-3 py-1 text-[10px] font-extrabold text-[#006c49] tracking-wide border border-[#006c49]/10">
+                          <span className="h-1.5 w-1.5 rounded-full bg-[#006c49]"></span>
+                          ĐỐI TÁC CHÍNH THỨC
+                        </span>
+                      </div>
                     </div>
 
                     {/* Stats Grid */}
@@ -2489,6 +2602,419 @@ export default function ProfilePage() {
                         </div>
                       </div>
                     )}
+
+                    {/* Edit Shop Modal Dialog */}
+                    {isEditShopOpen && (
+                      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                        <div className="w-full max-w-[650px] rounded-3xl bg-white p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+                          <div className="flex justify-between items-center border-b border-[#bbcabf]/20 pb-3">
+                            <h4 className="text-sm font-bold text-[#006c49] flex items-center gap-1.5">
+                              <span className="material-symbols-outlined text-base">edit_note</span>
+                              Chỉnh sửa thông tin Shop
+                            </h4>
+                            <button
+                              type="button"
+                              onClick={() => setIsEditShopOpen(false)}
+                              className="text-gray-400 hover:text-gray-600 flex h-7 w-7 items-center justify-center rounded-full hover:bg-gray-100"
+                            >
+                              ✕
+                            </button>
+                          </div>
+
+                          <form onSubmit={handleEditShopSubmit} className="space-y-5 text-left">
+
+                            {/* ── Ảnh bìa cửa hàng ─────────────────────────── */}
+                            <div className="space-y-2">
+                              <h5 className="text-xs font-bold text-[#006c49] flex items-center gap-1">
+                                <span className="material-symbols-outlined text-sm">image</span>
+                                Ảnh bìa cửa hàng
+                              </h5>
+
+                              {/* Preview */}
+                              <div className="relative w-full h-32 rounded-2xl overflow-hidden bg-slate-100 border-2 border-dashed border-[#bbcabf]/40 group">
+                                {shopCoverImage ? (
+                                  <>
+                                    <img
+                                      src={shopCoverImage}
+                                      alt="Ảnh bìa"
+                                      className="w-full h-full object-cover"
+                                    />
+                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                      <span className="text-white text-[10px] font-bold bg-black/40 px-3 py-1.5 rounded-full backdrop-blur-sm">
+                                        Thay đổi ảnh bìa
+                                      </span>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => { setShopCoverImage(""); setShopCoverUrl(""); }}
+                                      className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-all z-10 text-xs"
+                                      title="Xóa ảnh bìa"
+                                    >✕</button>
+                                  </>
+                                ) : (
+                                  <div className="flex flex-col items-center justify-center h-full gap-1.5 text-[#3c4a42]/30">
+                                    <span className="material-symbols-outlined text-3xl">add_photo_alternate</span>
+                                    <span className="text-[10px] font-semibold">Chưa có ảnh bìa</span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Upload + URL */}
+                              <div className="flex gap-2 items-center flex-wrap">
+                                <label className="cursor-pointer inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#006c49]/10 text-[#006c49] hover:bg-[#006c49]/20 text-[10px] font-bold border border-[#006c49]/20 transition-all">
+                                  <span className="material-symbols-outlined text-sm">upload</span>
+                                  Tải ảnh lên
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (!file) return;
+                                      const reader = new FileReader();
+                                      reader.onload = (ev) => {
+                                        // Open cropper instead of setting directly
+                                        setShopCropSrc(ev.target?.result as string);
+                                      };
+                                      reader.readAsDataURL(file);
+                                      e.target.value = "";
+                                    }}
+                                  />
+                                </label>
+                                <span className="text-[#3c4a42]/40 text-[10px] font-semibold">hoặc URL:</span>
+                                <input
+                                  type="url"
+                                  value={shopCoverUrl.startsWith("data:") ? "" : shopCoverUrl}
+                                  onChange={(e) => setShopCoverUrl(e.target.value)}
+                                  onBlur={(e) => {
+                                    const url = e.target.value.trim();
+                                    if (url.startsWith("http")) setShopCropSrc(url);
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      const url = shopCoverUrl.trim();
+                                      if (url.startsWith("http")) setShopCropSrc(url);
+                                    }
+                                  }}
+                                  placeholder="https://... nhấn Enter"
+                                  className="flex-1 min-w-0 rounded-xl bg-[#f4f6fa] px-3 py-1.5 text-[10px] text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                                />
+                              </div>
+                              <p className="text-[9px] text-[#3c4a42]/40 font-medium">Ảnh sẽ được cắt tỉ lệ 16:5 để khớp banner</p>
+                            </div>
+
+                            <div className="border-t border-[#bbcabf]/20" />
+
+                            {/* Section 1: Basic Info */}
+                            <div className="space-y-4">
+                              <h5 className="text-xs font-bold text-[#006c49] flex items-center gap-1">
+                                <span className="material-symbols-outlined text-sm">storefront</span>
+                                Thông tin cửa hàng
+                              </h5>
+                              
+                              <div className="flex flex-col items-center justify-center mb-2">
+                                <label className="flex h-20 w-20 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#bbcabf]/50 bg-gray-50/50 hover:bg-gray-50 transition-all overflow-hidden relative">
+                                  {shopLogo ? (
+                                    <img src={shopLogo} alt="Logo preview" className="h-full w-full object-cover" />
+                                  ) : (
+                                    <>
+                                      <span className="material-symbols-outlined text-[20px] text-[#3c4a42]/40">image</span>
+                                      <span className="text-[8px] font-bold text-[#3c4a42]/60 mt-1">Logo Shop</span>
+                                    </>
+                                  )}
+                                  <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
+                                </label>
+                              </div>
+
+                              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                <div>
+                                  <label className="block text-[10px] font-bold text-[#3c4a42]/70 mb-1">
+                                    Tên shop *
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={shopName}
+                                    onChange={(e) => setShopName(e.target.value)}
+                                    className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-2.5 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                                    required
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] font-bold text-[#3c4a42]/70 mb-1">
+                                    Slogan
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={shopSlogan}
+                                    onChange={(e) => setShopSlogan(e.target.value)}
+                                    className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-2.5 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                <div>
+                                  <label className="block text-[10px] font-bold text-[#3c4a42]/70 mb-1">
+                                    Số điện thoại *
+                                  </label>
+                                  <input
+                                    type="tel"
+                                    value={shopPhone}
+                                    onChange={(e) => setShopPhone(e.target.value)}
+                                    className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-2.5 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                                    required
+                                  />
+                                </div>
+                                <div>
+                                  <div className="flex justify-between items-center mb-1">
+                                    <label className="block text-[10px] font-bold text-[#3c4a42]/70">
+                                      Số Zalo *
+                                    </label>
+                                    <label className="flex items-center gap-1 cursor-pointer text-[9px] text-[#3c4a42]/60 font-semibold">
+                                      <input
+                                        type="checkbox"
+                                        checked={isZaloSame}
+                                        onChange={(e) => {
+                                          setIsZaloSame(e.target.checked);
+                                          if (e.target.checked) setShopZalo(shopPhone);
+                                        }}
+                                        className="h-3 w-3 rounded text-[#006c49] focus:ring-[#006c49]"
+                                      />
+                                      Giống số điện thoại
+                                    </label>
+                                  </div>
+                                  <input
+                                    type="tel"
+                                    value={shopZalo}
+                                    onChange={(e) => setShopZalo(e.target.value)}
+                                    disabled={isZaloSame}
+                                    className={`w-full rounded-xl border-none px-3.5 py-2.5 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49] ${
+                                      isZaloSame ? "bg-[#eef2f6] text-[#3c4a42]/60 cursor-not-allowed" : "bg-[#f4f6fa]"
+                                    }`}
+                                    required
+                                  />
+                                </div>
+                              </div>
+
+                              <div>
+                                <label className="block text-[10px] font-bold text-[#3c4a42]/70 mb-1">
+                                  Giới thiệu shop *
+                                </label>
+                                <textarea
+                                  value={shopDescription}
+                                  onChange={(e) => setShopDescription(e.target.value)}
+                                  rows={3}
+                                  className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-2.5 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                                  required
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-[10px] font-bold text-[#3c4a42]/70 mb-1">
+                                  Ảnh thực tế trong trang trại *
+                                </label>
+                                <div className="flex flex-wrap gap-2 items-center">
+                                  <label className="flex h-14 w-14 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#bbcabf]/50 bg-gray-50/50 hover:bg-gray-50 transition-all text-gray-400">
+                                    <span className="material-symbols-outlined text-base">add_a_photo</span>
+                                    <input type="file" multiple accept="image/*" onChange={handleFarmImagesUpload} className="hidden" />
+                                  </label>
+
+                                  {farmImages.map((img, idx) => (
+                                    <div key={idx} className="relative h-14 w-14 rounded-xl overflow-hidden border border-[#bbcabf]/20">
+                                      <img src={img} alt="Farm preview" className="h-full w-full object-cover" />
+                                      <button
+                                        type="button"
+                                        onClick={() => setFarmImages((prev) => prev.filter((_, i) => i !== idx))}
+                                        className="absolute top-0.5 right-0.5 h-4 w-4 rounded-full bg-red-500 text-white flex items-center justify-center text-[9px] hover:bg-red-600 transition"
+                                      >
+                                        ✕
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Section 2: Farm Info */}
+                            <div className="space-y-4 pt-2 border-t border-[#bbcabf]/15">
+                              <h5 className="text-xs font-bold text-[#006c49] flex items-center gap-1">
+                                <span className="material-symbols-outlined text-sm">eco</span>
+                                Thông tin trang trại
+                              </h5>
+
+                              <div>
+                                <span className="block text-[10px] font-bold text-[#3c4a42]/70 mb-1.5">Loại nông sản chủ đạo</span>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {[
+                                    { id: "vegetables", label: "Rau củ" },
+                                    { id: "fruits", label: "Trái cây" },
+                                    { id: "grains", label: "Ngũ cốc" },
+                                    { id: "herbs", label: "Thảo mộc" },
+                                    { id: "other", label: "Khác" }
+                                  ].map((cat) => {
+                                    const isSelected = selectedMainCategories.includes(cat.label);
+                                    return (
+                                      <button
+                                        key={cat.id}
+                                        type="button"
+                                        onClick={() => {
+                                          if (isSelected) {
+                                            setSelectedMainCategories((prev) => prev.filter((c) => c !== cat.label));
+                                          } else {
+                                            setSelectedMainCategories((prev) => [...prev, cat.label]);
+                                          }
+                                        }}
+                                        className={`rounded-full px-3.5 py-1 text-[11px] font-bold border transition-all duration-200 ${
+                                          isSelected
+                                            ? "bg-[#e6f4ea] border-[#006c49] text-[#006c49]"
+                                            : "bg-white border-[#bbcabf]/50 text-[#3c4a42] hover:bg-gray-50"
+                                        }`}
+                                      >
+                                        {cat.label}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                <div>
+                                  <label className="block text-[10px] font-bold text-[#3c4a42]/70 mb-1">
+                                    Tỉnh / Thành phố
+                                  </label>
+                                  <select
+                                    value={farmProvinceCode}
+                                    onChange={(e) => setFarmProvinceCode(Number(e.target.value))}
+                                    className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-2.5 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                                    required
+                                  >
+                                    <option value="">Chọn Tỉnh/Thành phố</option>
+                                    {provinces.map((prov) => (
+                                      <option key={prov.code} value={prov.code}>
+                                        {prov.name}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] font-bold text-[#3c4a42]/70 mb-1">
+                                    Địa chỉ cụ thể trang trại
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={farmAddress}
+                                    onChange={(e) => setFarmAddress(e.target.value)}
+                                    className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-2.5 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                                    required
+                                  />
+                                </div>
+                              </div>
+
+                              <div>
+                                <span className="block text-[10px] font-bold text-[#3c4a42]/70 mb-1.5">Tiêu chuẩn canh tác</span>
+                                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                                  {["VietGAP", "GlobalGAP", "Hữu cơ (Organic)", "Chưa có", "Khác"].map((std) => {
+                                    const isChecked = selectedStandards.includes(std);
+                                    return (
+                                      <label key={std} className="flex items-center gap-1.5 cursor-pointer text-xs text-[#3c4a42] font-semibold">
+                                        <input
+                                          type="checkbox"
+                                          checked={isChecked}
+                                          onChange={(e) => {
+                                            if (e.target.checked) {
+                                              setSelectedStandards((prev) => [...prev, std]);
+                                            } else {
+                                              setSelectedStandards((prev) => prev.filter((s) => s !== std));
+                                            }
+                                          }}
+                                          className="h-4 w-4 rounded text-[#006c49] focus:ring-[#006c49]"
+                                        />
+                                        {std}
+                                      </label>
+                                    );
+                                  })}
+                                </div>
+                                <div className="mt-2">
+                                  <input
+                                    type="text"
+                                    value={standardsDetail}
+                                    onChange={(e) => setStandardsDetail(e.target.value)}
+                                    placeholder="Thông tin chi tiết tiêu chuẩn khác..."
+                                    className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-2 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Section 3: Bank Details */}
+                            <div className="space-y-4 pt-2 border-t border-[#bbcabf]/15">
+                              <h5 className="text-xs font-bold text-[#006c49] flex items-center gap-1">
+                                <span className="material-symbols-outlined text-sm">payments</span>
+                                Thông tin thanh toán ngân hàng
+                              </h5>
+                              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                                <div>
+                                  <label className="block text-[10px] font-bold text-[#3c4a42]/70 mb-1">
+                                    Ngân hàng
+                                  </label>
+                                  <select
+                                    value={bankName}
+                                    onChange={(e) => setBankName(e.target.value)}
+                                    className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-2.5 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                                    required
+                                  >
+                                    {["Vietcombank", "Agribank", "BIDV", "Techcombank", "VietinBank", "MB Bank"].map((bank) => (
+                                      <option key={bank} value={bank}>{bank}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] font-bold text-[#3c4a42]/70 mb-1">
+                                    Số tài khoản *
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={bankAccountNumber}
+                                    onChange={(e) => setBankAccountNumber(e.target.value)}
+                                    className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-2.5 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                                    required
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] font-bold text-[#3c4a42]/70 mb-1">
+                                    Tên chủ tài khoản *
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={bankAccountName}
+                                    onChange={(e) => setBankAccountName(e.target.value.toUpperCase())}
+                                    className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-2.5 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                                    required
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Submit and Cancel Buttons */}
+                            <div className="flex justify-end gap-2 pt-3 border-t border-[#bbcabf]/15">
+                              <button
+                                type="button"
+                                onClick={() => setIsEditShopOpen(false)}
+                                className="rounded-full border border-[#bbcabf] px-5 py-2 text-xs font-bold text-[#3c4a42] transition hover:bg-[#f4f6fa] cursor-pointer"
+                              >
+                                Hủy bỏ
+                              </button>
+                              <button
+                                type="submit"
+                                className="rounded-full bg-[#006c49] px-6 py-2 text-xs font-bold text-white transition hover:opacity-90 shadow-sm cursor-pointer"
+                              >
+                                Lưu thay đổi
+                              </button>
+                            </div>
+                          </form>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -2497,5 +3023,19 @@ export default function ProfilePage() {
         </div>
       </div>
     </main>
+
+    {/* ── Cover Image Cropper (profile edit shop modal) ───────────────── */}
+    {shopCropSrc && (
+      <CoverImageCropper
+        src={shopCropSrc}
+        onConfirm={(cropped) => {
+          setShopCoverImage(cropped);
+          setShopCoverUrl(cropped);
+          setShopCropSrc(null);
+        }}
+        onCancel={() => setShopCropSrc(null)}
+      />
+    )}
+    </>
   );
 }

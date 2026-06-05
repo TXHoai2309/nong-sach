@@ -31,6 +31,7 @@ export interface SellerInfo {
   shopZalo: string;
   description: string;
   shopLogo?: string;
+  coverImage?: string;
   farmImages?: string[];
   mainCategories: string[];
   province: string;
