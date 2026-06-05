@@ -10,6 +10,12 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
 
 ### Sprint 4.3 — Sửa lỗi Profile runtime, ổn định Báo cáo shop và dọn lỗi lint/type
 
+### Added
+
+#### Cấu hình & Khởi tạo Firebase
+* Tạo mới file `.env.local` lưu trữ các biến môi trường Firebase (API Key, Auth Domain, Project ID, Storage Bucket, Messaging Sender ID, App ID, Realtime Database URL).
+* Thiết lập file khởi tạo [firebase.ts](file:///d:/Thực tập/Buoi3/nong-sach/src/lib/firebase.ts) kết nối và xuất các thực thể Firebase App, Auth, Firestore (`db`), và Realtime Database (`rtdb`) dùng cho các tính năng cơ sở dữ liệu thời gian thực sau này.
+
 ### Fixed
 
 #### Profile / Thông báo (`src/app/profile/page.tsx`)
