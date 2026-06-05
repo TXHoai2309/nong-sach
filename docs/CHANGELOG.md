@@ -32,9 +32,17 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
   * **Tab Đánh giá**: Danh sách phản hồi và đánh giá từ khách hàng cũ (sao vàng, bình luận, thời gian).
   * **Tab Giới thiệu**: Chi tiết quy trình canh tác nông trại, danh mục, địa chỉ, ảnh bộ sưu tập nông trại và **thông tin thanh toán ngân hàng** (tự động load động từ `localStorage` nếu là shop tự đăng của custom seller).
   * **Hệ thống Báo cáo Shop**: Triển khai modal báo cáo cửa hàng chuyên nghiệp, cho phép người dùng chọn lý do (Sản phẩm không đúng mô tả, lừa đảo, thái độ...) và gửi kèm chi tiết về hệ thống admin (Lưu trữ động tại `localStorage`).
+  * **Menu Tiện ích Sản phẩm (`...`)**: 
+    - Bổ sung menu dấu ba chấm trên cả `ProductCard` và `ProductDetail` cho phép truy cập nhanh: Chia sẻ, Sao chép liên kết, Báo cáo sản phẩm và Trợ giúp.
+    - Hỗ trợ nút "Chỉnh sửa sản phẩm" nhanh dành riêng cho chủ sở hữu shop.
+  * **Hệ thống Báo cáo Sản phẩm**: Triển khai quy trình báo cáo sản phẩm hoàn chỉnh với modal chọn lý do và nhập chi tiết, đồng bộ dữ liệu vào hệ thống báo cáo chung của nền tảng.
   * **Cửa hàng tương tự**: Đề xuất các shop khác ở chân trang có nút liên kết điều hướng mượt mà.
 
 ### Changed
+
+#### `src/store/report-store.ts` & `src/types/report.ts`
+* Tái cấu trúc (Refactor) hệ thống lưu trữ báo cáo sang dạng generic: Hỗ trợ đồng thời báo cáo Cửa hàng (`shop`) và báo cáo Sản phẩm (`product`).
+* Bổ sung các phương thức truy xuất báo cáo theo `shopId` hoặc `productId` linh hoạt.
 
 #### `src/types/product.ts`
 * Bổ sung các trường tùy chọn `sellerId?: string`, `shopName?: string`, `isOrganic?: boolean`, `unit?: string` vào interface `Product` để đồng bộ dữ liệu.

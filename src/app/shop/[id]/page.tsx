@@ -126,6 +126,7 @@ export default function ShopDetailPage({ params }: PageProps) {
     
     setReportSubmitting(true);
     addReport({
+      type: 'shop',
       shopId: id,
       shopName: shop?.name || "Cửa hàng không xác định",
       reporterId: currentUser?.id,
@@ -365,21 +366,21 @@ export default function ShopDetailPage({ params }: PageProps) {
                     </button>
                   )}
                   <button
-                    onClick={handleCopyLink}
+                    onClick={(e) => { e.stopPropagation(); handleCopyLink(); }}
                     className="w-full px-4 py-2.5 text-left text-sm font-bold text-on-surface hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
                   >
                     <span className="material-symbols-outlined text-[18px]">content_copy</span>
                     Sao chép liên kết
                   </button>
                   <button
-                    onClick={handleReport}
+                    onClick={(e) => { e.stopPropagation(); handleReport(); }}
                     className="w-full px-4 py-2.5 text-left text-sm font-bold text-red-500 hover:bg-red-50 flex items-center gap-2.5 transition-colors"
                   >
                     <span className="material-symbols-outlined text-[18px]">report</span>
                     Báo cáo shop
                   </button>
                   <button
-                    onClick={handleHelp}
+                    onClick={(e) => { e.stopPropagation(); handleHelp(); }}
                     className="w-full px-4 py-2.5 text-left text-sm font-bold text-on-surface hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
                   >
                     <span className="material-symbols-outlined text-[18px]">help</span>
@@ -796,7 +797,7 @@ export default function ShopDetailPage({ params }: PageProps) {
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsEditOpen(false)} />
 
           {/* Modal panel */}
-          <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="relative w-full max-w-[672px] max-h-[90vh] overflow-y-auto rounded-3xl bg-white shadow-2xl">
             {/* Header */}
             <div className="sticky top-0 z-10 bg-white rounded-t-3xl flex items-center justify-between px-6 py-5 border-b border-slate-100">
               <h2 className="text-lg font-bold text-on-surface flex items-center gap-2">
@@ -1100,8 +1101,8 @@ export default function ShopDetailPage({ params }: PageProps) {
       {/* ── Report Shop Modal ──────────────────────────────────────────────── */}
       {isReportModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsReportModalOpen(false)} />
-          <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-300">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsReportModalOpen(false)} />
+          <div className="relative w-full max-w-[480px] overflow-hidden rounded-3xl bg-white shadow-2xl">
             <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
               <h2 className="text-lg font-bold text-on-surface flex items-center gap-2">
                 <AlertCircle className="w-5 h-5 text-red-500" />

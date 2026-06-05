@@ -1,11 +1,12 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { ShopReport } from "@/types/report";
+import { Report } from "@/types/report";
 
 interface ReportState {
-  reports: ShopReport[];
-  addReport: (report: Omit<ShopReport, "id" | "createdAt" | "status">) => void;
-  getReportsByShopId: (shopId: string) => ShopReport[];
+  reports: Report[];
+  addReport: (report: Omit<Report, "id" | "createdAt" | "status">) => void;
+  getReportsByShopId: (shopId: string) => Report[];
+  getReportsByProductId: (productId: string) => Report[];
 }
 
 export const useReportStore = create<ReportState>()(
@@ -13,7 +14,7 @@ export const useReportStore = create<ReportState>()(
     (set, get) => ({
       reports: [],
       addReport: (reportData) => {
-        const newReport: ShopReport = {
+        const newReport: Report = {
           ...reportData,
           id: `REP-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
           status: "pending",
@@ -23,6 +24,9 @@ export const useReportStore = create<ReportState>()(
       },
       getReportsByShopId: (shopId: string) => {
         return get().reports.filter((r) => r.shopId === shopId);
+      },
+      getReportsByProductId: (productId: string) => {
+        return get().reports.filter((r) => r.productId === productId);
       },
     }),
     {
