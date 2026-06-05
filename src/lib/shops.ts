@@ -4,6 +4,7 @@
 
 import { Product } from "@/types/product";
 import { RegisteredUser } from "@/types/user";
+import { useAuthStore } from "@/store/auth-store";
 
 export interface Shop {
   id: string;
@@ -120,53 +121,41 @@ export function getShopById(shopId: string): Shop {
   const staticShop = STATIC_SHOPS.find((s) => s.id === shopId);
   if (staticShop) return staticShop;
 
-  // 2. Tìm trong localStorage (Dynamic shop cho custom seller)
+  // 2. Tìm trong Zustand store (Cho chủ shop hiện tại)
   if (typeof window !== "undefined") {
-    const stored = localStorage.getItem("nong-sach-auth");
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        const state = parsed.state;
-        if (state && state.registeredUsers) {
-          const users = state.registeredUsers as RegisteredUser[];
-          const user = users.find((u) => u.id === shopId);
-          if (user && user.sellerInfo) {
-            const info = user.sellerInfo;
-            // Đếm số lượng sản phẩm của shop này
-            const productsStored = localStorage.getItem("nong-sach-custom-products");
-            let count = 0;
-            if (productsStored) {
-              try {
-                const list = JSON.parse(productsStored) as Product[];
-                count = list.filter((p) => p.sellerId === shopId).length;
-              } catch {}
-            }
-
-            return {
-              id: user.id,
-              name: info.shopName,
-              logo: info.shopLogo || "https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?w=120&h=120&fit=crop",
-              verified: true,
-              rating: 5.0,
-              reviewCount: 0,
-              productCount: count,
-              followerCount: "0",
-              joinDate: user.memberSince || "06/2026",
-              location: info.province || "Lâm Đồng",
-              slogan: info.slogan || "Cung cấp nông sản sạch tươi ngon hữu cơ",
-              altitude: info.farmAddress || "Đà Lạt",
-              standard: info.farmingStandards?.join(", ") || "VietGAP",
-              description: info.description || "Nông sản sạch từ nông trại của tôi.",
-              farmImages: info.farmImages && info.farmImages.length > 0 ? info.farmImages : [
-                "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=600&h=400&fit=crop"
-              ],
-              mainCategories: info.mainCategories || ["Rau củ"],
-            };
-          }
-        }
-      } catch (e) {
-        console.error("Lỗi parse auth state", e);
+    const currentUser = useAuthStore.getState().currentUser;
+    if (currentUser && currentUser.id === shopId && currentUser.sellerInfo) {
+      const info = currentUser.sellerInfo;
+      // Đếm số lượng sản phẩm của shop này
+      const productsStored = localStorage.getItem("nong-sach-custom-products");
+      let count = 0;
+      if (productsStored) {
+        try {
+          const list = JSON.parse(productsStored) as Product[];
+          count = list.filter((p) => p.sellerId === shopId).length;
+        } catch {}
       }
+
+      return {
+        id: currentUser.id,
+        name: info.shopName,
+        logo: info.shopLogo || "https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?w=120&h=120&fit=crop",
+        verified: true,
+        rating: 5.0,
+        reviewCount: 0,
+        productCount: count,
+        followerCount: "0",
+        joinDate: currentUser.memberSince || "06/2026",
+        location: info.province || "Lâm Đồng",
+        slogan: info.slogan || "Cung cấp nông sản sạch tươi ngon hữu cơ",
+        altitude: info.farmAddress || "Đà Lạt",
+        standard: info.farmingStandards?.join(", ") || "VietGAP",
+        description: info.description || "Nông sản sạch từ nông trại của tôi.",
+        farmImages: info.farmImages && info.farmImages.length > 0 ? info.farmImages : [
+          "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=600&h=400&fit=crop"
+        ],
+        mainCategories: info.mainCategories || ["Rau củ"],
+      };
     }
   }
 

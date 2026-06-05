@@ -765,7 +765,7 @@ function ProfileContent() {
   };
 
   // 2. Change Password
-  const handleChangePassword = (e: FormEvent) => {
+  const handleChangePassword = async (e: FormEvent) => {
     e.preventDefault();
     if (!currentPassword) {
       showToast("Vui lòng nhập mật khẩu hiện tại", "error");
@@ -780,7 +780,7 @@ function ProfileContent() {
       return;
     }
 
-    const result = changePassword(currentPassword, newPassword);
+    const result = await changePassword(currentPassword, newPassword);
     if (result.success) {
       showToast(result.message);
       setCurrentPassword("");

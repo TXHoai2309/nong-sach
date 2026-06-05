@@ -17,6 +17,9 @@ import { CATEGORY_LABELS, Product } from "@/types/product";
 import CoverImageCropper from "@/components/ui/CoverImageCropper";
 import { REPORT_REASONS } from "@/types/report";
 import { useReportStore } from "@/store/report-store";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { User } from "@/types/user";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -37,14 +40,14 @@ const FALLBACK_PROVINCES = [
 ];
 
 // ── Derive a reactive Shop object from Zustand currentUser ─────────────────
-function buildShopFromCurrentUser(
-  currentUser: ReturnType<typeof useAuthStore.getState>["currentUser"],
+function buildShopFromUser(
+  user: User | null,
   productCount: number,
 ): Shop | null {
-  if (!currentUser || !currentUser.sellerInfo) return null;
-  const info = currentUser.sellerInfo;
+  if (!user || !user.sellerInfo) return null;
+  const info = user.sellerInfo;
   return {
-    id: currentUser.id,
+    id: user.id,
     name: info.shopName,
     logo: info.shopLogo || "https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?w=120&h=120&fit=crop",
     verified: true,
@@ -52,7 +55,7 @@ function buildShopFromCurrentUser(
     reviewCount: 0,
     productCount,
     followerCount: "0",
-    joinDate: currentUser.memberSince || "06/2026",
+    joinDate: user.memberSince || "06/2026",
     location: info.province || "Lâm Đồng",
     slogan: info.slogan || "Cung cấp nông sản sạch tươi ngon hữu cơ",
     altitude: info.farmAddress || "Đà Lạt",
@@ -74,6 +77,7 @@ export default function ShopDetailPage({ params }: PageProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [sortBy, setSortBy] = useState("popular");
+  const [customSeller, setCustomSeller] = useState<User | null>(null);
 
   // ── Edit shop modal state ───────────────────────────────────────────────
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -183,17 +187,52 @@ export default function ShopDetailPage({ params }: PageProps) {
   // ── Resolve all products (reactive: re-reads from localStorage each render) ─
   const allProducts = mounted ? getAllProducts() : [];
 
-  // ── Resolve Shop – REACTIVE: derive from Zustand for the owner ────────────
+  // ── Fetch external custom shop from Firestore ─────────────────────────────
+  useEffect(() => {
+    if (!mounted) return;
+    const isStatic = STATIC_SHOPS.some((s) => s.id === id);
+    const isCurrentUser = currentUser && currentUser.id === id;
+
+    if (!isStatic && !isCurrentUser) {
+      async function fetchCustomSeller() {
+        try {
+          const userRef = doc(db, "users", id);
+          const userSnap = await getDoc(userRef);
+          if (userSnap.exists()) {
+            const userData = userSnap.data() as User;
+            if (userData.sellerInfo) {
+              setCustomSeller(userData);
+            }
+          }
+        } catch (err) {
+          console.error("Error fetching custom seller from Firestore:", err);
+        }
+      }
+      fetchCustomSeller();
+    }
+  }, [mounted, id, currentUser?.id]);
+
+  // ── Resolve Shop – REACTIVE ───────────────────────────────────────────────
   const shop: Shop | null = (() => {
     if (!mounted) return null;
 
-    // If the currently-logged-in user IS this shop, build reactively
+    // 1. If the currently-logged-in user IS this shop, build reactively
     if (currentUser && currentUser.id === id && currentUser.sellerInfo) {
       const count = allProducts.filter((p) => p.sellerId === id).length;
-      return buildShopFromCurrentUser(currentUser, count);
+      return buildShopFromUser(currentUser, count);
     }
 
-    // Otherwise use localStorage / static data as before
+    // 2. If it's a dynamic custom shop from Firestore (not the logged-in user)
+    const isStatic = STATIC_SHOPS.some((s) => s.id === id);
+    if (!isStatic) {
+      if (customSeller) {
+        const count = allProducts.filter((p) => p.sellerId === id).length;
+        return buildShopFromUser(customSeller, count);
+      }
+      return null; // Keep loading until customSeller is loaded
+    }
+
+    // 3. Otherwise use static data
     return getShopById(id);
   })();
 

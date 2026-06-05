@@ -6,6 +6,38 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
 
 ---
 
+## [0.4.4] - 2026-06-05
+
+### Sprint 4.4 — Tích hợp Firebase Auth & Cloud Firestore cho Hệ thống Xác thực và Dữ liệu Cửa hàng
+
+### Added
+
+#### Tích hợp Firebase Auth & Cloud Firestore (`src/store/auth-store.ts`)
+* Chuyển đổi toàn bộ cơ chế quản lý trạng thái xác thực từ Local Storage sang **Firebase Auth & Cloud Firestore**.
+* Thực hiện đăng ký (`createUserWithEmailAndPassword`), đăng nhập (`signInWithEmailAndPassword`), đăng xuất (`signOut`) và đổi mật khẩu thông qua Firebase SDK.
+* Lưu trữ và đồng bộ hóa hồ sơ người dùng (`User`) động tại bộ sưu tập Firestore `users/{uid}`.
+* Thiết lập luồng tự động kiểm tra, đăng ký và khởi tạo tài khoản Demo mặc định (`nguyenvana@gmail.com` với mật khẩu `12345678`) trên Firebase Auth/Firestore khi đăng nhập lần đầu để đảm bảo tính năng kiểm thử của hệ thống hoạt động bình thường.
+* Lọc bỏ (Sanitize) các trường hình ảnh và dữ liệu nhạy cảm dạng base64 kích thước lớn (`idCardFront`, `idCardBack`, `farmImages`, `shopLogo`) trước khi đẩy payload lên Firestore để giữ cấu trúc tài liệu tối ưu và tuân thủ giới hạn payload của Cloud Firestore.
+
+#### Quản lý trạng thái Client-side (`src/components/layout/AuthInitializer.tsx`)
+* Triển khai bộ khởi tạo Client Component `<AuthInitializer />` dùng lắng nghe sự kiện thay đổi trạng thái xác thực của Firebase (`onAuthStateChanged`) và tự động nạp hồ sơ người dùng từ Firestore.
+* Tích hợp `<AuthInitializer />` vào layout dùng chung [layout.tsx](file:///d:/Thực tập/Buoi3/nong-sach/src/app/layout.tsx) mà không thay đổi bản chất Server Component của Layout, bảo vệ hiệu quả SEO và các cấu hình metadata Next.js.
+
+#### Dynamic Shop Fetching (`src/app/shop/[id]/page.tsx`)
+* Viết mới cơ chế tải thông tin shop tùy chỉnh từ Firestore: Tải động thông tin hồ sơ của nhà vườn (custom seller) từ Firestore khi người mua truy cập trang shop `/shop/[id]`.
+* Tối ưu hóa bộ phân giải `shop` (resolver) hoạt động phản ứng (reactive), tự động cập nhật số lượng sản phẩm đang có của shop từ bộ đệm sản phẩm local.
+
+### Changed
+
+#### Luồng Đăng nhập & Đăng ký
+* Chuyển các bộ xử lý sự kiện trong trang Đăng nhập [login/page.tsx](file:///d:/Thực tập/Buoi3/nong-sach/src/app/login/page.tsx), Đăng ký [register/page.tsx](file:///d:/Thực tập/Buoi3/nong-sach/src/app/register/page.tsx), và đổi mật khẩu trong trang cá nhân [profile/page.tsx](file:///d:/Thực tập/Buoi3/nong-sach/src/app/profile/page.tsx) sang dạng bất đồng bộ (`async/await`) nhằm bắt đúng kết quả trả về từ Firebase.
+* Đồng bộ hóa cơ chế phân giải cửa hàng `getShopById` trong [shops.ts](file:///d:/Thực tập/Buoi3/nong-sach/src/lib/shops.ts) trực tiếp với dữ liệu store Zustand.
+
+### Verification
+
+* `npx tsc --noEmit` hoàn thành thành công, không gặp bất cứ lỗi cú pháp hay kiểu dữ liệu nào.
+* Chạy `npm run build` tạo thành công build production Next.js tối ưu và trơn tru.
+
 ## [0.4.3] - 2026-06-05
 
 ### Sprint 4.3 — Sửa lỗi Profile runtime, ổn định Báo cáo shop và dọn lỗi lint/type

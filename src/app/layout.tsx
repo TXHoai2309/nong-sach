@@ -3,6 +3,7 @@ import { Be_Vietnam_Pro } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import AuthInitializer from "@/components/layout/AuthInitializer";
 import React from "react";
 
 const beVietnamPro = Be_Vietnam_Pro({
@@ -52,6 +53,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col bg-[#f9f9ff] text-[#111c2d]">
+        <AuthInitializer />
         <Header />
         <div className="flex-1">{children}</div>
         <Footer />

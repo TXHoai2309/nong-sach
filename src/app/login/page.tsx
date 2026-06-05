@@ -64,7 +64,7 @@ export default function LoginPage() {
     setLoading(true);
     await new Promise((r) => setTimeout(r, 700));
 
-    const res = login(email.trim(), password);
+    const res = await login(email.trim(), password);
     setLoading(false);
 
     if (res.success) {

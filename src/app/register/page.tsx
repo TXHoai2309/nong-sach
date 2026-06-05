@@ -76,7 +76,7 @@ export default function RegisterPage() {
     setLoading(true);
     await new Promise((r) => setTimeout(r, 700));
 
-    const res = register(name.trim(), email.trim(), password);
+    const res = await register(name.trim(), email.trim(), password);
     setLoading(false);
 
     if (res.success) {
