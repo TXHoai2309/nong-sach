@@ -156,6 +156,8 @@ Các ảnh chụp màn hình và video kiểm thử được lưu trữ trực t
 | **TC-24: Đề xuất cửa hàng tương tự** | Cuộn xuống chân trang chi tiết shop, click "Xem cửa hàng" ở card shop tương tự. | Điều hướng mượt mà và load chính xác dữ liệu của cửa hàng được click. | ✅ Pass |
 | **TC-25: Xem shop tự tạo của custom seller** | Đăng ký người bán, đăng sản phẩm, click xem shop từ trang chi tiết sản phẩm tự đăng. | Trang `/shop/[userId]` load động toàn bộ thông tin đã đăng ký ở hồ sơ (tên, tiêu chuẩn, địa chỉ cụ thể, tài khoản ngân hàng, sản phẩm tự đăng). | ✅ Pass |
 | **TC-26: Cải thiện giao diện Ảnh bìa Shop** | Truy cập trang chi tiết shop, kiểm tra chiều cao và bo góc banner. | Ảnh bìa thu ngắn lại, không tràn viền, bo góc dưới và phẳng góc trên đồng bộ với thẻ thông tin shop. | ✅ Pass |
+| **TC-27: Cắt ảnh bìa trực tiếp** | Trong modal chỉnh sửa shop, di chuột vào ảnh bìa hiện có và nhấn "Cắt / Chỉnh sửa ảnh". | Công cụ cắt ảnh (CoverImageCropper) mở ra với ảnh hiện tại, cho phép căn chỉnh lại khung hình. | ✅ Pass |
+| **TC-28: Gửi báo cáo vi phạm shop** | Nhấn "Báo cáo shop" trong menu "...", chọn lý do, viết chi tiết và gửi. | Hiển thị trạng thái "Đang gửi", đóng modal và thông báo thành công. Dữ liệu được lưu vào `nong-sach-reports`. | ✅ Pass |
 
 ---
 

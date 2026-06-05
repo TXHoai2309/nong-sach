@@ -68,6 +68,7 @@ Người tiêu dùng ngày càng lo ngại về an toàn thực phẩm, đặc b
 | F-12 | Quản lý sản phẩm   | CRUD: Thêm mới (kèm upload 6 ảnh bìa/phụ), Sửa thông tin, Xóa sản phẩm | P1      | ✅ Done     |
 | F-13 | Banner thông tin Shop | Banner hiển thị logo, tên shop, đánh giá, vị trí trên trang chi tiết sản phẩm | P1      | ✅ Done     |
 | F-14 | Trang chi tiết Shop   | Trang thông tin shop (/shop/[id]) với cover, avatar, mô tả, tab sản phẩm, đánh giá và giới thiệu | P1      | ✅ Done     |
+| F-15 | Báo cáo cửa hàng      | Chức năng gửi báo cáo vi phạm kèm lý do và chi tiết để Admin phê duyệt | P2      | ✅ Done     |
 
 > **Ghi chú cho team:** F-09 hiện đã có giao diện hoàn chỉnh theo Stitch HTML tại route `/contact`. Form liên hệ đang ở mức UI/UX MVP; nếu cần gửi dữ liệu thật, cần bổ sung API/Firebase handler ở Phase 2. Kênh bán hàng (F-11), Quản lý sản phẩm (F-12) và Trang chi tiết shop (F-14) hiện được lưu động tại `localStorage` phía client của từng người dùng để mô phỏng tính năng thực tế.
 

@@ -16,6 +16,8 @@ import { useAuthStore } from "@/store/auth-store";
 import { formatCurrency } from "@/lib/format";
 import { CATEGORY_LABELS, Product } from "@/types/product";
 import CoverImageCropper from "@/components/ui/CoverImageCropper";
+import { REPORT_REASONS } from "@/types/report";
+import { useReportStore } from "@/store/report-store";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -97,6 +99,62 @@ export default function ShopDetailPage({ params }: PageProps) {
   const [provinces, setProvinces] = useState<{ code: number; name: string }[]>([]);
   const [editSaving, setEditSaving] = useState(false);
   const [editToast, setEditToast] = useState<string | null>(null);
+
+  // ── Report modal state ───────────────────────────────────────────────
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [reportReason, setReportReason] = useState(REPORT_REASONS[0]);
+  const [reportDetails, setReportDetails] = useState("");
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  const addReport = useReportStore((state) => state.addReport);
+
+  const [isTopMenuOpen, setIsTopMenuOpen] = useState(false);
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    alert("Đã sao chép liên kết cửa hàng vào bộ nhớ tạm!");
+    setIsTopMenuOpen(false);
+  };
+
+  const handleReport = () => {
+    setIsReportModalOpen(true);
+    setIsTopMenuOpen(false);
+  };
+
+  const handleSubmitReport = (e: FormEvent) => {
+    e.preventDefault();
+    if (!reportReason) return;
+    
+    setReportSubmitting(true);
+    addReport({
+      shopId: id,
+      shopName: shop?.name || "Cửa hàng không xác định",
+      reporterId: currentUser?.id,
+      reporterName: currentUser?.name,
+      reason: reportReason,
+      details: reportDetails.trim() || undefined,
+    });
+
+    setTimeout(() => {
+      setReportSubmitting(false);
+      setIsReportModalOpen(false);
+      setReportReason(REPORT_REASONS[0]);
+      setReportDetails("");
+      alert("Cảm ơn bạn đã báo cáo. Chúng tôi sẽ xem xét cửa hàng này trong vòng 24h.");
+    }, 600);
+  };
+
+  const handleHelp = () => {
+    alert("Hệ thống hỗ trợ Zalo: 0392 982 XXX (Hotline: 1900 1234).");
+    setIsTopMenuOpen(false);
+  };
+
+  // Close top menu when clicking outside
+  useEffect(() => {
+    if (!isTopMenuOpen) return;
+    const handleClick = () => setIsTopMenuOpen(false);
+    window.addEventListener("click", handleClick);
+    return () => window.removeEventListener("click", handleClick);
+  }, [isTopMenuOpen]);
 
   const { currentUser, updateSellerInfo } = useAuthStore();
   const addToCart = useCartStore((state) => state.addToCart);
@@ -283,18 +341,54 @@ export default function ShopDetailPage({ params }: PageProps) {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20" />
 
-          {/* "..." button — top-right of cover. Only visible to owner. */}
-          {isOwner && (
-            <div className="absolute top-4 right-4 z-30">
+          {/* Utility Menu Button — top-right of cover */}
+          <div className="absolute top-4 right-4 z-30">
+            <div className="relative">
               <button
-                onClick={openEditModal}
+                onClick={(e) => { e.stopPropagation(); setIsTopMenuOpen(!isTopMenuOpen); }}
                 className="flex items-center justify-center bg-black/25 hover:bg-black/40 border border-white/20 backdrop-blur-md w-10 h-10 rounded-full text-white transition-all shadow-md cursor-pointer"
-                title="Chỉnh sửa thông tin cửa hàng"
+                title="Tùy chọn"
               >
                 <MoreHorizontal className="w-5 h-5" />
               </button>
+
+              {/* Dropdown Menu */}
+              {isTopMenuOpen && (
+                <div className="absolute top-12 right-0 w-48 bg-white/95 backdrop-blur-xl border border-slate-100 rounded-2xl shadow-2xl py-2 z-50 overflow-hidden animate-in fade-in zoom-in duration-200 origin-top-right">
+                  {isOwner && (
+                    <button
+                      onClick={openEditModal}
+                      className="w-full px-4 py-2.5 text-left text-sm font-bold text-primary hover:bg-primary/5 flex items-center gap-2.5 transition-colors border-b border-slate-50"
+                    >
+                      <Pencil className="w-4 h-4" />
+                      Chỉnh sửa shop
+                    </button>
+                  )}
+                  <button
+                    onClick={handleCopyLink}
+                    className="w-full px-4 py-2.5 text-left text-sm font-bold text-on-surface hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">content_copy</span>
+                    Sao chép liên kết
+                  </button>
+                  <button
+                    onClick={handleReport}
+                    className="w-full px-4 py-2.5 text-left text-sm font-bold text-red-500 hover:bg-red-50 flex items-center gap-2.5 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">report</span>
+                    Báo cáo shop
+                  </button>
+                  <button
+                    onClick={handleHelp}
+                    className="w-full px-4 py-2.5 text-left text-sm font-bold text-on-surface hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">help</span>
+                    Bạn cần giúp đỡ?
+                  </button>
+                </div>
+              )}
             </div>
-          )}
+          </div>
 
           <div className="absolute bottom-4 left-6 right-6 z-20">
             <Breadcrumb
@@ -740,11 +834,15 @@ export default function ShopDetailPage({ params }: PageProps) {
                         className="object-cover"
                         unoptimized={editCoverImage.startsWith("data:")}
                       />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <button
+                        type="button"
+                        onClick={() => setCropSrc(editCoverImage)}
+                        className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer w-full h-full border-none p-0"
+                      >
                         <span className="text-white text-xs font-bold bg-black/40 px-3 py-1.5 rounded-full backdrop-blur-sm">
-                          Thay đổi ảnh bìa
+                          Cắt / Chỉnh sửa ảnh
                         </span>
-                      </div>
+                      </button>
                       <button
                         type="button"
                         onClick={() => { setEditCoverImage(""); setEditCoverUrl(""); }}
@@ -992,6 +1090,78 @@ export default function ShopDetailPage({ params }: PageProps) {
                     <Check className="w-4 h-4" />
                   )}
                   {editSaving ? "Đang lưu..." : "Lưu thay đổi"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Report Shop Modal ──────────────────────────────────────────────── */}
+      {isReportModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsReportModalOpen(false)} />
+          <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-300">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+              <h2 className="text-lg font-bold text-on-surface flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-red-500" />
+                Báo cáo cửa hàng
+              </h2>
+              <button onClick={() => setIsReportModalOpen(false)} className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-all">
+                <X className="w-4 h-4 text-slate-600" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitReport} className="p-6 space-y-5">
+              <div className="space-y-3">
+                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider">Lý do báo cáo</label>
+                <div className="grid grid-cols-1 gap-2">
+                  {REPORT_REASONS.map((reason) => (
+                    <label key={reason} className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:bg-slate-50 cursor-pointer transition-all">
+                      <input
+                        type="radio"
+                        name="reportReason"
+                        value={reason}
+                        checked={reportReason === reason}
+                        onChange={(e) => setReportReason(e.target.value)}
+                        className="w-4 h-4 accent-primary"
+                      />
+                      <span className="text-sm font-medium text-on-surface">{reason}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider">Chi tiết thêm (tùy chọn)</label>
+                <textarea
+                  value={reportDetails}
+                  onChange={(e) => setReportDetails(e.target.value)}
+                  rows={3}
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-primary transition-all resize-none bg-slate-50"
+                  placeholder="Mô tả cụ thể vấn đề bạn gặp phải..."
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsReportModalOpen(false)}
+                  className="flex-1 px-6 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-on-surface hover:bg-slate-50 transition-all"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={reportSubmitting}
+                  className="flex-1 px-6 py-2.5 rounded-xl bg-red-500 text-white text-sm font-bold hover:bg-red-600 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+                >
+                  {reportSubmitting ? (
+                    <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <Check className="w-4 h-4" />
+                  )}
+                  {reportSubmitting ? "Đang gửi..." : "Gửi báo cáo"}
                 </button>
               </div>
             </form>

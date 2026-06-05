@@ -31,6 +31,7 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
     - Grid sản phẩm hiển thị đầy đủ hình ảnh, badge hữu cơ, icon yêu thích, xuất xứ, đánh giá và nút thêm vào giỏ hàng nhanh.
   * **Tab Đánh giá**: Danh sách phản hồi và đánh giá từ khách hàng cũ (sao vàng, bình luận, thời gian).
   * **Tab Giới thiệu**: Chi tiết quy trình canh tác nông trại, danh mục, địa chỉ, ảnh bộ sưu tập nông trại và **thông tin thanh toán ngân hàng** (tự động load động từ `localStorage` nếu là shop tự đăng của custom seller).
+  * **Hệ thống Báo cáo Shop**: Triển khai modal báo cáo cửa hàng chuyên nghiệp, cho phép người dùng chọn lý do (Sản phẩm không đúng mô tả, lừa đảo, thái độ...) và gửi kèm chi tiết về hệ thống admin (Lưu trữ động tại `localStorage`).
   * **Cửa hàng tương tự**: Đề xuất các shop khác ở chân trang có nút liên kết điều hướng mượt mà.
 
 ### Changed
@@ -48,6 +49,10 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
 * Cải thiện UX với thiết kế bo góc: Áp dụng bo góc dưới (`rounded-b-3xl`) cho cả ảnh bìa và thẻ thông tin shop, đồng thời bỏ bo góc trên để tạo sự liền mạch, chuyên nghiệp.
 * Giới hạn chiều rộng: Bọc toàn bộ phần banner vào `.site-container` thay vì tràn viền, giúp bố cục trang đồng nhất và dễ nhìn hơn trên màn hình lớn.
 * Tinh chỉnh vị trí các thành phần: Căn chỉnh lại Breadcrumb và nút chỉnh sửa (More) để hiển thị cân đối trong khung banner mới.
+* **Tính năng cắt ảnh trực tiếp**: Tích hợp nút "Cắt / Chỉnh sửa ảnh" ngay trên phần xem trước ảnh bìa trong modal chỉnh sửa, cho phép kích hoạt công cụ crop nhanh chóng cho ảnh hiện tại.
+
+#### Kênh người bán (`src/app/profile/page.tsx`)
+* Đồng bộ tính năng "Cắt / Chỉnh sửa ảnh" vào modal chỉnh sửa thông tin shop trong Kênh người bán, đảm bảo trải nghiệm người dùng nhất quán.
 
 #### Bố cục Stats Box & Nút tùy chọn (`src/app/shop/[id]/page.tsx`)
 * Khắc phục lỗi co rút giao diện (khiến font chữ/nhãn thông tin bị đè và chồng chéo lên nhau) tại ô thống kê cửa hàng khi ngày tham gia của nhà vườn dài (ví dụ: `tháng 06, 2026`). Áp dụng giới hạn độ rộng tối thiểu an toàn `minWidth: min(100%, 420px)` và tinh chỉnh font size hợp lý.

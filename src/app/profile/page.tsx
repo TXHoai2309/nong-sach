@@ -2639,11 +2639,15 @@ export default function ProfilePage() {
                                       alt="Ảnh bìa"
                                       className="w-full h-full object-cover"
                                     />
-                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                    <button
+                                      type="button"
+                                      onClick={() => setShopCropSrc(shopCoverImage)}
+                                      className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer w-full h-full border-none p-0"
+                                    >
                                       <span className="text-white text-[10px] font-bold bg-black/40 px-3 py-1.5 rounded-full backdrop-blur-sm">
-                                        Thay đổi ảnh bìa
+                                        Cắt / Chỉnh sửa ảnh
                                       </span>
-                                    </div>
+                                    </button>
                                     <button
                                       type="button"
                                       onClick={() => { setShopCoverImage(""); setShopCoverUrl(""); }}
