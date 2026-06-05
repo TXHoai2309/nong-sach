@@ -6,6 +6,39 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
 
 ---
 
+## [0.4.6] - 2026-06-05
+
+### Sprint 4.6 — Di chuyển Cơ sở dữ liệu Đơn hàng lên Firestore
+
+### Added
+
+#### Tích hợp Firestore cho Quản lý Đơn hàng (`src/store/order-store.ts`)
+* Loại bỏ hoàn toàn cơ chế lưu trữ cục bộ Zustand `persist` đối với đơn hàng.
+* Tích hợp lưu trữ và đồng bộ hóa đơn hàng động lên collection `orders` trên Cloud Firestore.
+* Viết lại toàn bộ các phương thức thao tác sang bất đồng bộ (`async`):
+  - `addOrder(order)`: Ghi tài liệu đơn hàng lên `orders/{id}` bằng `setDoc` và cập nhật store cục bộ.
+  - `updateOrderStatus(orderId, status)`: Cập nhật trạng thái đơn hàng trên Firestore bằng `updateDoc`.
+  - `getOrdersByUserId(userId)` và `getOrdersBySellerId(sellerId)`: Hỗ trợ truy vấn và lọc đơn hàng theo ID người mua/người bán.
+* Thêm hai hàm hỗ trợ tải dữ liệu động từ Firestore:
+  - `fetchOrdersByUserId(userId)`: Nạp đơn hàng của người mua từ Firestore, sắp xếp theo thời gian mới nhất (`createdAt` giảm dần) và lưu vào store.
+  - `fetchOrdersBySellerId(sellerId)`: Tương tự cho người bán.
+* Thêm thuộc tính trạng thái `isLoading` vào store để quản lý trạng thái tải dữ liệu đơn hàng.
+
+### Changed
+
+#### Đồng bộ các call sites Đơn hàng
+* **Trang thanh toán (`src/app/checkout/page.tsx`)**:
+  - Chuyển đổi hàm xử lý `handleSubmit` thành `async`.
+  - Thay thế vòng lặp `.forEach` bằng `for...of` để có thể `await addOrder(newOrder)` một cách an toàn cho từng đơn hàng (trong trường hợp giỏ hàng chứa sản phẩm của nhiều nhà vườn khác nhau) trước khi dọn giỏ hàng và chuyển hướng sang trang thành công.
+* **Trang cá nhân (`src/app/profile/page.tsx`)**:
+  - Tải động danh sách đơn hàng mua hoặc bán trực tiếp từ Firestore khi người dùng nhấp vào tab "Đơn hàng của tôi" hoặc tab "Đơn hàng" trong Kênh người bán thông qua các hook `useEffect` mới.
+  - Cập nhật hàm `handleUpdateOrderStatus` thành `async` và thêm `await` khi gọi `updateOrderStatus` để đảm bảo lưu dữ liệu trạng thái thành công trên database trước khi gửi thông báo.
+
+### Verification
+
+* Chạy `npx tsc --noEmit` hoàn thành thành công, đạt 0 lỗi biên dịch.
+* Chạy `npm run build` tạo build production Next.js thành công.
+
 ## [0.4.5] - 2026-06-05
 
 ### Sprint 4.5 — Di chuyển Cơ sở dữ liệu Sản phẩm lên Firestore & Trang Khởi tạo Dữ liệu (Seed)

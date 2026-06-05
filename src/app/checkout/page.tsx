@@ -227,7 +227,7 @@ export default function CheckoutPage() {
     return Object.keys(nextErrors).length === 0;
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!validate()) return;
 
@@ -245,7 +245,7 @@ export default function CheckoutPage() {
 
     // Create an order for each seller
     const sellerIds = Object.keys(itemsBySeller);
-    sellerIds.forEach((sellerId, index) => {
+    for (const [index, sellerId] of sellerIds.entries()) {
       const sellerItems = itemsBySeller[sellerId];
       const sellerTotal = sellerItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
       const subOrderId = sellerIds.length > 1 ? `${orderIdBase}-${index + 1}` : orderIdBase;
@@ -267,7 +267,7 @@ export default function CheckoutPage() {
         createdAt: new Date().toISOString(),
       };
 
-      addOrder(newOrder);
+      await addOrder(newOrder);
 
       // Notify Seller
       if (sellerId !== "admin") {
@@ -279,7 +279,7 @@ export default function CheckoutPage() {
           orderId: subOrderId,
         });
       }
-    });
+    }
 
     // Notify Buyer
     if (currentUser) {

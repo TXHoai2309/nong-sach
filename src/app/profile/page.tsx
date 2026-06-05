@@ -89,6 +89,9 @@ function ProfileContent() {
   const { addToCart } = useCartStore();
   const orders = useOrderStore((state) => state.orders);
   const updateOrderStatus = useOrderStore((state) => state.updateOrderStatus);
+  const fetchOrdersByUserId = useOrderStore((state) => state.fetchOrdersByUserId);
+  const fetchOrdersBySellerId = useOrderStore((state) => state.fetchOrdersBySellerId);
+  const isOrdersLoading = useOrderStore((state) => state.isLoading);
   const markAsRead = useNotificationStore((state) => state.markAsRead);
   const markAllAsRead = useNotificationStore((state) => state.markAllAsRead);
   const getNotificationsByUserId = useNotificationStore((state) => state.getNotificationsByUserId);
@@ -264,6 +267,21 @@ function ProfileContent() {
     }
     loadCustomProducts();
   }, [mounted, currentUser, activeTab]);
+
+  // Load orders dynamically from Firestore when active tab changes
+  useEffect(() => {
+    if (!mounted || !currentUser) return;
+    if (activeTab === "orders") {
+      fetchOrdersByUserId(currentUser.id);
+    }
+  }, [mounted, activeTab, currentUser?.id, fetchOrdersByUserId]);
+
+  useEffect(() => {
+    if (!mounted || !currentUser) return;
+    if (activeTab === "seller" && sellerSubTab === "orders") {
+      fetchOrdersBySellerId(currentUser.id);
+    }
+  }, [mounted, activeTab, sellerSubTab, currentUser?.id, fetchOrdersBySellerId]);
 
   // Image compression helper
   const compressImage = (
@@ -614,8 +632,8 @@ function ProfileContent() {
     setNewProdImages([]);
   };
 
-  const handleUpdateOrderStatus = (orderId: string, newStatus: OrderStatus, userId: string) => {
-    updateOrderStatus(orderId, newStatus);
+  const handleUpdateOrderStatus = async (orderId: string, newStatus: OrderStatus, userId: string) => {
+    await updateOrderStatus(orderId, newStatus);
     
     let statusText = "";
     switch (newStatus) {
