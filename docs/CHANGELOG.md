@@ -6,6 +6,49 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
 
 ---
 
+## [0.4.3] - 2026-06-05
+
+### Sprint 4.3 — Sửa lỗi Profile runtime, ổn định Báo cáo shop và dọn lỗi lint/type
+
+### Fixed
+
+#### Profile / Thông báo (`src/app/profile/page.tsx`)
+* Sửa lỗi runtime `expandedOrderId is not defined` khi truy cập `/profile?tab=notifications` hoặc các tab Profile có render danh sách đơn hàng.
+* Bổ sung state `expandedOrderId` để điều khiển mở/thu chi tiết đơn hàng một cách rõ ràng.
+* Đồng bộ lại các trường đơn hàng theo type hiện tại (`id`, `createdAt`, `totalAmount`, `fullName`, trạng thái `delivered`) để tránh lỗi khi render lịch sử đơn hàng.
+* Bổ sung type nội bộ cho tab Profile, giới tính, tỉnh/huyện và sản phẩm của shop; loại bỏ các `any` không cần thiết.
+* Thay các ảnh preview trong Profile từ `<img>` sang `next/image` với `unoptimized` cho ảnh base64/local upload, giúp lint sạch hơn và preview nhất quán hơn.
+* Chuyển các cập nhật state khởi tạo trong `useEffect` sang timeout có cleanup để tránh rule React compiler `set-state-in-effect` báo đỏ trên Next.js 16.
+* **Mới**: Tích hợp điều hướng động dựa trên URL query param `tab` (sử dụng `useSearchParams` và bọc trang trong `<Suspense>`). Khi click vào quả chuông thông báo trên Header, trang cá nhân sẽ tự động chuyển sang tab **Thông báo** (`notifications`).
+* **Mới**: Đồng bộ hóa URL khi người dùng thay đổi tab thủ công ở Sidebar menu bằng cách cập nhật query parameter qua `router.push('/profile?tab=...', { scroll: false })` giúp giữ trạng thái tab khi tải lại trang.
+
+#### Layout / Spacing (`src/components/layout/Header.tsx`)
+* **Mới**: Khắc phục khoảng cách quá hẹp và dính sát nhau giữa mục liên kết "Liên hệ" và ô nhập tìm kiếm bằng cách bổ sung thuộc tính `gap-6 md:gap-10` trên thẻ container `<nav>` chính, đảm bảo giao diện thoáng đãng và không bị dính sát nhau trên các màn hình có chiều rộng giới hạn.
+
+#### Báo cáo shop (`src/app/shop/[id]/page.tsx`)
+* Sửa lỗi modal Báo cáo shop bị co lại thành một vạch trắng do class `max-w-md`/`max-w-2xl` không tương thích với token spacing hiện tại.
+* Đổi kích thước modal sang giá trị cụ thể `max-w-[480px]` và `max-w-[672px]` để giữ form báo cáo/chỉnh sửa shop hiển thị đúng.
+* Bỏ các `useMemo` không phù hợp với dữ liệu đọc từ Zustand/localStorage để tránh React compiler báo lỗi preserve manual memoization.
+* Chuyển state `mounted` và `displayFollowers` sang cập nhật an toàn có cleanup.
+
+#### Lint và TypeScript toàn project
+* Sửa nhóm lỗi `setMounted(true)` trực tiếp trong `useEffect` ở các trang/components: cart, checkout, login, products, header, cart badge và notification badge.
+* Cập nhật trang chi tiết sản phẩm (`src/app/products/[id]/page.tsx`) chuyển `setMounted(true)` sang timeout có cleanup để ổn định cơ chế render và tránh cảnh báo lint.
+* Sửa lỗi type `any` khi đọc dữ liệu từ `localStorage` trong `src/lib/products.ts`, `src/lib/shops.ts` và `src/store/auth-store.ts`.
+* Cập nhật `auth-store` để dùng `Partial<AuthState>` và type `User | RegisteredUser | null` khi sanitize dữ liệu persist.
+* Loại bỏ import không dùng trong `notification-store`.
+
+### Verification
+
+* `npx tsc --noEmit` chạy thành công.
+* `npm run lint` chạy thành công, không còn lint error. Còn một số warning nhẹ không chặn build như font Google trong layout, import `Container` chưa dùng và cảnh báo `<img>` trong cropper.
+
+### Notes
+
+* Nếu trình duyệt vẫn hiện overlay đỏ sau khi sửa, cần dừng dev server và chạy lại `npm run dev`, hoặc hard refresh bằng `Ctrl + Shift + R` để xóa trạng thái HMR cũ.
+
+---
+
 ## [0.4.2] - 2026-06-05
 
 ### Sprint 4.2 — Banner thông tin Shop & Trang chi tiết cửa hàng tương tác

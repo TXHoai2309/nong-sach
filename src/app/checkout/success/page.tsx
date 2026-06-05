@@ -47,7 +47,8 @@ function SuccessContent() {
       if (stored) {
         const parsed = JSON.parse(stored) as StoredOrderDetails;
         if (parsed && parsed.orderId === orderId) {
-          setLocalOrder(parsed);
+          const timer = window.setTimeout(() => setLocalOrder(parsed), 0);
+          return () => window.clearTimeout(timer);
         }
       }
     } catch (e) {

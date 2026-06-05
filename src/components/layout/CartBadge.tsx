@@ -8,7 +8,10 @@ export default function CartBadge() {
   const [mounted, setMounted] = useState(false);
   const items = useCartStore((state) => state.items);
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setMounted(true), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const totalItems = mounted
     ? items.reduce((sum, item) => sum + item.quantity, 0)

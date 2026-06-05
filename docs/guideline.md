@@ -173,7 +173,35 @@ Tại giao diện Kênh bán hàng (Dashboard), người bán có thể quản l
    - Bấm nút `Xóa` (icon thùng rác) bên cạnh sản phẩm.
    - Xác nhận xóa trong hộp thoại cảnh báo. Sản phẩm sẽ được xóa khỏi bộ nhớ đệm và giao diện cập nhật ngay lập tức.
 
-## 13. Ghi chú sử dụng
+## 15. Kiểm tra lỗi đỏ trong quá trình chạy dev
+
+Khi Next.js hiển thị overlay đỏ trên trình duyệt, thực hiện các bước kiểm tra nhanh sau:
+
+1. Mở terminal tại thư mục project và chạy:
+
+```text
+npm run lint
+npx tsc --noEmit
+```
+
+2. Nếu lỗi xuất hiện ở Profile:
+   - Kiểm tra các state dùng trong JSX đã được khai báo chưa, đặc biệt các state điều khiển mở/thu chi tiết như `expandedOrderId`.
+   - Kiểm tra dữ liệu đơn hàng đang render có đúng field theo type hiện tại không: `id`, `createdAt`, `totalAmount`, `fullName`, `status`.
+   - Với các state khởi tạo từ `currentUser`, `localStorage` hoặc API trong `useEffect`, nên cập nhật qua timeout có cleanup để tránh rule React compiler `set-state-in-effect` báo lỗi trên Next.js 16.
+
+3. Nếu lỗi xuất hiện khi bấm `Báo cáo shop`:
+   - Kiểm tra modal không dùng các class width bị ảnh hưởng bởi token spacing tùy chỉnh như `max-w-md` hoặc `max-w-2xl`.
+   - Ưu tiên dùng width cụ thể như `max-w-[480px]` cho modal báo cáo và `max-w-[672px]` cho modal chỉnh sửa shop.
+   - Đảm bảo menu `...` đóng sau khi mở modal để không tạo overlay chồng trạng thái.
+
+4. Nếu đã sửa code nhưng trình duyệt vẫn còn overlay đỏ:
+   - Dừng dev server.
+   - Chạy lại `npm run dev`.
+   - Hard refresh trình duyệt bằng `Ctrl + Shift + R`.
+
+Trạng thái sau Sprint 4.3: `npm run lint` và `npx tsc --noEmit` đều chạy thành công, không còn error. Một số warning nhẹ vẫn có thể xuất hiện nhưng không chặn build/dev server.
+
+## 16. Ghi chú sử dụng
 
 - Website có thể chạy tốt trên desktop, tablet và mobile.
 - Giỏ hàng được lưu bằng localStorage nên vẫn giữ dữ liệu sau khi tải lại trang.
@@ -181,7 +209,7 @@ Tại giao diện Kênh bán hàng (Dashboard), người bán có thể quản l
 - Khi thêm sản phẩm mới hoặc đăng ký người bán, ảnh được lưu trữ dưới dạng base64. Để tránh lỗi đầy bộ nhớ Local Storage (`QuotaExceededError`), hệ thống đã triển khai cơ chế lọc `partialize` loại bỏ ảnh nặng trong Auth store và sử dụng giải thuật nén ảnh canvas/WebP Hybrid trước khi lưu. Ảnh sản phẩm cũ đã lưu mờ trong localStorage cần được upload lại từ ảnh gốc để cải thiện chất lượng.
 - Khi build production trong project này, script đang dùng `next build --webpack` để tránh lỗi Turbopack với đường dẫn tiếng Việt.
 
-## 14. Quy trình nghiệp vụ tổng thể trong tương lai (Phase 2)
+## 17. Quy trình nghiệp vụ tổng thể trong tương lai (Phase 2)
 
 Phần này mô tả quy trình nghiệp vụ định hướng cho các phiên bản tiếp theo của NôngSạch khi kết nối với Server/Database thực tế.
 

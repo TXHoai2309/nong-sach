@@ -3,6 +3,7 @@
 // =============================================
 
 import { Product } from "@/types/product";
+import { RegisteredUser } from "@/types/user";
 
 export interface Shop {
   id: string;
@@ -127,7 +128,8 @@ export function getShopById(shopId: string): Shop {
         const parsed = JSON.parse(stored);
         const state = parsed.state;
         if (state && state.registeredUsers) {
-          const user = state.registeredUsers.find((u: any) => u.id === shopId);
+          const users = state.registeredUsers as RegisteredUser[];
+          const user = users.find((u) => u.id === shopId);
           if (user && user.sellerInfo) {
             const info = user.sellerInfo;
             // Đếm số lượng sản phẩm của shop này
@@ -135,8 +137,8 @@ export function getShopById(shopId: string): Shop {
             let count = 0;
             if (productsStored) {
               try {
-                const list = JSON.parse(productsStored);
-                count = list.filter((p: any) => p.sellerId === shopId).length;
+                const list = JSON.parse(productsStored) as Product[];
+                count = list.filter((p) => p.sellerId === shopId).length;
               } catch {}
             }
 

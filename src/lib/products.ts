@@ -16,8 +16,8 @@ export function getAllProducts(): Product[] {
   const stored = localStorage.getItem("nong-sach-custom-products");
   if (stored) {
     try {
-      const customProducts = JSON.parse(stored);
-      const mappedCustom = customProducts.map((p: any) => ({
+      const customProducts = JSON.parse(stored) as Product[];
+      const mappedCustom: Product[] = customProducts.map((p) => ({
         id: p.id,
         name: p.name,
         category: p.category as ProductCategory,

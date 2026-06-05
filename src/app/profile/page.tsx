@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState, useMemo, type FormEvent } from "react";
+import { useEffect, useState, useMemo, type FormEvent, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import { formatCurrency } from "@/lib/format";
 import { Order } from "@/types/order";
@@ -12,8 +12,8 @@ import { useCartStore } from "@/store/cart-store";
 import { useOrderStore } from "@/store/order-store";
 import { useNotificationStore } from "@/store/notification-store";
 import { OrderStatus } from "@/types/order";
-import { NotificationType } from "@/types/notification";
-import { UserAddress } from "@/types/user";
+import { Product, ProductCategory } from "@/types/product";
+import { UserAddress, User } from "@/types/user";
 import CoverImageCropper from "@/components/ui/CoverImageCropper";
 
 const PROVINCES_API = "https://provinces.open-api.vn/api/v1/?depth=2";
@@ -48,21 +48,64 @@ const fallbackProvinces = [
   },
 ];
 
-export default function ProfilePage() {
+type ProfileTab = "info" | "orders" | "addresses" | "password" | "notifications" | "seller";
+type ProfileGender = NonNullable<User["gender"]>;
+
+interface DistrictOption {
+  code: number;
+  name: string;
+}
+
+interface ProvinceOption {
+  code: number;
+  name: string;
+  districts: DistrictOption[];
+}
+
+type ShopProduct = Product & {
+  sellerId: string;
+  shopName?: string;
+};
+
+function ProfileContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
   const [mounted, setMounted] = useState(false);
-  const { currentUser, logout, approveSeller, updateSellerInfo } = useAuthStore();
+  const {
+    currentUser,
+    logout,
+    updateProfile,
+    changePassword,
+    addAddress,
+    updateAddress,
+    deleteAddress,
+    setDefaultAddress,
+    registerSeller,
+    approveSeller,
+    updateSellerInfo,
+  } = useAuthStore();
   const { addToCart } = useCartStore();
   const orders = useOrderStore((state) => state.orders);
   const updateOrderStatus = useOrderStore((state) => state.updateOrderStatus);
-  const notifications = useNotificationStore((state) => state.notifications);
   const markAsRead = useNotificationStore((state) => state.markAsRead);
   const markAllAsRead = useNotificationStore((state) => state.markAllAsRead);
   const getNotificationsByUserId = useNotificationStore((state) => state.getNotificationsByUserId);
   const addNotification = useNotificationStore((state) => state.addNotification);
 
   // Navigation tab
-  const [activeTab, setActiveTab] = useState<"info" | "orders" | "addresses" | "password" | "notifications" | "seller">("info");
+  const [activeTab, setActiveTab] = useState<ProfileTab>("info");
+
+  // Listen to tab URL query param
+  useEffect(() => {
+    if (tabParam) {
+      const validTabs: ProfileTab[] = ["info", "orders", "addresses", "password", "notifications", "seller"];
+      if (validTabs.includes(tabParam as ProfileTab)) {
+        setActiveTab(tabParam as ProfileTab);
+      }
+    }
+  }, [tabParam]);
+
   const [sellerSubTab, setSellerSubTab] = useState<"products" | "orders">("products");
 
   // Notifications/Toasts
@@ -93,12 +136,12 @@ export default function ProfilePage() {
   const [bankAccountName, setBankAccountName] = useState("");
 
   // Seller Dashboard products list
-  const [shopProducts, setShopProducts] = useState<any[]>([]);
+  const [shopProducts, setShopProducts] = useState<ShopProduct[]>([]);
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
   const [isEditShopOpen, setIsEditShopOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<any | null>(null);
+  const [editingProduct, setEditingProduct] = useState<ShopProduct | null>(null);
   const [newProdName, setNewProdName] = useState("");
-  const [newProdCategory, setNewProdCategory] = useState("vegetables");
+  const [newProdCategory, setNewProdCategory] = useState<ProductCategory>("vegetables");
   const [newProdPrice, setNewProdPrice] = useState("");
   const [newProdUnit, setNewProdUnit] = useState("kg");
   const [newProdStock, setNewProdStock] = useState("");
@@ -111,7 +154,7 @@ export default function ProfilePage() {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [dob, setDob] = useState("");
-  const [gender, setGender] = useState<"Nam" | "Nữ" | "Khác" | "">("");
+  const [gender, setGender] = useState<ProfileGender>("");
 
   // Change Password State
   const [currentPassword, setCurrentPassword] = useState("");
@@ -131,10 +174,11 @@ export default function ProfilePage() {
   const [addrIsDefault, setAddrIsDefault] = useState(false);
 
   // Provinces data
-  const [provinces, setProvinces] = useState<any[]>([]);
+  const [provinces, setProvinces] = useState<ProvinceOption[]>([]);
 
   // Order filter
   const [orderFilter, setOrderFilter] = useState<"all" | "processing" | "completed">("all");
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
 
   // Show toast helper
   const showToast = (message: string, type: "success" | "error" = "success") => {
@@ -145,7 +189,8 @@ export default function ProfilePage() {
   };
 
   useEffect(() => {
-    setMounted(true);
+    const timer = window.setTimeout(() => setMounted(true), 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   // Redirect to login if not logged in
@@ -162,7 +207,7 @@ export default function ProfilePage() {
       try {
         const res = await fetch(PROVINCES_API);
         if (!res.ok) throw new Error();
-        const data = await res.json();
+        const data = await res.json() as ProvinceOption[];
         setProvinces(data.length > 0 ? data : fallbackProvinces);
       } catch {
         setProvinces(fallbackProvinces);
@@ -174,10 +219,13 @@ export default function ProfilePage() {
   // Initialize profile form values when user loads
   useEffect(() => {
     if (currentUser) {
-      setFullName(currentUser.name || "");
-      setPhone(currentUser.phone || "");
-      setDob(currentUser.dob || "");
-      setGender(currentUser.gender || "");
+      const timer = window.setTimeout(() => {
+        setFullName(currentUser.name || "");
+        setPhone(currentUser.phone || "");
+        setDob(currentUser.dob || "");
+        setGender(currentUser.gender || "");
+      }, 0);
+      return () => window.clearTimeout(timer);
     }
   }, [currentUser]);
 
@@ -195,7 +243,8 @@ export default function ProfilePage() {
   // Copy phone number to Zalo if checkbox is selected
   useEffect(() => {
     if (isZaloSame) {
-      setShopZalo(shopPhone);
+      const timer = window.setTimeout(() => setShopZalo(shopPhone), 0);
+      return () => window.clearTimeout(timer);
     }
   }, [isZaloSame, shopPhone]);
 
@@ -205,9 +254,10 @@ export default function ProfilePage() {
     const stored = localStorage.getItem("nong-sach-custom-products");
     if (stored) {
       try {
-        const list = JSON.parse(stored);
-        const filteredList = list.filter((p: any) => p.sellerId === currentUser.id);
-        setShopProducts(filteredList);
+        const list = JSON.parse(stored) as ShopProduct[];
+        const filteredList = list.filter((p) => p.sellerId === currentUser.id);
+        const timer = window.setTimeout(() => setShopProducts(filteredList), 0);
+        return () => window.clearTimeout(timer);
       } catch (e) {
         console.error(e);
       }
@@ -351,21 +401,6 @@ export default function ProfilePage() {
       };
       reader.readAsDataURL(file);
     }
-  };
-
-  const handleProductImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      void (async () => {
-        try {
-          const finalImage = await processProductImage(file);
-          setNewProdImage(finalImage);
-        } catch {
-          showToast("Khong the xu ly anh san pham nay", "error");
-        }
-      })();
-    }
-    e.target.value = "";
   };
 
   const handleProductMultipleImagesUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -600,7 +635,7 @@ export default function ProfilePage() {
     showToast(`Đã cập nhật đơn hàng thành ${newStatus}`);
   };
 
-  const handleEditProduct = (p: any) => {
+  const handleEditProduct = (p: ShopProduct) => {
     setEditingProduct(p);
     setNewProdName(p.name);
     setNewProdCategory(p.category);
@@ -619,13 +654,13 @@ export default function ProfilePage() {
       try {
         const stored = localStorage.getItem("nong-sach-custom-products");
         if (stored) {
-          const list = JSON.parse(stored);
-          const updated = list.filter((p: any) => p.id !== productId);
+          const list = JSON.parse(stored) as ShopProduct[];
+          const updated = list.filter((p) => p.id !== productId);
           localStorage.setItem("nong-sach-custom-products", JSON.stringify(updated));
           setShopProducts((prev) => prev.filter((p) => p.id !== productId));
           showToast("Đã xóa sản phẩm thành công!");
         }
-      } catch (err) {
+      } catch {
         showToast("Đã có lỗi xảy ra khi xóa sản phẩm", "error");
       }
     }
@@ -654,7 +689,7 @@ export default function ProfilePage() {
     const updatedImages = newProdImages.length > 0 ? newProdImages : (newProdImage ? [newProdImage] : []);
     const mainImage = newProdImage || (updatedImages.length > 0 ? updatedImages[0] : "https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?w=600&h=600&fit=crop");
 
-    const productData = {
+    const productData: ShopProduct = {
       id: editingProduct ? editingProduct.id : "prod-custom-" + Date.now(),
       name: newProdName.trim(),
       category: newProdCategory,
@@ -672,10 +707,10 @@ export default function ProfilePage() {
 
     try {
       const stored = localStorage.getItem("nong-sach-custom-products");
-      let list = stored ? JSON.parse(stored) : [];
+      let list = stored ? (JSON.parse(stored) as ShopProduct[]) : [];
 
       if (editingProduct) {
-        list = list.map((p: any) => p.id === editingProduct.id ? productData : p);
+        list = list.map((p) => p.id === editingProduct.id ? productData : p);
         localStorage.setItem("nong-sach-custom-products", JSON.stringify(list));
         setShopProducts((prev) => prev.map((p) => p.id === editingProduct.id ? productData : p));
         showToast("Cập nhật sản phẩm thành công!");
@@ -687,7 +722,7 @@ export default function ProfilePage() {
       }
 
       closeProductModal();
-    } catch (err) {
+    } catch {
       showToast("Đã có lỗi xảy ra khi lưu sản phẩm", "error");
     }
   };
@@ -823,7 +858,7 @@ export default function ProfilePage() {
     }
 
     const selectedProv = provinces.find((p) => p.code === Number(addrProvinceCode));
-    const selectedDist = selectedProv?.districts?.find((d: any) => d.code === Number(addrDistrictCode));
+    const selectedDist = selectedProv?.districts?.find((d) => d.code === Number(addrDistrictCode));
 
     const addressData = {
       fullName: addrFullName.trim(),
@@ -929,7 +964,7 @@ export default function ProfilePage() {
             <nav className="rounded-3xl border border-[#bbcabf]/30 bg-white p-2 shadow-sm" aria-label="Menu tài khoản">
               <ul className="space-y-1">
                 {(() => {
-                  const menuItems = [
+                  const menuItems: Array<{ id: ProfileTab; label: string; icon: string }> = [
                     { id: "info", label: "Thông tin cá nhân", icon: "person" },
                     { id: "orders", label: "Đơn hàng của tôi", icon: "shopping_bag" },
                     { id: "addresses", label: "Địa chỉ giao hàng", icon: "location_on" },
@@ -971,8 +1006,9 @@ export default function ProfilePage() {
                       <li key={item.id}>
                         <button
                           onClick={() => {
-                            setActiveTab(item.id as any);
+                            setActiveTab(item.id);
                             setIsAddressFormOpen(false);
+                            router.push(`/profile?tab=${item.id}`, { scroll: false });
                           }}
                           className={`flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left text-sm transition-all ${btnClass}`}
                         >
@@ -1110,7 +1146,7 @@ export default function ProfilePage() {
                             name="gender"
                             value={item.value}
                             checked={gender === item.value}
-                            onChange={() => setGender(item.value as any)}
+                            onChange={() => setGender(item.value as ProfileGender)}
                             className="h-4.5 w-4.5 border-gray-300 text-[#006c49] focus:ring-[#006c49]"
                           />
                           {item.label}
@@ -1182,20 +1218,20 @@ export default function ProfilePage() {
                           <div className="flex flex-col justify-between gap-3 border-b border-[#bbcabf]/20 pb-4 sm:flex-row sm:items-center">
                             <div>
                               <p className="text-sm font-bold text-[#3c4a42]">
-                                Đơn hàng #{order.orderId}
+                                Đơn hàng #{order.id}
                               </p>
                               <p className="mt-1 text-xs text-[#3c4a42]/60 font-medium">
-                                Ngày đặt: {order.date}
+                                Ngày đặt: {new Date(order.createdAt).toLocaleString("vi-VN")}
                               </p>
                             </div>
                             <div className="flex items-center gap-3">
                               <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold ${
-                                order.status === "completed"
+                                order.status === "delivered"
                                   ? "bg-[#e6f4ea] text-[#006c49]"
                                   : "bg-[#e7eeff] text-[#004b87]"
                               }`}>
                                 <span className="h-1.5 w-1.5 rounded-full bg-current"></span>
-                                {order.status === "completed" ? "Hoàn thành" : "Đang xử lý"}
+                                {order.status === "delivered" ? "Hoàn thành" : "Đang xử lý"}
                               </span>
                             </div>
                           </div>
@@ -1229,7 +1265,7 @@ export default function ProfilePage() {
                                   {order.items.reduce((sum, i) => sum + i.quantity, 0)} sản phẩm
                                 </p>
                                 <p className="text-base font-extrabold text-[#006c49] mt-0.5">
-                                  {formatCurrency(order.total)}
+                                  {formatCurrency(order.totalAmount)}
                                 </p>
                               </div>
                             </div>
@@ -1238,7 +1274,7 @@ export default function ProfilePage() {
                           {/* Expanded Details section */}
                           {isExpanded && (
                             <div className="bg-[#f9f9ff] rounded-xl p-4 border border-[#bbcabf]/15 mb-4 text-xs space-y-2 text-[#3c4a42]/80">
-                              <p><strong className="text-[#3c4a42]">Người nhận:</strong> {order.name}</p>
+                              <p><strong className="text-[#3c4a42]">Người nhận:</strong> {order.fullName}</p>
                               <p><strong className="text-[#3c4a42]">Số điện thoại:</strong> {order.phone}</p>
                               <p><strong className="text-[#3c4a42]">Địa chỉ giao hàng:</strong> {order.address}</p>
                               <p><strong className="text-[#3c4a42]">Phương thức thanh toán:</strong> {
@@ -1362,7 +1398,7 @@ export default function ProfilePage() {
                           disabled={!addrProvinceCode}
                         >
                           <option value="">Chọn Quận/Huyện</option>
-                          {formDistrictOptions.map((dist: any) => (
+                          {formDistrictOptions.map((dist) => (
                             <option key={dist.code} value={dist.code}>
                               {dist.name}
                             </option>
@@ -1714,7 +1750,7 @@ export default function ProfilePage() {
                         <div className="flex flex-col items-center justify-center mb-6">
                           <label className="flex h-24 w-24 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#bbcabf]/50 bg-gray-50/50 hover:bg-gray-50 transition-all overflow-hidden relative">
                             {shopLogo ? (
-                              <img src={shopLogo} alt="Logo preview" className="h-full w-full object-cover" />
+                              <Image src={shopLogo} alt="Logo preview" fill unoptimized className="object-cover" sizes="96px" />
                             ) : (
                               <>
                                 <span className="material-symbols-outlined text-[28px] text-[#3c4a42]/40">image</span>
@@ -1829,7 +1865,7 @@ export default function ProfilePage() {
 
                             {farmImages.map((img, idx) => (
                               <div key={idx} className="relative h-16 w-16 rounded-xl overflow-hidden border border-[#bbcabf]/20">
-                                <img src={img} alt="Farm preview" className="h-full w-full object-cover" />
+                                <Image src={img} alt="Farm preview" fill unoptimized className="object-cover" sizes="64px" />
                                 <button
                                   type="button"
                                   onClick={() => setFarmImages((prev) => prev.filter((_, i) => i !== idx))}
@@ -1991,7 +2027,7 @@ export default function ProfilePage() {
                             <span className="block text-[11px] font-bold text-[#3c4a42]/70 mb-1.5">Mặt trước CCCD *</span>
                             <label className="flex h-28 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#bbcabf]/50 bg-gray-50/50 hover:bg-gray-50 transition-all overflow-hidden relative">
                               {idCardFront ? (
-                                <img src={idCardFront} alt="CCCD Front preview" className="h-full w-full object-cover" />
+                                <Image src={idCardFront} alt="CCCD Front preview" fill unoptimized className="object-cover" sizes="(min-width: 640px) 50vw, 100vw" />
                               ) : (
                                 <>
                                   <span className="material-symbols-outlined text-[24px] text-gray-400">photo_camera</span>
@@ -2005,7 +2041,7 @@ export default function ProfilePage() {
                             <span className="block text-[11px] font-bold text-[#3c4a42]/70 mb-1.5">Mặt sau CCCD *</span>
                             <label className="flex h-28 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#bbcabf]/50 bg-gray-50/50 hover:bg-gray-50 transition-all overflow-hidden relative">
                               {idCardBack ? (
-                                <img src={idCardBack} alt="CCCD Back preview" className="h-full w-full object-cover" />
+                                <Image src={idCardBack} alt="CCCD Back preview" fill unoptimized className="object-cover" sizes="(min-width: 640px) 50vw, 100vw" />
                               ) : (
                                 <>
                                   <span className="material-symbols-outlined text-[24px] text-gray-400">photo_camera</span>
@@ -2272,7 +2308,7 @@ export default function ProfilePage() {
                               inventory
                             </span>
                             <p className="text-xs font-bold">Cửa hàng chưa có sản phẩm nào đăng bán.</p>
-                            <p className="text-[10px] text-[#3c4a42]/50 mt-1">Bấm nút "Đăng sản phẩm mới" ở trên để đưa nông sản của bạn lên cửa hàng nhé.</p>
+                            <p className="text-[10px] text-[#3c4a42]/50 mt-1">Bấm nút &quot;Đăng sản phẩm mới&quot; ở trên để đưa nông sản của bạn lên cửa hàng nhé.</p>
                           </div>
                         ) : (
                           <div className="overflow-x-auto">
@@ -2500,7 +2536,7 @@ export default function ProfilePage() {
                                 </label>
                                 <select
                                   value={newProdCategory}
-                                  onChange={(e) => setNewProdCategory(e.target.value)}
+                                  onChange={(e) => setNewProdCategory(e.target.value as ProductCategory)}
                                   className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-2.5 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
                                   required
                                 >
@@ -2621,7 +2657,7 @@ export default function ProfilePage() {
                                   const isMain = idx === 0;
                                   return (
                                     <div key={idx} className={`relative h-16 w-16 rounded-xl overflow-hidden border-2 ${isMain ? 'border-[#006c49] shadow-sm' : 'border-gray-200'} shrink-0 group`}>
-                                      <img src={img} alt={`Product preview ${idx}`} className="h-full w-full object-cover" />
+                                      <Image src={img} alt={`Product preview ${idx}`} fill unoptimized className="object-cover" sizes="64px" />
                                       {isMain && (
                                         <div className="absolute top-0 left-0 bg-[#006c49] text-white text-[8px] font-bold px-1.5 py-0.5 rounded-br-lg">
                                           Bìa
@@ -2666,7 +2702,7 @@ export default function ProfilePage() {
                                 })}
                               </div>
                               <p className="text-[9px] text-[#3c4a42]/50 font-medium mt-1.5">
-                                Ảnh đầu tiên sẽ là ảnh đại diện (Ảnh bìa). Nhấp "Đặt làm bìa" để thay đổi.
+                                Ảnh đầu tiên sẽ là ảnh đại diện (Ảnh bìa). Nhấp &quot;Đặt làm bìa&quot; để thay đổi.
                               </p>
                             </div>
 
@@ -2736,10 +2772,13 @@ export default function ProfilePage() {
                               <div className="relative w-full h-32 rounded-2xl overflow-hidden bg-slate-100 border-2 border-dashed border-[#bbcabf]/40 group">
                                 {shopCoverImage ? (
                                   <>
-                                    <img
+                                    <Image
                                       src={shopCoverImage}
                                       alt="Ảnh bìa"
-                                      className="w-full h-full object-cover"
+                                      fill
+                                      unoptimized
+                                      className="object-cover"
+                                      sizes="(min-width: 640px) 420px, 100vw"
                                     />
                                     <button
                                       type="button"
@@ -2821,7 +2860,7 @@ export default function ProfilePage() {
                               <div className="flex flex-col items-center justify-center mb-2">
                                 <label className="flex h-20 w-20 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#bbcabf]/50 bg-gray-50/50 hover:bg-gray-50 transition-all overflow-hidden relative">
                                   {shopLogo ? (
-                                    <img src={shopLogo} alt="Logo preview" className="h-full w-full object-cover" />
+                                    <Image src={shopLogo} alt="Logo preview" fill unoptimized className="object-cover" sizes="80px" />
                                   ) : (
                                     <>
                                       <span className="material-symbols-outlined text-[20px] text-[#3c4a42]/40">image</span>
@@ -2927,7 +2966,7 @@ export default function ProfilePage() {
 
                                   {farmImages.map((img, idx) => (
                                     <div key={idx} className="relative h-14 w-14 rounded-xl overflow-hidden border border-[#bbcabf]/20">
-                                      <img src={img} alt="Farm preview" className="h-full w-full object-cover" />
+                                      <Image src={img} alt="Farm preview" fill unoptimized className="object-cover" sizes="56px" />
                                       <button
                                         type="button"
                                         onClick={() => setFarmImages((prev) => prev.filter((_, i) => i !== idx))}
@@ -3143,5 +3182,19 @@ export default function ProfilePage() {
       />
     )}
     </>
+  );
+}
+
+export default function ProfilePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-[#f9f9ff]">
+          <div className="text-[#3c4a42] font-semibold">Đang tải trang cá nhân...</div>
+        </div>
+      }
+    >
+      <ProfileContent />
+    </Suspense>
   );
 }

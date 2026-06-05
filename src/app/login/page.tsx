@@ -22,12 +22,13 @@ export default function LoginPage() {
   const [mounted,      setMounted]      = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    const timer = window.setTimeout(() => setMounted(true), 0);
     if (currentUser) {
       const params = new URLSearchParams(window.location.search);
       const redirectTo = params.get("redirect") || "/";
       router.push(redirectTo);
     }
+    return () => window.clearTimeout(timer);
   }, [currentUser, router]);
 
   if (!mounted) return null;

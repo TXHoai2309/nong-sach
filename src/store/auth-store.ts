@@ -178,7 +178,7 @@ export const useAuthStore = create<AuthState>()(
           user.id === userId ? { ...user, ...updatedProfile } : user
         );
 
-        const newSet: any = { registeredUsers };
+        const newSet: Partial<AuthState> = { registeredUsers };
         if (isSelf) {
           newSet.currentUser = { ...currentUser, ...updatedProfile };
         }
@@ -250,7 +250,7 @@ export const useAuthStore = create<AuthState>()(
 
         const currentAddresses = currentUser.addresses || [];
         const addressToDelete = currentAddresses.find((addr) => addr.id === id);
-        let updatedAddresses = currentAddresses.filter((addr) => addr.id !== id);
+        const updatedAddresses = currentAddresses.filter((addr) => addr.id !== id);
 
         if (addressToDelete?.isDefault && updatedAddresses.length > 0) {
           updatedAddresses[0].isDefault = true;
@@ -275,10 +275,14 @@ export const useAuthStore = create<AuthState>()(
     {
       name: "nong-sach-auth",
       partialize: (state) => {
-        const sanitizeUser = (user: any) => {
+        const sanitizeUser = (user: User | RegisteredUser | null) => {
           if (!user) return user;
           if (!user.sellerInfo) return user;
-          const { idCardFront, idCardBack, farmImages, shopLogo, ...restInfo } = user.sellerInfo;
+          const restInfo: Partial<SellerInfo> = { ...user.sellerInfo };
+          delete restInfo.idCardFront;
+          delete restInfo.idCardBack;
+          delete restInfo.farmImages;
+          delete restInfo.shopLogo;
           return {
             ...user,
             sellerInfo: restInfo,
@@ -288,7 +292,7 @@ export const useAuthStore = create<AuthState>()(
         return {
           currentUser: sanitizeUser(state.currentUser),
           registeredUsers: state.registeredUsers.map(sanitizeUser),
-        } as any;
+        };
       },
     }
   )

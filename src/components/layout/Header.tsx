@@ -24,7 +24,8 @@ export default function Header() {
   const { currentUser, logout } = useAuthStore();
 
   useEffect(() => {
-    setMounted(true);
+    const timer = window.setTimeout(() => setMounted(true), 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -49,7 +50,7 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 bg-[#f9f9ff]/85 shadow-sm backdrop-blur-md">
-      <nav className="mx-auto flex w-full max-w-[1120px] items-center justify-between px-6 py-3">
+      <nav className="mx-auto flex w-full max-w-[1120px] items-center justify-between gap-6 md:gap-10 px-6 py-3">
         <div className="flex items-center gap-6 lg:gap-12">
           <Link href="/" aria-label="NôngSạch - Trang chủ" className="text-[28px] font-bold leading-9 text-[#006c49] shrink-0 whitespace-nowrap">
             NôngSạch

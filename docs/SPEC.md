@@ -5,12 +5,12 @@
 | Thông tin         | Chi tiết                                    |
 | ----------------- | ------------------------------------------- |
 | Tên dự án         | NôngSạch — Nền tảng giao dịch nông sản sạch |
-| Phiên bản         | MVP v0.4.2                                  |
+| Phiên bản         | MVP v0.4.3                                  |
 | Ngày tạo          | 03/06/2026                                  |
 | Cập nhật lần cuối | 05/06/2026                                  |
 | Nhóm              | NôngSạch Team                               |
 | Môn học           | Vibe Coding Thực Chiến — Buổi 3             |
-| Trạng thái        | ✅ Hoàn thành Sprint 1, Sprint 2, Sprint 3, Sprint 4 & Sprint 4.2 |
+| Trạng thái        | ✅ Hoàn thành Sprint 1, Sprint 2, Sprint 3, Sprint 4, Sprint 4.2 & Sprint 4.3 |
 
 ---
 
@@ -73,6 +73,7 @@ Người tiêu dùng ngày càng lo ngại về an toàn thực phẩm, đặc b
 | F-17 | Báo cáo sản phẩm      | Quy trình gửi báo cáo vi phạm cho từng sản phẩm cụ thể, tích hợp vào hệ thống chung | P2      | ✅ Done     |
 | F-18 | Quản lý đơn bán hàng  | Dashboard cho người bán quản lý danh sách đơn hàng, cập nhật trạng thái đơn (Xác nhận, Giao hàng...) | P1      | ✅ Done     |
 | F-19 | Hệ thống thông báo    | Thông báo thời gian thực cho người mua và người bán về các sự kiện đơn hàng và hệ thống | P1      | ✅ Done     |
+| F-20 | Ổn định Profile & Báo cáo shop | Sửa lỗi runtime Profile, đảm bảo modal Báo cáo shop hiển thị đúng và lint/type toàn project không còn error | P0      | ✅ Done     |
 
 
 > **Ghi chú cho team:** F-09 hiện đã có giao diện hoàn chỉnh theo Stitch HTML tại route `/contact`. Form liên hệ đang ở mức UI/UX MVP; nếu cần gửi dữ liệu thật, cần bổ sung API/Firebase handler ở Phase 2. Kênh bán hàng (F-11), Quản lý sản phẩm (F-12) và Trang chi tiết shop (F-14) hiện được lưu động tại `localStorage` phía client của từng người dùng để mô phỏng tính năng thực tế.
@@ -548,6 +549,17 @@ interface ContactMessage {
 | T-40 | Tabs Sản phẩm có bộ lọc danh mục, tìm kiếm trong shop và sắp xếp | 3  | ✅      |
 | T-41 | Tabs Đánh giá & Giới thiệu (hiển thị tài khoản thanh toán ngân hàng) | 3  | ✅      |
 | T-42 | Section các cửa hàng tương tự ở chân trang | 2  | ✅      |
+
+## Sprint 4.3 — Profile runtime fix, Shop report modal & lint stability (✅ Hoàn thành)
+
+| ID   | Task                                           | SP | Status |
+| ---- | ---------------------------------------------- | -- | ------ |
+| T-43 | Sửa lỗi `expandedOrderId is not defined` trong Profile/Notifications | 1  | ✅      |
+| T-44 | Đồng bộ field đơn hàng trong Profile với type Order hiện tại | 1  | ✅      |
+| T-45 | Sửa modal Báo cáo shop bị co thành vạch trắng bằng width cố định an toàn | 1  | ✅      |
+| T-46 | Dọn lỗi React compiler `set-state-in-effect` ở các trang dùng `mounted` | 2  | ✅      |
+| T-47 | Loại bỏ `any` ở product/shop/auth store localStorage helpers | 2  | ✅      |
+| T-48 | Xác minh `npm run lint` và `npx tsc --noEmit` không còn error | 1  | ✅      |
 
 ## Backlog Phase 2 (Tương lai)
 

@@ -113,7 +113,8 @@ export default function CheckoutPage() {
   const selectedDistrict = districtOptions.find((district) => district.code === Number(districtCode));
 
   useEffect(() => {
-    setMounted(true);
+    const timer = window.setTimeout(() => setMounted(true), 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -124,8 +125,11 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (!currentUser) return;
-    setFullName((prev) => prev || currentUser.name || "");
-    setEmail((prev) => prev || currentUser.email || "");
+    const timer = window.setTimeout(() => {
+      setFullName((prev) => prev || currentUser.name || "");
+      setEmail((prev) => prev || currentUser.email || "");
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [currentUser]);
 
   useEffect(() => {

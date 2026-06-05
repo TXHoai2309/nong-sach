@@ -29,7 +29,8 @@ export default function ProductsPage() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    const timer = window.setTimeout(() => setMounted(true), 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const allProducts = useMemo(() => {
@@ -72,7 +73,7 @@ export default function ProductsPage() {
     }
 
     return result;
-  }, [search, selectedCategory, sort]);
+  }, [allProducts, search, selectedCategory, sort]);
 
   const clearFilters = () => {
     setSearch("");

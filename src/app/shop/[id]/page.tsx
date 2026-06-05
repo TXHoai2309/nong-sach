@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState, useMemo, type FormEvent } from "react";
+import { use, useEffect, useState, type FormEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -160,7 +160,10 @@ export default function ShopDetailPage({ params }: PageProps) {
   const { currentUser, updateSellerInfo } = useAuthStore();
   const addToCart = useCartStore((state) => state.addToCart);
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setMounted(true), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   // Load provinces for edit modal
   useEffect(() => {
@@ -179,13 +182,10 @@ export default function ShopDetailPage({ params }: PageProps) {
   }, [mounted]);
 
   // ── Resolve all products (reactive: re-reads from localStorage each render) ─
-  const allProducts = useMemo(() => {
-    if (!mounted) return [];
-    return getAllProducts();
-  }, [mounted]);
+  const allProducts = mounted ? getAllProducts() : [];
 
   // ── Resolve Shop – REACTIVE: derive from Zustand for the owner ────────────
-  const shop = useMemo((): Shop | null => {
+  const shop: Shop | null = (() => {
     if (!mounted) return null;
 
     // If the currently-logged-in user IS this shop, build reactively
@@ -196,12 +196,12 @@ export default function ShopDetailPage({ params }: PageProps) {
 
     // Otherwise use localStorage / static data as before
     return getShopById(id);
-  }, [id, mounted, currentUser, allProducts]);
+  })();
 
   const isOwner = mounted && currentUser?.id === id && !!currentUser?.sellerInfo;
 
   // ── Shop products ─────────────────────────────────────────────────────────
-  const shopProducts = useMemo(() => {
+  const shopProducts = (() => {
     if (!mounted || !shop) return [];
     return allProducts.filter((p) => {
       if (p.sellerId) return p.sellerId === shop.id;
@@ -211,13 +211,11 @@ export default function ShopDetailPage({ params }: PageProps) {
       if (shop.id === "moc-farm-da-lat") return ["10"].includes(p.id);
       return false;
     });
-  }, [shop, mounted, allProducts]);
+  })();
 
-  const shopCategories = useMemo(() => {
-    return Array.from(new Set(shopProducts.map((p) => p.category)));
-  }, [shopProducts]);
+  const shopCategories = Array.from(new Set(shopProducts.map((p) => p.category)));
 
-  const filteredProducts = useMemo(() => {
+  const filteredProducts = (() => {
     let result = [...shopProducts];
     if (selectedCategory !== "all") result = result.filter((p) => p.category === selectedCategory);
     if (searchQuery.trim()) {
@@ -228,9 +226,9 @@ export default function ShopDetailPage({ params }: PageProps) {
     if (sortBy === "price-desc") result.sort((a, b) => b.price - a.price);
     if (sortBy === "name-asc") result.sort((a, b) => a.name.localeCompare(b.name));
     return result;
-  }, [shopProducts, selectedCategory, searchQuery, sortBy]);
+  })();
 
-  const similarShops = useMemo(() => STATIC_SHOPS.filter((s) => s.id !== id).slice(0, 3), [id]);
+  const similarShops = STATIC_SHOPS.filter((s) => s.id !== id).slice(0, 3);
 
   // ── Follower Count Logic ──────────────────────────────────────────────────
   const [displayFollowers, setDisplayFollowers] = useState<string | number>(0);
@@ -240,7 +238,7 @@ export default function ShopDetailPage({ params }: PageProps) {
     if (typeof val === "number") return val;
     const match = val.match(/^(\d+(?:\.\d+)?)(K|M)?$/);
     if (!match) return 0;
-    let num = parseFloat(match[1]);
+    const num = parseFloat(match[1]);
     const unit = match[2];
     if (unit === "K") return num * 1000;
     if (unit === "M") return num * 1000000;
@@ -256,7 +254,8 @@ export default function ShopDetailPage({ params }: PageProps) {
 
   useEffect(() => {
     if (shop) {
-      setDisplayFollowers(shop.followerCount);
+      const timer = window.setTimeout(() => setDisplayFollowers(shop.followerCount), 0);
+      return () => window.clearTimeout(timer);
     }
   }, [shop]);
 
