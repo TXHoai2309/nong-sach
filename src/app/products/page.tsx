@@ -6,6 +6,7 @@ import Breadcrumb from "@/components/layout/Breadcrumb";
 import Container from "@/components/layout/Container";
 import ProductGrid from "@/components/product/ProductGrid";
 import { getAllProducts } from "@/lib/products";
+import { products as staticProducts } from "@/data/products";
 import { ProductCategory, CATEGORY_LABELS } from "@/types/product";
 
 const ALL_CATEGORIES: ProductCategory[] = [
@@ -26,17 +27,12 @@ const SORT_LABELS: Record<SortOption, string> = {
 };
 
 export default function ProductsPage() {
-  const [mounted, setMounted] = useState(false);
+  const [allProducts, setAllProducts] = useState(staticProducts);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setMounted(true), 0);
+    const timer = window.setTimeout(() => setAllProducts(getAllProducts()), 0);
     return () => window.clearTimeout(timer);
   }, []);
-
-  const allProducts = useMemo(() => {
-    return getAllProducts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mounted]);
 
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] =

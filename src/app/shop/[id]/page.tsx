@@ -8,7 +8,6 @@ import {
   Info, ShoppingCart, Star, MapPin, X, Pencil, Upload,
 } from "lucide-react";
 import Breadcrumb from "@/components/layout/Breadcrumb";
-import Container from "@/components/layout/Container";
 import { getShopById, STATIC_SHOPS, Shop } from "@/lib/shops";
 import { getAllProducts } from "@/lib/products";
 import { useCartStore } from "@/store/cart-store";
@@ -247,25 +246,32 @@ export default function ShopDetailPage({ params }: PageProps) {
 
   // Helper to format 2400 to "2.4K"
   const formatFollowers = (num: number): string | number => {
-    if (num < 1000) return num;
+    if (num < 10000) return num; // Show exact count up to 9999 to make +1 visible
     if (num < 1000000) return (num / 1000).toFixed(1).replace(/\.0$/, "") + "K";
     return (num / 1000000).toFixed(1).replace(/\.0$/, "") + "M";
   };
 
   useEffect(() => {
     if (shop) {
+      // Only reset display count when the shop ID changes or when shop data loads
       const timer = window.setTimeout(() => setDisplayFollowers(shop.followerCount), 0);
       return () => window.clearTimeout(timer);
     }
-  }, [shop]);
+  }, [shop?.id, shop?.followerCount, shop]);
 
   const handleToggleFollow = () => {
-    const nextFollowed = !isFollowed;
-    setIsFollowed(nextFollowed);
-    
-    const currentNum = parseFollowers(displayFollowers);
-    const nextNum = nextFollowed ? currentNum + 1 : Math.max(0, currentNum - 1);
-    setDisplayFollowers(formatFollowers(nextNum));
+    setIsFollowed((prevFollowed) => {
+      const nextFollowed = !prevFollowed;
+      
+      // Update follower count based on the new follow state
+      setDisplayFollowers((prevCount) => {
+        const currentNum = parseFollowers(prevCount);
+        const nextNum = nextFollowed ? currentNum + 1 : Math.max(0, currentNum - 1);
+        return formatFollowers(nextNum);
+      });
+
+      return nextFollowed;
+    });
   };
 
   const handleMessageClick = () => alert(`Chức năng nhắn tin với "${shop?.name}" đang phát triển ở Phase 2!`);
