@@ -13,6 +13,7 @@ import {
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { ref, uploadString, getDownloadURL } from "firebase/storage";
 import { addShop, updateShop } from "@/lib/shops";
+import { useNotificationStore } from "@/store/notification-store";
 
 const getFirebaseErrorCode = (error: unknown) =>
   typeof error === "object" && error !== null && "code" in error
@@ -442,6 +443,13 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         sellerStatus: "pending",
         sellerInfo: sanitizedInfo,
       });
+
+      useNotificationStore.getState().addNotification({
+        userId: currentUser.id,
+        title: "Hồ sơ bán hàng đang chờ duyệt",
+        message: "Hồ sơ của bạn đã được gửi thành công. NôngSạch sẽ thông báo ngay khi tài khoản bán hàng được xác nhận.",
+        type: "account_update",
+      });
     } catch (err) {
       console.error("Firestore register seller update error:", err);
       throw err;
@@ -497,6 +505,13 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
           mainCategories: info.mainCategories || ["Rau củ"],
         });
       }
+
+      useNotificationStore.getState().addNotification({
+        userId,
+        title: "Tài khoản bán hàng đã được xác nhận",
+        message: "Chúc mừng! Hồ sơ của bạn đã được phê duyệt. Bạn có thể quản lý cửa hàng, đăng sản phẩm và xử lý đơn hàng ngay bây giờ.",
+        type: "account_update",
+      });
     } catch (err) {
       console.error("Firestore approve seller update error:", err);
     }

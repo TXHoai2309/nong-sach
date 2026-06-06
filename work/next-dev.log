@@ -1,0 +1,25 @@
+
+> nong-sach@0.1.0 dev
+> next dev --webpack --port 3001
+
+▲ Next.js 16.2.7 (webpack)
+- Local:         http://localhost:3001
+- Network:       http://10.207.38.147:3001
+- Environments: .env.local
+✓ Ready in 497ms
+⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of D:\package-lock.json as the root directory.
+ To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+ Detected additional lockfiles: 
+   * D:\Thực tập\Buoi3\nong-sach\package-lock.json
+
+⨯ Another next dev server is already running.
+
+- Local:        http://localhost:3000
+- PID:          18428
+- Dir:          D:\Thực tập\Buoi3\nong-sach
+- Log:          .next\dev\logs\next-development.log
+
+Run taskkill /PID 18428 /F to stop it.
+[?25h

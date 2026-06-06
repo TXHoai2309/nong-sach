@@ -6,11 +6,13 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import { formatCurrency } from "@/lib/format";
+import { getOrderStatusMeta } from "@/lib/order-status";
 import { Order } from "@/types/order";
 import { useAuthStore } from "@/store/auth-store";
 import { useCartStore } from "@/store/cart-store";
 import { useOrderStore } from "@/store/order-store";
 import { useNotificationStore } from "@/store/notification-store";
+import { Notification } from "@/types/notification";
 import { OrderStatus } from "@/types/order";
 import { Product, ProductCategory } from "@/types/product";
 import { UserAddress, User } from "@/types/user";
@@ -52,6 +54,46 @@ const fallbackProvinces = [
 type ProfileTab = "info" | "orders" | "addresses" | "password" | "notifications" | "seller";
 type ProfileGender = NonNullable<User["gender"]>;
 
+const notificationMeta: Record<Notification["type"], { icon: string; label: string; tone: string }> = {
+  order_update: {
+    icon: "receipt_long",
+    label: "Đơn hàng",
+    tone: "bg-blue-50 text-blue-700 ring-blue-100",
+  },
+  new_order: {
+    icon: "shopping_bag",
+    label: "Đơn mới",
+    tone: "bg-emerald-50 text-emerald-700 ring-emerald-100",
+  },
+  account_update: {
+    icon: "verified_user",
+    label: "Tài khoản",
+    tone: "bg-amber-50 text-amber-700 ring-amber-100",
+  },
+  system: {
+    icon: "campaign",
+    label: "Hệ thống",
+    tone: "bg-slate-50 text-slate-700 ring-slate-100",
+  },
+};
+
+const formatNotificationTime = (createdAt: string) => {
+  const createdTime = new Date(createdAt).getTime();
+  if (Number.isNaN(createdTime)) return "";
+
+  const diffMinutes = Math.floor((Date.now() - createdTime) / 60000);
+  if (diffMinutes < 1) return "Vừa xong";
+  if (diffMinutes < 60) return `${diffMinutes} phút trước`;
+
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours} giờ trước`;
+
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 7) return `${diffDays} ngày trước`;
+
+  return new Date(createdAt).toLocaleString("vi-VN");
+};
+
 interface DistrictOption {
   code: number;
   name: string;
@@ -92,9 +134,9 @@ function ProfileContent() {
   const fetchOrdersByUserId = useOrderStore((state) => state.fetchOrdersByUserId);
   const fetchOrdersBySellerId = useOrderStore((state) => state.fetchOrdersBySellerId);
   const isOrdersLoading = useOrderStore((state) => state.isLoading);
+  const notifications = useNotificationStore((state) => state.notifications);
   const markAsRead = useNotificationStore((state) => state.markAsRead);
   const markAllAsRead = useNotificationStore((state) => state.markAllAsRead);
-  const getNotificationsByUserId = useNotificationStore((state) => state.getNotificationsByUserId);
   const addNotification = useNotificationStore((state) => state.addNotification);
 
   // Navigation tab
@@ -245,6 +287,18 @@ function ProfileContent() {
     if (!currentUser || currentUser.role !== "seller") return [];
     return orders.filter((o) => o.sellerId === currentUser.id);
   }, [orders, currentUser]);
+
+  const userNotifications = useMemo(() => {
+    if (!currentUser) return [];
+    return notifications
+      .filter((n) => n.userId === currentUser.id)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [notifications, currentUser]);
+
+  const unreadNotificationCount = useMemo(
+    () => userNotifications.filter((noti) => !noti.isRead).length,
+    [userNotifications]
+  );
 
   // Copy phone number to Zalo if checkbox is selected
   useEffect(() => {
@@ -651,24 +705,17 @@ function ProfileContent() {
 
   const handleUpdateOrderStatus = async (orderId: string, newStatus: OrderStatus, userId: string) => {
     await updateOrderStatus(orderId, newStatus);
-    
-    let statusText = "";
-    switch (newStatus) {
-      case "confirmed": statusText = "đã được xác nhận"; break;
-      case "shipping": statusText = "đang được giao"; break;
-      case "delivered": statusText = "đã giao thành công"; break;
-      case "cancelled": statusText = "đã bị hủy"; break;
-    }
+    const statusMeta = getOrderStatusMeta(newStatus);
 
-    addNotification({
+    await addNotification({
       userId,
-      title: "Cập nhật đơn hàng",
-      message: `Đơn hàng #${orderId} của bạn ${statusText}.`,
+      title: `Đơn hàng ${statusMeta.label.toLowerCase()}`,
+      message: `Đơn hàng #${orderId}: ${statusMeta.detail}`,
       type: "order_update",
       orderId,
     });
     
-    showToast(`Đã cập nhật đơn hàng thành ${newStatus}`);
+    showToast(`Đã cập nhật đơn hàng: ${statusMeta.label}`);
   };
 
   const handleEditProduct = (p: ShopProduct) => {
@@ -1241,6 +1288,7 @@ function ProfileContent() {
                   <div className="space-y-4">
                     {filteredOrders.map((order) => {
                       const isExpanded = expandedOrderId === order.id;
+                      const statusMeta = getOrderStatusMeta(order.status);
                       return (
                         <div key={order.id} className="rounded-2xl border border-[#bbcabf]/25 p-4 sm:p-5">
                           <div className="flex flex-col justify-between gap-3 border-b border-[#bbcabf]/20 pb-4 sm:flex-row sm:items-center">
@@ -1253,13 +1301,9 @@ function ProfileContent() {
                               </p>
                             </div>
                             <div className="flex items-center gap-3">
-                              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold ${
-                                order.status === "delivered"
-                                  ? "bg-[#e6f4ea] text-[#006c49]"
-                                  : "bg-[#e7eeff] text-[#004b87]"
-                              }`}>
+                              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold ${statusMeta.tone}`}>
                                 <span className="h-1.5 w-1.5 rounded-full bg-current"></span>
-                                {order.status === "delivered" ? "Hoàn thành" : "Đang xử lý"}
+                                {statusMeta.label}
                               </span>
                             </div>
                           </div>
@@ -1665,25 +1709,32 @@ function ProfileContent() {
             {/* 5. NOTIFICATIONS TAB */}
             {activeTab === "notifications" && (
               <div className="rounded-3xl border border-[#bbcabf]/30 bg-white p-6 shadow-sm">
-                <div className="mb-6 flex items-center justify-between">
+                <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <h3 className="text-lg font-bold text-[#006c49]">Thông báo</h3>
-                  {currentUser && getNotificationsByUserId(currentUser.id).length > 0 && (
+                  <p className="text-xs font-medium text-[#3c4a42]/60">
+                    {unreadNotificationCount > 0
+                      ? `${unreadNotificationCount} thông báo chưa đọc`
+                      : "Tất cả thông báo đã được đọc"}
+                  </p>
+                  {currentUser && unreadNotificationCount > 0 && (
                     <button
                       onClick={() => markAllAsRead(currentUser.id)}
-                      className="text-xs font-bold text-[#006c49] hover:underline"
+                      className="inline-flex w-fit items-center gap-1.5 rounded-full border border-[#006c49]/15 bg-[#e6f4ea] px-3 py-2 text-xs font-bold text-[#006c49] transition hover:bg-[#d8efe0]"
                     >
                       Đánh dấu tất cả đã đọc
                     </button>
                   )}
                 </div>
                 <div className="space-y-4">
-                  {!currentUser || getNotificationsByUserId(currentUser.id).length === 0 ? (
+                  {!currentUser || userNotifications.length === 0 ? (
                     <div className="py-10 text-center text-[#3c4a42]/50">
                       <span className="material-symbols-outlined text-4xl mb-2">notifications_off</span>
                       <p className="text-sm font-bold">Bạn chưa có thông báo nào.</p>
                     </div>
                   ) : (
-                    getNotificationsByUserId(currentUser.id).map((noti) => (
+                    userNotifications.map((noti) => {
+                      const meta = notificationMeta[noti.type] ?? notificationMeta.system;
+                      return (
                       <div
                         key={noti.id}
                         onClick={() => markAsRead(noti.id)}
@@ -1694,7 +1745,18 @@ function ProfileContent() {
                         }`}
                       >
                         <div className="flex items-start justify-between gap-3">
-                          <div>
+                          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ring-1 ${meta.tone}`}>
+                            <span className="material-symbols-outlined text-[22px]">{meta.icon}</span>
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="mb-2 flex flex-wrap items-center gap-2">
+                              <span className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ring-1 ${meta.tone}`}>
+                                {meta.label}
+                              </span>
+                              <span className="text-[10px] font-bold text-[#3c4a42]/40">
+                                {formatNotificationTime(noti.createdAt)}
+                              </span>
+                            </div>
                             <h4 className="text-sm font-bold text-[#3c4a42] flex items-center gap-1.5">
                               {noti.title}
                               {!noti.isRead && (
@@ -1704,13 +1766,24 @@ function ProfileContent() {
                             <p className="mt-1.5 text-xs leading-5 text-[#3c4a42]/70 font-medium">
                               {noti.message}
                             </p>
-                            <p className="mt-2 text-[10px] text-[#3c4a42]/40 font-medium">
-                              {new Date(noti.createdAt).toLocaleString("vi-VN")}
-                            </p>
+                            {noti.orderId && (
+                              <Link
+                                href={`/checkout/success?orderId=${noti.orderId}&readonly=true`}
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  markAsRead(noti.id);
+                                }}
+                                className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[11px] font-bold text-[#006c49] ring-1 ring-[#006c49]/15 transition hover:bg-[#e6f4ea]"
+                              >
+                                <span className="material-symbols-outlined text-sm">open_in_new</span>
+                                Xem đơn hàng
+                              </Link>
+                            )}
                           </div>
                         </div>
                       </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               </div>

@@ -6,9 +6,69 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
 
 ---
 
+## [0.5.3] - 2026-06-06
+
+### Đồng bộ Notification đơn hàng realtime và hiển thị đầy đủ trạng thái giao hàng
+
+### Added
+* **Realtime Notification theo tài khoản (`src/store/notification-store.ts`, `src/components/layout/AuthInitializer.tsx`)**:
+  * Chuyển Notification sang ghi và lắng nghe từ Firestore collection `notifications`.
+  * Tự động subscribe Notification theo `currentUser.id` sau khi người dùng đăng nhập để người mua và người bán nhận thông báo đúng tài khoản, kể cả khi ở phiên/trình duyệt khác nhau.
+* **Helper trạng thái đơn hàng (`src/lib/order-status.ts`)**:
+  * Bổ sung metadata dùng chung cho các trạng thái `pending`, `confirmed`, `shipping`, `delivered`, `cancelled`.
+  * Chuẩn hóa label, mô tả, icon và màu hiển thị cho từng trạng thái.
+
+### Changed
+* **Luồng đặt hàng (`src/app/checkout/page.tsx`)**:
+  * Khi người mua đặt hàng, hệ thống chờ ghi Notification cho người bán trước khi điều hướng sang trang thành công.
+  * Người bán nhận Notification `Đơn hàng mới` khi có đơn hàng cần xác nhận.
+  * Người mua vẫn nhận Notification xác nhận đơn hàng đã được tiếp nhận.
+* **Luồng cập nhật trạng thái của người bán (`src/app/profile/page.tsx`)**:
+  * Khi người bán chuyển trạng thái đơn hàng sang `Đã xác nhận`, `Đang giao`, `Đã giao` hoặc `Đã hủy`, người mua nhận Notification tương ứng.
+  * Nội dung Notification mô tả rõ tình trạng hiện tại của đơn hàng.
+* **Hiển thị trạng thái đơn hàng phía người mua (`src/app/profile/page.tsx`)**:
+  * Không còn gom các trạng thái chưa giao thành “Đang xử lý”.
+  * Badge trạng thái trong danh sách đơn hàng hiển thị đúng từng bước: `Chờ xác nhận`, `Đã xác nhận`, `Đang giao`, `Đã giao`, `Đã hủy`.
+* **Trang đặt hàng thành công / chi tiết đơn (`src/app/checkout/success/page.tsx`)**:
+  * Lắng nghe realtime document đơn hàng từ Firestore bằng `onSnapshot`.
+  * Phần “Trạng thái” cập nhật ngay theo trạng thái mới nhất của đơn hàng, kèm mô tả chi tiết.
+
+### Verification
+* `npm run lint` hoàn thành thành công, còn các warning cũ không chặn build.
+* `npm run build` hoàn thành thành công, còn warning hiện có từ Next.js/Firebase/protobuf và workspace root.
+
+---
+
+## [0.5.2] - 2026-06-06
+
+### Cải thiện Notification cho trạng thái tài khoản và đơn hàng
+
+### Added
+* **Loại thông báo tài khoản (`src/types/notification.ts`)**:
+  * Bổ sung `account_update` vào `NotificationType` để phân biệt thông báo liên quan đến tài khoản với thông báo đơn hàng và hệ thống.
+* **Thông báo trạng thái tài khoản bán hàng (`src/store/auth-store.ts`)**:
+  * Tạo thông báo khi người dùng gửi hồ sơ đăng ký bán hàng thành công.
+  * Tạo thông báo khi hồ sơ bán hàng được phê duyệt, giúp người dùng biết tài khoản đã được xác nhận và có thể bắt đầu quản lý cửa hàng.
+
+### Changed
+* **Tối ưu badge thông báo (`src/components/layout/NotificationBadge.tsx`)**:
+  * Badge số lượng chưa đọc subscribe trực tiếp vào danh sách notification để cập nhật ngay khi có thông báo mới hoặc khi đánh dấu đã đọc.
+* **Nâng cấp UX tab Thông báo (`src/app/profile/page.tsx`)**:
+  * Sắp xếp thông báo mới nhất lên đầu và tính số thông báo chưa đọc từ dữ liệu đã memo hóa.
+  * Bổ sung icon, nhãn loại thông báo và màu sắc riêng cho đơn hàng, đơn mới, tài khoản và hệ thống.
+  * Hiển thị thời gian tương đối như “Vừa xong”, “5 phút trước”, “2 giờ trước”.
+  * Thêm CTA “Xem đơn hàng” cho thông báo có `orderId`, đồng thời đánh dấu thông báo là đã đọc khi người dùng mở chi tiết đơn.
+  * Chỉ hiển thị nút “Đánh dấu tất cả đã đọc” khi còn thông báo chưa đọc.
+
+### Verification
+* `npm run lint` hoàn thành thành công, còn các warning cũ không chặn build.
+* `npm run build` hoàn thành thành công, còn warning hiện có từ Next.js/Firebase/protobuf và workspace root.
+
+---
+
 ## [0.5.1] - 2026-06-06
 
-### Sprint 5.1 — Tính năng Theo dõi Cửa hàng Real-time (Real-time Follow Shop)
+###  Tính năng Theo dõi Cửa hàng Real-time (Real-time Follow Shop)
 
 ### Added
 * **Thư viện Theo dõi (`src/lib/follows.ts`)**: 
@@ -32,7 +92,7 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
 
 ## [0.5.0] - 2026-06-06
 
-### Sprint 5.0 — Nâng cấp hồ sơ Cửa hàng: Ảnh bìa, Avatar & Đồng bộ hóa Firebase toàn diện
+### Nâng cấp hồ sơ Cửa hàng: Ảnh bìa, Avatar & Đồng bộ hóa Firebase toàn diện
 
 ### Added
 * **Mở rộng Model Shop (`src/lib/shops.ts`)**: Bổ sung trường `coverImage` (ảnh bìa) vào giao diện dữ liệu Cửa hàng để hỗ trợ đầy đủ các thành phần nhận diện thương hiệu.
@@ -54,9 +114,9 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
 
 ---
 
-## [0.4.9] - 2026-06-06
+## [0.4.9] - 2026-06-05
 
-### Sprint 4.9 — Tối ưu hóa hiệu năng tải ảnh lên Firebase Storage & Khắc phục giao diện lỗi xác thực Firebase Auth
+### Tối ưu hóa hiệu năng tải ảnh lên Firebase Storage & Khắc phục giao diện lỗi xác thực Firebase Auth
 
 ### Changed
 
@@ -78,7 +138,7 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
 
 ## [0.4.8] - 2026-06-05
 
-### Sprint 4.8 — Kiểm tra hoàn thiện Firebase runtime & loại bỏ dữ liệu local khi test
+### Kiểm tra hoàn thiện Firebase runtime & loại bỏ dữ liệu local khi test
 
 ### Changed
 
@@ -153,7 +213,7 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
 
 ## [0.4.7] - 2026-06-05
 
-### Sprint 4.7 — Di chuyển Cơ sở dữ liệu Cửa hàng lên Firestore
+### Di chuyển Cơ sở dữ liệu Cửa hàng lên Firestore
 
 ### Added
 
@@ -191,7 +251,7 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
 
 ## [0.4.6] - 2026-06-05
 
-### Sprint 4.6 — Di chuyển Cơ sở dữ liệu Đơn hàng lên Firestore
+### Di chuyển Cơ sở dữ liệu Đơn hàng lên Firestore
 
 ### Added
 
@@ -224,7 +284,7 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
 
 ## [0.4.5] - 2026-06-05
 
-### Sprint 4.5 — Di chuyển Cơ sở dữ liệu Sản phẩm lên Firestore & Trang Khởi tạo Dữ liệu (Seed)
+### Di chuyển Cơ sở dữ liệu Sản phẩm lên Firestore & Trang Khởi tạo Dữ liệu (Seed)
 
 ### Added
 
@@ -254,7 +314,7 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
 
 ## [0.4.4] - 2026-06-05
 
-### Sprint 4.4 — Tích hợp Firebase Auth & Cloud Firestore cho Hệ thống Xác thực và Dữ liệu Cửa hàng
+### Tích hợp Firebase Auth & Cloud Firestore cho Hệ thống Xác thực và Dữ liệu Cửa hàng
 
 ### Added
 
@@ -286,7 +346,7 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
 
 ## [0.4.3] - 2026-06-05
 
-### Sprint 4.3 — Sửa lỗi Profile runtime, ổn định Báo cáo shop và dọn lỗi lint/type
+### Sửa lỗi Profile runtime, ổn định Báo cáo shop và dọn lỗi lint/type
 
 ### Added
 
@@ -332,7 +392,7 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
 
 ## [0.4.2] - 2026-06-05
 
-### Sprint 4.2 — Banner thông tin Shop & Trang chi tiết cửa hàng tương tác
+### Banner thông tin Shop & Trang chi tiết cửa hàng tương tác
 
 ### Added
 
@@ -403,7 +463,7 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
 
 ## [0.4.1] - 2026-06-05
 
-### Sprint 4.1 — Cải thiện chất lượng ảnh upload & UX khung ảnh sản phẩm
+### Cải thiện chất lượng ảnh upload & UX khung ảnh sản phẩm
 
 ### Fixed
 
@@ -430,7 +490,7 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
 
 ## [0.4.0] - 2026-06-05
 
-### Sprint 4.0 — Đăng Ký Người Bán (Seller Registration), Kênh Bán Hàng (Seller Dashboard), Quản Lý Sản Phẩm (Product CRUD) & Tối Ưu Bộ Sưu Tập Ảnh
+### Đăng Ký Người Bán (Seller Registration), Kênh Bán Hàng (Seller Dashboard), Quản Lý Sản Phẩm (Product CRUD) & Tối Ưu Bộ Sưu Tập Ảnh
 
 ### Added
 

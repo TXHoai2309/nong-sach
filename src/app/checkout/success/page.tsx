@@ -5,10 +5,11 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { formatCurrency } from "@/lib/format";
+import { getOrderStatusMeta } from "@/lib/order-status";
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import { getAllProducts } from "@/lib/products";
 import { db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
 import { Order } from "@/types/order";
 import { Product } from "@/types/product";
 
@@ -28,15 +29,24 @@ function SuccessContent() {
 
   useEffect(() => {
     let active = true;
+    let unsubscribeOrder: (() => void) | undefined;
+
     async function loadSuccessData() {
       try {
-        const orderSnap = await getDoc(doc(db, "orders", orderId));
-        const loadedOrder = orderSnap.exists() ? (orderSnap.data() as Order) : null;
         const products = await getAllProducts();
         if (!active) return;
-        setOrder(loadedOrder);
-        const purchasedIds = new Set(loadedOrder?.items.map((item) => item.productId) ?? []);
-        setRecommendedProducts(products.filter((p) => !purchasedIds.has(p.id)).slice(0, 4));
+        unsubscribeOrder = onSnapshot(
+          doc(db, "orders", orderId),
+          (orderSnap) => {
+            const loadedOrder = orderSnap.exists() ? (orderSnap.data() as Order) : null;
+            setOrder(loadedOrder);
+            const purchasedIds = new Set(loadedOrder?.items.map((item) => item.productId) ?? []);
+            setRecommendedProducts(products.filter((p) => !purchasedIds.has(p.id)).slice(0, 4));
+          },
+          (error) => {
+            console.error("Error listening to order details from Firestore", error);
+          }
+        );
       } catch (e) {
         console.error("Error reading order details from Firestore", e);
       }
@@ -44,6 +54,7 @@ function SuccessContent() {
     loadSuccessData();
     return () => {
       active = false;
+      unsubscribeOrder?.();
     };
   }, [orderId]);
 
@@ -78,6 +89,7 @@ function SuccessContent() {
   // Get items list to display
   const displayItems = order?.items || [];
   const displayTotal = order?.totalAmount ?? totalParam;
+  const statusMeta = getOrderStatusMeta(order?.status ?? "pending");
 
   return (
     <div className="max-w-[860px] mx-auto space-y-8 pb-12">
@@ -121,11 +133,12 @@ function SuccessContent() {
               {/* Row 1: Status */}
               <div className="flex gap-sm">
                 <span className="material-symbols-outlined text-primary text-[20px] shrink-0 mt-0.5">
-                  inventory_2
+                  {statusMeta.icon}
                 </span>
                 <div className="space-y-0.5">
                   <p className="text-xs text-on-surface-variant font-medium">Trạng thái</p>
-                  <p className="text-sm font-bold text-[#2e7d32]">Đang chuẩn bị</p>
+                  <p className={`text-sm font-bold ${statusMeta.successTone}`}>{statusMeta.label}</p>
+                  <p className="text-xs font-medium text-on-surface-variant">{statusMeta.detail}</p>
                 </div>
               </div>
 

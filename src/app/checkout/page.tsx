@@ -271,7 +271,7 @@ export default function CheckoutPage() {
 
       // Notify Seller
       if (sellerId !== "admin") {
-        addNotification({
+        await addNotification({
           userId: sellerId,
           title: "Đơn hàng mới!",
           message: `Bạn nhận được đơn hàng mới #${subOrderId} từ ${fullName.trim()}.`,
@@ -283,7 +283,7 @@ export default function CheckoutPage() {
 
     // Notify Buyer
     if (currentUser) {
-      addNotification({
+      await addNotification({
         userId: currentUser.id,
         title: "Đặt hàng thành công",
         message: `Đơn hàng ${orderIdBase} của bạn đã được tiếp nhận và đang chờ xác nhận.`,

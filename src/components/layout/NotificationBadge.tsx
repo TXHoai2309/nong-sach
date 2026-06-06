@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 
 export default function NotificationBadge() {
   const { currentUser } = useAuthStore();
-  const getUnreadCount = useNotificationStore((state) => state.getUnreadCount);
+  const notifications = useNotificationStore((state) => state.notifications);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -17,7 +17,7 @@ export default function NotificationBadge() {
 
   if (!mounted || !currentUser) return null;
 
-  const count = getUnreadCount(currentUser.id);
+  const count = notifications.filter((n) => n.userId === currentUser.id && !n.isRead).length;
 
   return (
     <Link
