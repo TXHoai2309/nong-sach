@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -32,10 +32,15 @@ export default function CartPage() {
 
   const {
     items,
+    selectedProductIds,
     removeFromCart,
     increaseQuantity,
     decreaseQuantity,
-    getTotalPrice,
+    toggleSelectedItem,
+    selectAllItems,
+    clearSelectedItems,
+    getSelectedTotalPrice,
+    getSelectedTotalItems,
     getTotalItems,
   } = useCartStore();
 
@@ -44,7 +49,7 @@ export default function CartPage() {
     setPromoSuccess("");
     if (promoCode.trim().toUpperCase() === "NONGSACK") {
       setDiscount(15000);
-      setPromoSuccess("Áp dụng mã giảm giá 15.000₫ thành công!");
+      setPromoSuccess("Áp dụng mã giảm giá 15.000đ thành công!");
     } else if (!promoCode.trim()) {
       setPromoError("Vui lòng nhập mã giảm giá");
       setDiscount(0);
@@ -96,9 +101,12 @@ export default function CartPage() {
   }
 
   // Dynamic calculations
-  const subtotal = getTotalPrice();
+  const subtotal = getSelectedTotalPrice();
   const finalDiscount = Math.min(discount, subtotal);
   const total = Math.max(0, subtotal - finalDiscount);
+  const selectedTotalItems = getSelectedTotalItems();
+  const selectedItemSet = new Set(selectedProductIds);
+  const isAllSelected = items.length > 0 && selectedProductIds.length === items.length;
 
   // Group items by shopName
   const groupedItems = items.reduce((groups, item) => {
@@ -131,6 +139,24 @@ export default function CartPage() {
           </span>
         </div>
 
+        <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-outline-variant/20 bg-white/80 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <label className="flex items-center gap-3 text-sm font-bold text-on-surface">
+            <input
+              type="checkbox"
+              checked={isAllSelected}
+              onChange={() => {
+                if (isAllSelected) clearSelectedItems();
+                else selectAllItems();
+              }}
+              className="h-5 w-5 accent-[#006c49]"
+            />
+            Chọn tất cả sản phẩm
+          </label>
+          <span className="text-xs font-semibold text-on-surface-variant">
+            Đã chọn {selectedTotalItems} / {getTotalItems()} sản phẩm để mua
+          </span>
+        </div>
+
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
           {/* Left Column: Grouped Cart Items List by Shop */}
           <div className="space-y-6 lg:col-span-8">
@@ -157,6 +183,17 @@ export default function CartPage() {
                         key={item.productId}
                         className="relative flex flex-col sm:flex-row items-start sm:items-center gap-4"
                       >
+                        <label className="flex items-center gap-2 text-xs font-bold text-primary sm:self-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedItemSet.has(item.productId)}
+                            onChange={() => toggleSelectedItem(item.productId)}
+                            className="h-5 w-5 accent-[#006c49]"
+                            aria-label={`Chọn mua ${item.name}`}
+                          />
+                          <span className="sm:hidden">Chọn mua</span>
+                        </label>
+
                         {/* Remove Button (X) at Top Right on mobile, or next to price on desktop */}
                         <button
                           onClick={() => removeFromCart(item.productId)}
@@ -184,7 +221,7 @@ export default function CartPage() {
                           </h3>
                           {isLowStock && (
                             <p className="text-xs text-error font-semibold flex items-center gap-1 mt-1">
-                              <span>⚠️</span> Chỉ còn {item.stock} sản phẩm
+                              <span>!</span> Chỉ còn {item.stock} sản phẩm
                             </p>
                           )}
 
@@ -300,13 +337,23 @@ export default function CartPage() {
               </div>
 
               {/* Checkout CTA */}
-              <Link
-                href="/checkout"
-                className="block w-full text-center py-4 bg-primary text-white font-bold rounded-2xl hover:opacity-90 active:scale-[0.99] transition-all shadow-md flex justify-center items-center gap-xs text-base cursor-pointer"
-              >
-                Tiến hành đặt hàng
-                <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
-              </Link>
+              {selectedTotalItems > 0 ? (
+                <Link
+                  href="/checkout"
+                  className="flex w-full cursor-pointer items-center justify-center gap-xs rounded-2xl bg-primary py-4 text-center text-base font-bold text-white shadow-md transition-all hover:opacity-90 active:scale-[0.99]"
+                >
+                  Tiến hành đặt hàng
+                  <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  className="flex w-full cursor-not-allowed items-center justify-center gap-xs rounded-2xl bg-slate-300 py-4 text-center text-base font-bold text-white"
+                >
+                  Chọn sản phẩm cần mua
+                </button>
+              )}
 
               {/* Trust Badges */}
               <div className="space-y-3 pt-2 text-sm text-on-surface-variant font-medium">

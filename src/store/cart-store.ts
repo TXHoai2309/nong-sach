@@ -2,16 +2,28 @@ import { create } from "zustand";
 import { CartItem } from "@/types/cart";
 import { Product } from "@/types/product";
 import { getShopForProduct } from "@/lib/shops";
+import { db } from "@/lib/firebase";
+import { doc, onSnapshot, setDoc } from "firebase/firestore";
 
 interface CartState {
   items: CartItem[];
+  selectedProductIds: string[];
+  cartUserId: string | null;
   addToCart: (product: Product) => void | Promise<void>;
   removeFromCart: (productId: string) => void;
   increaseQuantity: (productId: string) => void;
   decreaseQuantity: (productId: string) => void;
   clearCart: () => void;
+  toggleSelectedItem: (productId: string) => void;
+  selectAllItems: () => void;
+  clearSelectedItems: () => void;
+  removePurchasedItems: (productIds: string[]) => void;
   getTotalItems: () => number;
   getTotalPrice: () => number;
+  getSelectedItems: () => CartItem[];
+  getSelectedTotalItems: () => number;
+  getSelectedTotalPrice: () => number;
+  subscribeToUserCart: (userId: string) => () => void;
 
   // Modal states
   activeProductForModal: Product | null;
@@ -30,8 +42,26 @@ interface CartState {
   addToCartWithOptions: (product: Product, quantity: number, weight: "500g" | "1kg" | "2kg") => void;
 }
 
+const saveCart = (userId: string | null, items: CartItem[], selectedProductIds: string[]) => {
+  if (!userId) return;
+  setDoc(
+    doc(db, "carts", userId),
+    {
+      userId,
+      items,
+      selectedProductIds,
+      updatedAt: new Date().toISOString(),
+    },
+    { merge: true }
+  ).catch((error) => {
+    console.error("Loi saveCart:", error);
+  });
+};
+
 export const useCartStore = create<CartState>((set, get) => ({
   items: [],
+  selectedProductIds: [],
+  cartUserId: null,
 
   // Legacy/compatibility fallback
   addToCart: async (product: Product) => {
@@ -53,7 +83,7 @@ export const useCartStore = create<CartState>((set, get) => ({
     if (weight === "500g") priceFactor = 0.5;
     else if (weight === "2kg") priceFactor = 2.0;
 
-    let finalProduct: Product = {
+    const finalProduct: Product = {
       ...product,
       id: baseId,
       price: product.price / priceFactor,
@@ -105,7 +135,11 @@ export const useCartStore = create<CartState>((set, get) => ({
             get().openAddedToast(updatedItem);
           }, 0);
         }
-        return { items: updatedItems };
+        const selectedProductIds = state.selectedProductIds.includes(targetId)
+          ? state.selectedProductIds
+          : [...state.selectedProductIds, targetId];
+        saveCart(state.cartUserId, updatedItems, selectedProductIds);
+        return { items: updatedItems, selectedProductIds };
       }
 
       const newItem: CartItem = {
@@ -123,14 +157,20 @@ export const useCartStore = create<CartState>((set, get) => ({
         get().openAddedToast(newItem);
       }, 0);
 
-      return { items: [...state.items, newItem] };
+      const updatedItems = [...state.items, newItem];
+      const selectedProductIds = [...state.selectedProductIds, targetId];
+      saveCart(state.cartUserId, updatedItems, selectedProductIds);
+      return { items: updatedItems, selectedProductIds };
     });
   },
 
   removeFromCart: (productId: string) => {
-    set((state) => ({
-      items: state.items.filter((item) => item.productId !== productId),
-    }));
+    set((state) => {
+      const items = state.items.filter((item) => item.productId !== productId);
+      const selectedProductIds = state.selectedProductIds.filter((id) => id !== productId);
+      saveCart(state.cartUserId, items, selectedProductIds);
+      return { items, selectedProductIds };
+    });
   },
 
   increaseQuantity: (productId: string) => {
@@ -138,11 +178,11 @@ export const useCartStore = create<CartState>((set, get) => ({
       const item = state.items.find((i) => i.productId === productId);
       if (!item || item.quantity >= item.stock) return state;
 
-      return {
-        items: state.items.map((i) =>
-          i.productId === productId ? { ...i, quantity: i.quantity + 1 } : i
-        ),
-      };
+      const items = state.items.map((i) =>
+        i.productId === productId ? { ...i, quantity: i.quantity + 1 } : i
+      );
+      saveCart(state.cartUserId, items, state.selectedProductIds);
+      return { items };
     });
   },
 
@@ -152,20 +192,57 @@ export const useCartStore = create<CartState>((set, get) => ({
       if (!item) return state;
 
       if (item.quantity <= 1) {
-        return {
-          items: state.items.filter((i) => i.productId !== productId),
-        };
+        const items = state.items.filter((i) => i.productId !== productId);
+        const selectedProductIds = state.selectedProductIds.filter((id) => id !== productId);
+        saveCart(state.cartUserId, items, selectedProductIds);
+        return { items, selectedProductIds };
       }
 
-      return {
-        items: state.items.map((i) =>
-          i.productId === productId ? { ...i, quantity: i.quantity - 1 } : i
-        ),
-      };
+      const items = state.items.map((i) =>
+        i.productId === productId ? { ...i, quantity: i.quantity - 1 } : i
+      );
+      saveCart(state.cartUserId, items, state.selectedProductIds);
+      return { items };
     });
   },
 
-  clearCart: () => set({ items: [] }),
+  clearCart: () => {
+    const cartUserId = get().cartUserId;
+    set({ items: [], selectedProductIds: [] });
+    saveCart(cartUserId, [], []);
+  },
+
+  toggleSelectedItem: (productId) => {
+    set((state) => {
+      const selectedProductIds = state.selectedProductIds.includes(productId)
+        ? state.selectedProductIds.filter((id) => id !== productId)
+        : [...state.selectedProductIds, productId];
+      saveCart(state.cartUserId, state.items, selectedProductIds);
+      return { selectedProductIds };
+    });
+  },
+
+  selectAllItems: () => {
+    const items = get().items;
+    const selectedProductIds = items.map((item) => item.productId);
+    set({ selectedProductIds });
+    saveCart(get().cartUserId, items, selectedProductIds);
+  },
+
+  clearSelectedItems: () => {
+    set({ selectedProductIds: [] });
+    saveCart(get().cartUserId, get().items, []);
+  },
+
+  removePurchasedItems: (productIds) => {
+    const purchasedIds = new Set(productIds);
+    set((state) => {
+      const items = state.items.filter((item) => !purchasedIds.has(item.productId));
+      const selectedProductIds = state.selectedProductIds.filter((id) => !purchasedIds.has(id));
+      saveCart(state.cartUserId, items, selectedProductIds);
+      return { items, selectedProductIds };
+    });
+  },
 
   getTotalItems: () => {
     return get().items.reduce((sum, item) => sum + item.quantity, 0);
@@ -175,12 +252,48 @@ export const useCartStore = create<CartState>((set, get) => ({
     return get().items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   },
 
+  getSelectedItems: () => {
+    const selectedIds = new Set(get().selectedProductIds);
+    return get().items.filter((item) => selectedIds.has(item.productId));
+  },
+
+  getSelectedTotalItems: () => {
+    return get().getSelectedItems().reduce((sum, item) => sum + item.quantity, 0);
+  },
+
+  getSelectedTotalPrice: () => {
+    return get().getSelectedItems().reduce((sum, item) => sum + item.price * item.quantity, 0);
+  },
+
+  subscribeToUserCart: (userId) => {
+    set({ cartUserId: userId });
+    return onSnapshot(
+      doc(db, "carts", userId),
+      (snapshot) => {
+        const data = snapshot.data() as { items?: CartItem[]; selectedProductIds?: string[] } | undefined;
+        if (!data) {
+          saveCart(userId, get().items, get().selectedProductIds);
+          return;
+        }
+        const items = data.items ?? [];
+        const validIds = new Set(items.map((item) => item.productId));
+        const selectedProductIds = (data.selectedProductIds ?? items.map((item) => item.productId)).filter((id) =>
+          validIds.has(id)
+        );
+        set({ items, selectedProductIds });
+      },
+      (error) => {
+        console.error("Loi subscribeToUserCart:", error);
+      }
+    );
+  },
+
   // Modal control
   activeProductForModal: null,
   defaultQuantityForModal: 1,
   isOptionsModalOpen: false,
   openOptionsModal: async (product: Product, defaultQuantity = 1) => {
-    let finalProduct = { ...product };
+    const finalProduct = { ...product };
     if (!product.sellerId || !product.shopName) {
       try {
         const resolvedShop = await getShopForProduct(product);

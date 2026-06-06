@@ -26,8 +26,11 @@ export default function CartOptionsModal() {
   // Reset local state when modal opens for a new product
   useEffect(() => {
     if (activeProductForModal) {
-      setWeight("1kg");
-      setQuantity(defaultQuantityForModal);
+      const timer = window.setTimeout(() => {
+        setWeight("1kg");
+        setQuantity(defaultQuantityForModal);
+      }, 0);
+      return () => window.clearTimeout(timer);
     }
   }, [activeProductForModal, defaultQuantityForModal]);
 

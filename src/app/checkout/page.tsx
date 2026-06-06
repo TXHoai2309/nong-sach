@@ -85,11 +85,13 @@ const getUnit = (name: string) => {
   return "hộp";
 };
 
+const createOrderIdBase = () => `NS-${Date.now()}`;
+
 export default function CheckoutPage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const { currentUser } = useAuthStore();
-  const { items, clearCart, getTotalItems, getTotalPrice } = useCartStore();
+  const { items, getSelectedItems, getSelectedTotalItems, getSelectedTotalPrice, removePurchasedItems } = useCartStore();
   const addOrder = useOrderStore((state) => state.addOrder);
   const addNotification = useNotificationStore((state) => state.addNotification);
 
@@ -216,9 +218,10 @@ export default function CheckoutPage() {
   }, []);
 
   const shippingFee = shippingMethod === "fast" ? 15000 : 0;
-  const subtotal = getTotalPrice();
+  const selectedItems = getSelectedItems();
+  const subtotal = getSelectedTotalPrice();
   const total = subtotal + shippingFee;
-  const totalItems = getTotalItems();
+  const totalItems = getSelectedTotalItems();
 
   const updateError = (field: keyof FormErrors) => {
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
@@ -281,14 +284,19 @@ export default function CheckoutPage() {
     event.preventDefault();
     if (!validate()) return;
 
-    const timestamp = Date.now();
-    const orderIdBase = `NS-${timestamp}`;
+    const orderIdBase = createOrderIdBase();
     const districtName = selectedDistrict?.name ?? activeSavedAddress?.districtName ?? "";
     const provinceName = selectedProvince?.name ?? activeSavedAddress?.provinceName ?? "";
     const fullAddress = `${address.trim()}${districtName ? `, ${districtName}` : ""}${provinceName ? `, ${provinceName}` : ""}`;
 
-    // Group items by sellerId
-    const itemsBySeller = items.reduce((acc, item) => {
+    if (selectedItems.length === 0) {
+      showToast("Vui lòng chọn sản phẩm cần mua trong giỏ hàng.", "error");
+      router.push("/cart");
+      return;
+    }
+
+    // Group selected items by sellerId
+    const itemsBySeller = selectedItems.reduce((acc, item) => {
       const sellerId = item.sellerId || "admin";
       if (!acc[sellerId]) acc[sellerId] = [];
       acc[sellerId].push(item);
@@ -344,7 +352,7 @@ export default function CheckoutPage() {
       });
     }
 
-    clearCart();
+    removePurchasedItems(selectedItems.map((item) => item.productId));
 
     const queryParams = new URLSearchParams({
       orderId: orderIdBase,
@@ -639,7 +647,7 @@ export default function CheckoutPage() {
                   <div className="relative">
                     <select
                       value={shippingMethod}
-                      onChange={(e) => setShippingMethod(e.target.value as any)}
+                      onChange={(e) => setShippingMethod(e.target.value as "standard" | "fast" | "pickup")}
                       className={`${inputClass()} appearance-none pr-10`}
                     >
                       <option value="standard">Tiêu chuẩn (2-4h) — Miễn phí</option>
@@ -656,7 +664,7 @@ export default function CheckoutPage() {
                   <div className="relative">
                     <select
                       value={paymentMethod}
-                      onChange={(e) => setPaymentMethod(e.target.value as any)}
+                      onChange={(e) => setPaymentMethod(e.target.value as "cod" | "bank" | "credit" | "wallet")}
                       className={`${inputClass()} appearance-none pr-10`}
                     >
                       <option value="cod">Thanh toán khi nhận hàng (COD)</option>
@@ -704,7 +712,7 @@ export default function CheckoutPage() {
               </div>
 
               <div className="mb-5 space-y-4">
-                {items.map((item) => (
+                {selectedItems.map((item) => (
                   <div key={item.productId} className="flex items-center gap-3">
                     <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl bg-surface">
                       <Image src={item.image} alt={item.name} fill className="object-cover" sizes="56px" />

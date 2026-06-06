@@ -118,6 +118,38 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
 
 ---
 
+## [0.5.4] - 2026-06-06
+
+### Đồng bộ giỏ hàng lên CSDL và checkout theo sản phẩm được chọn
+
+### Added
+* **Lưu giỏ hàng lên Firestore (`src/store/cart-store.ts`, `src/components/layout/AuthInitializer.tsx`)**:
+  * Bổ sung cơ chế lưu giỏ hàng theo tài khoản tại collection `carts`.
+  * Tự động subscribe giỏ hàng theo `currentUser.id` sau khi đăng nhập để đồng bộ giỏ hàng giữa các phiên/trình duyệt.
+  * Lưu cả danh sách sản phẩm trong giỏ và danh sách sản phẩm đang được chọn mua.
+* **Chọn sản phẩm cần mua trong giỏ hàng (`src/app/cart/page.tsx`)**:
+  * Thêm checkbox cho từng sản phẩm trong giỏ hàng.
+  * Thêm checkbox “Chọn tất cả sản phẩm”.
+  * Hiển thị số lượng sản phẩm đã chọn trên tổng số sản phẩm trong giỏ.
+
+### Changed
+* **Tóm tắt đơn hàng trong giỏ hàng (`src/app/cart/page.tsx`)**:
+  * Tạm tính, giảm giá và tổng cộng chỉ tính các sản phẩm đang được chọn mua.
+  * Nút checkout bị vô hiệu hóa khi chưa chọn sản phẩm nào.
+* **Luồng thanh toán (`src/app/checkout/page.tsx`)**:
+  * Checkout chỉ tạo đơn hàng từ các sản phẩm đã chọn trong giỏ.
+  * Trang thanh toán chỉ hiển thị các sản phẩm đã chọn.
+  * Sau khi đặt hàng thành công, chỉ xóa các sản phẩm đã được mua khỏi giỏ hàng.
+  * Các sản phẩm không được chọn mua vẫn được giữ lại trong giỏ hàng và tiếp tục được lưu trên Firestore.
+* **Modal thêm giỏ hàng (`src/components/cart/CartOptionsModal.tsx`)**:
+  * Điều chỉnh reset state khi mở modal để phù hợp với rule React compiler hiện tại.
+
+### Verification
+* `npm run lint` hoàn thành thành công, còn các warning cũ không chặn build.
+* `npm run build` hoàn thành thành công, còn warning hiện có từ Next.js/Firebase/protobuf và workspace root.
+
+---
+
 ## [0.5.3] - 2026-06-06
 
 ### Đồng bộ Notification đơn hàng realtime và hiển thị đầy đủ trạng thái giao hàng
