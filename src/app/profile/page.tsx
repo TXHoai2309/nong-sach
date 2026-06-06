@@ -54,6 +54,12 @@ const fallbackProvinces = [
 type ProfileTab = "info" | "orders" | "addresses" | "password" | "notifications" | "seller";
 type ProfileGender = NonNullable<User["gender"]>;
 
+const normalizeVietnamPhone = (phone?: string) => {
+  const digits = (phone || "").replace(/\D/g, "");
+  if (digits.startsWith("84") && digits.length === 11) return `0${digits.slice(2)}`;
+  return digits;
+};
+
 const notificationMeta: Record<Notification["type"], { icon: string; label: string; tone: string }> = {
   order_update: {
     icon: "receipt_long",
@@ -309,6 +315,18 @@ function ProfileContent() {
     }
   }, [isZaloSame, shopPhone]);
 
+  useEffect(() => {
+    if (!currentUser?.phone || shopPhone.trim() || currentUser.sellerInfo?.shopPhone) return;
+    const normalizedPhone = normalizeVietnamPhone(currentUser.phone);
+    if (!normalizedPhone) return;
+
+    const timer = window.setTimeout(() => {
+      setShopPhone(normalizedPhone);
+      if (isZaloSame || !shopZalo.trim()) setShopZalo(normalizedPhone);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [currentUser?.phone, currentUser?.sellerInfo?.shopPhone, isZaloSame, shopPhone, shopZalo]);
+
   // Load custom products for this seller from Firestore
   useEffect(() => {
     if (!mounted || !currentUser) return;
@@ -511,16 +529,18 @@ function ProfileContent() {
 
   const handleRegisterSellerSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    const normalizedShopPhone = normalizeVietnamPhone(shopPhone);
+    const normalizedShopZalo = normalizeVietnamPhone(shopZalo);
 
     if (!shopName.trim()) {
       showToast("Vui lòng nhập tên shop", "error");
       return;
     }
-    if (!shopPhone.trim() || !/^0\d{9}$/.test(shopPhone.trim().replace(/\s+/g, ""))) {
+    if (!normalizedShopPhone || !/^0\d{9}$/.test(normalizedShopPhone)) {
       showToast("Số điện thoại shop không hợp lệ", "error");
       return;
     }
-    if (!shopZalo.trim() || !/^0\d{9}$/.test(shopZalo.trim().replace(/\s+/g, ""))) {
+    if (!normalizedShopZalo || !/^0\d{9}$/.test(normalizedShopZalo)) {
       showToast("Số Zalo không hợp lệ", "error");
       return;
     }
@@ -560,8 +580,8 @@ function ProfileContent() {
       await registerSeller({
         shopName: shopName.trim(),
         slogan: shopSlogan.trim(),
-        shopPhone: shopPhone.trim(),
-        shopZalo: shopZalo.trim(),
+        shopPhone: normalizedShopPhone,
+        shopZalo: normalizedShopZalo,
         description: shopDescription.trim(),
         shopLogo: shopLogo || undefined,
         coverImage: shopCoverImage || undefined,
@@ -617,16 +637,18 @@ function ProfileContent() {
 
   const handleEditShopSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    const normalizedShopPhone = normalizeVietnamPhone(shopPhone);
+    const normalizedShopZalo = normalizeVietnamPhone(shopZalo);
 
     if (!shopName.trim()) {
       showToast("Vui lòng nhập tên shop", "error");
       return;
     }
-    if (!shopPhone.trim() || !/^0\d{9}$/.test(shopPhone.trim().replace(/\s+/g, ""))) {
+    if (!normalizedShopPhone || !/^0\d{9}$/.test(normalizedShopPhone)) {
       showToast("Số điện thoại shop không hợp lệ", "error");
       return;
     }
-    if (!shopZalo.trim() || !/^0\d{9}$/.test(shopZalo.trim().replace(/\s+/g, ""))) {
+    if (!normalizedShopZalo || !/^0\d{9}$/.test(normalizedShopZalo)) {
       showToast("Số Zalo không hợp lệ", "error");
       return;
     }
@@ -662,8 +684,8 @@ function ProfileContent() {
       await updateSellerInfo({
         shopName: shopName.trim(),
         slogan: shopSlogan.trim(),
-        shopPhone: shopPhone.trim(),
-        shopZalo: shopZalo.trim(),
+        shopPhone: normalizedShopPhone,
+        shopZalo: normalizedShopZalo,
         description: shopDescription.trim(),
         shopLogo: shopLogo || undefined,
         coverImage: shopCoverImage || undefined,
@@ -1914,6 +1936,9 @@ function ProfileContent() {
 
                         {/* Cover Image upload */}
                         <div className="space-y-2 mb-6">
+                          <p className="text-[10px] font-medium text-[#3c4a42]/50">
+                            Ảnh bìa là tùy chọn, bạn có thể bổ sung sau khi hồ sơ được duyệt.
+                          </p>
                           <label className="block text-[11px] font-bold text-[#3c4a42]/70">
                             Ảnh bìa cửa hàng (Banner)
                           </label>
@@ -1995,6 +2020,9 @@ function ProfileContent() {
 
                         {/* Logo upload */}
                         <div className="flex flex-col items-center justify-center mb-6">
+                          <p className="mb-2 text-[10px] font-medium text-[#3c4a42]/50">
+                            Ảnh đại diện là tùy chọn, có thể thêm sau.
+                          </p>
                           <label className="flex h-24 w-24 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#bbcabf]/50 bg-gray-50/50 hover:bg-gray-50 transition-all overflow-hidden relative">
                             {shopLogo ? (
                               <Image src={shopLogo} alt="Logo preview" fill unoptimized className="object-cover" sizes="96px" />
@@ -2100,6 +2128,9 @@ function ProfileContent() {
 
                         {/* Farm photos */}
                         <div className="mt-4">
+                          <p className="mb-2 text-[10px] font-medium text-[#006c49]">
+                            Ảnh trang trại sẽ được upload lên Firebase Storage khi gửi hồ sơ.
+                          </p>
                           <label className="block text-[11px] font-bold text-[#3c4a42]/70 mb-1.5">
                             Ảnh thực tế trong trang trại *
                           </label>
@@ -3028,6 +3059,10 @@ function ProfileContent() {
                                 Ảnh bìa cửa hàng
                               </h5>
 
+                              <p className="text-[10px] font-medium text-[#3c4a42]/50">
+                                Ảnh bìa là tùy chọn, có thể bổ sung hoặc đổi sau.
+                              </p>
+
                               {/* Preview */}
                               <div className="relative w-full h-32 rounded-2xl overflow-hidden bg-slate-100 border-2 border-dashed border-[#bbcabf]/40 group">
                                 {shopCoverImage ? (
@@ -3118,6 +3153,9 @@ function ProfileContent() {
                               </h5>
                               
                               <div className="flex flex-col items-center justify-center mb-2">
+                                <p className="mb-2 text-[10px] font-medium text-[#3c4a42]/50">
+                                  Ảnh đại diện là tùy chọn.
+                                </p>
                                 <label className="flex h-20 w-20 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#bbcabf]/50 bg-gray-50/50 hover:bg-gray-50 transition-all overflow-hidden relative">
                                   {shopLogo ? (
                                     <Image src={shopLogo} alt="Logo preview" fill unoptimized className="object-cover" sizes="80px" />
@@ -3218,6 +3256,9 @@ function ProfileContent() {
                                 <label className="block text-[10px] font-bold text-[#3c4a42]/70 mb-1">
                                   Ảnh thực tế trong trang trại *
                                 </label>
+                                <p className="mb-2 text-[10px] font-medium text-[#006c49]">
+                                  Ảnh trang trại sẽ được upload lên Firebase Storage khi cập nhật shop.
+                                </p>
                                 <div className="flex flex-wrap gap-2 items-center">
                                   <label className="flex h-14 w-14 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#bbcabf]/50 bg-gray-50/50 hover:bg-gray-50 transition-all text-gray-400">
                                     <span className="material-symbols-outlined text-base">add_a_photo</span>

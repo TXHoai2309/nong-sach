@@ -35,9 +35,9 @@ const uploadImageToStorage = async (base64OrUrl: string | undefined, path: strin
   try {
     const storageRef = ref(storage, path);
     
-    // Race the upload and download URL fetch against a 3-second timeout
+    // Race the upload and download URL fetch against a timeout so the form stays responsive.
     const timeout = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error("Firebase Storage upload timed out (3s)")), 3000)
+      setTimeout(() => reject(new Error("Firebase Storage upload timed out (10s)")), 10000)
     );
 
     const uploadTask = async () => {

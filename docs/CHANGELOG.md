@@ -4,6 +4,27 @@ All notable changes to the **NôngSạch** project will be documented in this fi
 
 The format is based on **Keep a Changelog** and this project adheres to **Semantic Versioning**.
 
+## [0.5.8] - 2026-06-07
+
+### Cải thiện form đăng ký bán hàng và upload ảnh trang trại
+
+### Changed
+* **Form đăng ký bán hàng (`src/app/profile/page.tsx`)**:
+  - Ghi rõ ảnh đại diện và ảnh bìa cửa hàng là tùy chọn, người bán có thể bổ sung sau khi hồ sơ được duyệt.
+  - Tự động điền số điện thoại shop từ số điện thoại tài khoản nếu người dùng đã nhập khi đăng ký tài khoản.
+  - Chuẩn hóa số điện thoại shop và số Zalo về định dạng `0xxxxxxxxx` trước khi validate và lưu hồ sơ, bao gồm trường hợp người dùng nhập dạng `+84` hoặc có khoảng trắng.
+  - Bổ sung ghi chú rằng ảnh thực tế trang trại sẽ được upload lên Firebase Storage khi gửi hồ sơ hoặc cập nhật shop.
+* **Upload ảnh người bán (`src/store/auth-store.ts`)**:
+  - Tăng thời gian chờ upload ảnh lên Firebase Storage từ 3 giây lên 10 giây để ảnh trang trại có nhiều thời gian upload thành công hơn trước khi fallback.
+  - Tiếp tục upload ảnh thực tế trang trại vào đường dẫn `sellers/{userId}/farmImages/...` trên Firebase Storage.
+
+### Verification
+* `npm.cmd run lint` hoàn thành thành công, còn các warning cũ không chặn build.
+* `npx.cmd tsc --noEmit --incremental false` hoàn thành thành công.
+* `npm.cmd run build` chưa hoàn tất do file `.next\trace` đang bị khóa bởi tiến trình/dev server hiện có.
+
+---
+
 ## [0.5.7] - 2026-06-06
 
 ### Sửa lỗi gán sai mã định danh cửa hàng (Shop ID Fallback Bug)
