@@ -91,6 +91,11 @@ function SuccessContent() {
   const displayTotal = order?.totalAmount ?? totalParam;
   const statusMeta = getOrderStatusMeta(order?.status ?? "pending");
 
+  const currentStatus = order?.status ?? "pending";
+  const step2Active = ["confirmed", "shipping", "delivered"].includes(currentStatus);
+  const step3Active = ["shipping", "delivered"].includes(currentStatus);
+  const step4Active = currentStatus === "delivered";
+
   return (
     <div className="max-w-[860px] mx-auto space-y-8 pb-12">
       {/* Top Header Section */}
@@ -235,35 +240,63 @@ function SuccessContent() {
       {/* Stepper Timeline */}
       <div className="flex justify-center items-center py-4 bg-white rounded-[2rem] border border-outline-variant/10 shadow-sm">
         <div className="grid grid-cols-[1fr_50px_1fr_50px_1fr_50px_1fr] items-start gap-1 w-full max-w-[520px] px-6">
+          {/* Step 1: Đặt hàng */}
           <div className="flex flex-col items-center">
-            <div className="w-9 h-9 rounded-full bg-[#006c49] text-white flex items-center justify-center shadow-md">
+            <div className="w-9 h-9 rounded-full bg-[#006c49] text-white flex items-center justify-center shadow-md transition-colors duration-300">
               <span className="material-symbols-outlined text-[18px]">check</span>
             </div>
             <span className="text-[10px] font-bold text-[#006c49] mt-1 text-center">Đặt hàng</span>
           </div>
-          <span className="mt-[18px] h-[2px] bg-outline-variant/30" />
+          <span className={`mt-[18px] h-[2px] transition-colors duration-300 ${step2Active ? "bg-[#006c49]" : "bg-outline-variant/30"}`} />
           
+          {/* Step 2: Đóng gói */}
           <div className="flex flex-col items-center">
-            <div className="w-9 h-9 rounded-full bg-[#e7eeff] text-on-surface-variant flex items-center justify-center">
-              <span className="material-symbols-outlined text-[18px] text-[#5c5f61]">inventory_2</span>
+            <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 ${
+              step2Active ? "bg-[#006c49] text-white shadow-md" : "bg-[#e7eeff] text-on-surface-variant"
+            }`}>
+              <span className={`material-symbols-outlined text-[18px] transition-colors duration-300 ${step2Active ? "text-white" : "text-[#5c5f61]"}`}>
+                inventory_2
+              </span>
             </div>
-            <span className="text-[10px] font-medium text-on-surface-variant mt-1 text-center">Đóng gói</span>
+            <span className={`text-[10px] mt-1 text-center transition-all duration-300 ${
+              step2Active ? "font-bold text-[#006c49]" : "font-medium text-on-surface-variant"
+            }`}>
+              Đóng gói
+            </span>
           </div>
-          <span className="mt-[18px] h-[2px] bg-outline-variant/30" />
+          <span className={`mt-[18px] h-[2px] transition-colors duration-300 ${step3Active ? "bg-[#006c49]" : "bg-outline-variant/30"}`} />
 
+          {/* Step 3: Đang giao */}
           <div className="flex flex-col items-center">
-            <div className="w-9 h-9 rounded-full bg-[#e7eeff] text-on-surface-variant flex items-center justify-center">
-              <span className="material-symbols-outlined text-[18px] text-[#5c5f61]">local_shipping</span>
+            <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 ${
+              step3Active ? "bg-[#006c49] text-white shadow-md" : "bg-[#e7eeff] text-on-surface-variant"
+            }`}>
+              <span className={`material-symbols-outlined text-[18px] transition-colors duration-300 ${step3Active ? "text-white" : "text-[#5c5f61]"}`}>
+                local_shipping
+              </span>
             </div>
-            <span className="text-[10px] font-medium text-on-surface-variant mt-1 text-center">Đang giao</span>
+            <span className={`text-[10px] mt-1 text-center transition-all duration-300 ${
+              step3Active ? "font-bold text-[#006c49]" : "font-medium text-on-surface-variant"
+            }`}>
+              Đang giao
+            </span>
           </div>
-          <span className="mt-[18px] h-[2px] bg-outline-variant/30" />
+          <span className={`mt-[18px] h-[2px] transition-colors duration-300 ${step4Active ? "bg-[#006c49]" : "bg-outline-variant/30"}`} />
 
+          {/* Step 4: Đã nhận */}
           <div className="flex flex-col items-center">
-            <div className="w-9 h-9 rounded-full bg-[#e7eeff] text-on-surface-variant flex items-center justify-center">
-              <span className="material-symbols-outlined text-[18px] text-[#5c5f61]">check_circle</span>
+            <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 ${
+              step4Active ? "bg-[#006c49] text-white shadow-md" : "bg-[#e7eeff] text-on-surface-variant"
+            }`}>
+              <span className={`material-symbols-outlined text-[18px] transition-colors duration-300 ${step4Active ? "text-white" : "text-[#5c5f61]"}`}>
+                check_circle
+              </span>
             </div>
-            <span className="text-[10px] font-medium text-on-surface-variant mt-1 text-center">Đã nhận</span>
+            <span className={`text-[10px] mt-1 text-center transition-all duration-300 ${
+              step4Active ? "font-bold text-[#006c49]" : "font-medium text-on-surface-variant"
+            }`}>
+              Đã nhận
+            </span>
           </div>
         </div>
       </div>

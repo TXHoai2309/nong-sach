@@ -16,6 +16,8 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
 * **Chuyển lựa chọn sang dạng Dropdown (`src/app/checkout/page.tsx`)**:
   * Thay thế các nút radio to và cồng kềnh cho phương thức giao hàng và thanh toán thành 2 thẻ `<select>` dropdown nằm song song nhau (bố cục 2 cột).
   * Đồng bộ hóa giao diện của các thẻ dropdown này với thiết kế chung của toàn bộ form (`inputClass()`).
+* **Đồng bộ hóa Real-time Thanh tiến trình (Stepper Timeline) (`src/app/checkout/success/page.tsx`)**:
+  * Cập nhật các bước tiến trình đơn hàng ("Đặt hàng", "Đóng gói", "Đang giao", "Đã nhận") và các đường nối giữa chúng tự động thay đổi màu sắc xanh (active)/xám (inactive) theo thời gian thực dựa vào trạng thái Firestore đơn hàng `order?.status`.
 
 ### Fixed
 * **Khắc phục lỗi co hẹp chiều rộng (Squeezed Container Bug) (`src/app/checkout/page.tsx`, `src/app/seed/page.tsx`)**:
