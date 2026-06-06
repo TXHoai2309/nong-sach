@@ -1,8 +1,30 @@
-﻿# Changelog
+# Changelog
 
 All notable changes to the **NôngSạch** project will be documented in this file.
 
 The format is based on **Keep a Changelog** and this project adheres to **Semantic Versioning**.
+
+---
+
+## [0.4.9] - 2026-06-06
+
+### Sprint 4.9 — Tối ưu hóa hiệu năng tải ảnh lên Firebase Storage & Khắc phục giao diện lỗi xác thực Firebase Auth
+
+### Changed
+
+#### Cải thiện cơ chế ghi log lỗi xác thực (`src/store/auth-store.ts`)
+* Chuyển đổi gọi `console.error` sang `console.warn` đối với các trường hợp lỗi thông thường khi đăng nhập (sai thông tin xác thực, sai mật khẩu, sai email), đăng ký (trùng email, mật khẩu yếu), và đổi mật khẩu.
+* Khắc phục triệt để tình trạng giao diện phát triển của Next.js (Dev Overlay) tự động bật lên màn hình đỏ báo lỗi hệ thống, giúp người dùng nhìn thấy thông báo lỗi chuẩn trên form đăng nhập/đăng ký.
+
+#### Tối ưu luồng upload ảnh đăng ký bán hàng (`src/store/auth-store.ts`, `src/lib/firebase.ts`)
+* Thiết lập giới hạn thời gian chờ tải ảnh `maxUploadRetryTime` và `maxOperationRetryTime` của dịch vụ `Firebase Storage` xuống còn **3 giây** (3000ms) để tránh bị treo quá lâu khi kết nối mạng Firebase bị chậm hoặc chặn.
+* Bổ sung cơ chế giới hạn thời gian `Promise.race` tối đa **3 giây** trong hàm tải ảnh lên Storage `uploadImageToStorage(...)`. Nếu quá thời hạn này, hệ thống sẽ tự động dừng tải lên và chuyển sang sử dụng chuỗi ảnh Base64 làm giá trị dự phòng (fallback) ghi vào Firestore, đảm bảo giao diện luôn phản hồi lập tức.
+* Nâng cấp hàm nạp ảnh của người bán `uploadSellerImages(...)` tải lên song song các tệp ảnh chính (Logo, ảnh bìa, CCCD mặt trước/sau) bằng `Promise.all` thay vì đợi tải tuần tự từng ảnh, giúp cải thiện đáng kể tốc độ gửi hồ sơ đăng ký.
+
+### Verification
+
+* `npx tsc --noEmit` hoàn thành thành công.
+* `npm run dev` hoạt động bình thường, không gặp lỗi biên dịch.
 
 ---
 

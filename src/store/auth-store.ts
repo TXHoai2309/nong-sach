@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { User, RegisteredUser, UserAddress, SellerInfo } from "@/types/user";
-import { auth, db } from "@/lib/firebase";
+import { auth, db, storage } from "@/lib/firebase";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -11,6 +11,7 @@ import {
   EmailAuthProvider,
 } from "firebase/auth";
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { ref, uploadString, getDownloadURL } from "firebase/storage";
 import { addShop, updateShop } from "@/lib/shops";
 
 const getFirebaseErrorCode = (error: unknown) =>
@@ -20,6 +21,64 @@ const getFirebaseErrorCode = (error: unknown) =>
 
 const getFirebaseErrorMessage = (error: unknown) =>
   error instanceof Error ? error.message : "";
+
+const removeUndefinedFields = <T extends Record<string, unknown>>(data: T): T =>
+  Object.fromEntries(
+    Object.entries(data).filter(([, value]) => value !== undefined)
+  ) as T;
+
+const uploadImageToStorage = async (base64OrUrl: string | undefined, path: string): Promise<string | undefined> => {
+  if (!base64OrUrl) return undefined;
+  if (!base64OrUrl.startsWith("data:")) return base64OrUrl;
+
+  try {
+    const storageRef = ref(storage, path);
+    
+    // Race the upload and download URL fetch against a 3-second timeout
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("Firebase Storage upload timed out (3s)")), 3000)
+    );
+
+    const uploadTask = async () => {
+      await uploadString(storageRef, base64OrUrl, "data_url");
+      return await getDownloadURL(storageRef);
+    };
+
+    const downloadUrl = await Promise.race([uploadTask(), timeout]);
+    return downloadUrl;
+  } catch (error) {
+    console.warn(`Lỗi/Timeout upload ảnh lên Storage (${path}), chuyển sang dùng base64:`, error);
+    return base64OrUrl;
+  }
+};
+
+const uploadSellerImages = async (userId: string, info: SellerInfo): Promise<SellerInfo> => {
+  // Perform uploads in parallel using Promise.all to prevent sequential waiting
+  const [uploadedLogo, uploadedCover, uploadedIdFront, uploadedIdBack] = await Promise.all([
+    uploadImageToStorage(info.shopLogo, `sellers/${userId}/shopLogo`),
+    uploadImageToStorage(info.coverImage, `sellers/${userId}/coverImage`),
+    uploadImageToStorage(info.idCardFront, `sellers/${userId}/idCardFront`),
+    uploadImageToStorage(info.idCardBack, `sellers/${userId}/idCardBack`),
+  ]);
+
+  let uploadedFarmImages: string[] = [];
+  if (info.farmImages && info.farmImages.length > 0) {
+    uploadedFarmImages = await Promise.all(
+      info.farmImages.map((img, idx) =>
+        uploadImageToStorage(img, `sellers/${userId}/farmImages/image_${idx}`)
+      )
+    ).then((res) => res.filter((url): url is string => !!url));
+  }
+
+  return {
+    ...info,
+    shopLogo: uploadedLogo,
+    coverImage: uploadedCover,
+    idCardFront: uploadedIdFront,
+    idCardBack: uploadedIdBack,
+    farmImages: uploadedFarmImages.length > 0 ? uploadedFarmImages : undefined,
+  };
+};
 
 interface AuthState {
   currentUser: User | null;
@@ -152,7 +211,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
             set({ currentUser: defaultUser });
             return { success: true, message: "Đăng nhập thành công với tài khoản Demo!" };
           } catch (regErr: unknown) {
-            console.error("Auto-registration of Demo user failed:", regErr);
+            console.warn("Auto-registration of Demo user failed:", regErr);
           }
         }
       }
@@ -185,7 +244,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         return { success: true, message: "Đăng nhập thành công!" };
       }
     } catch (error: unknown) {
-      console.error("Login error:", error);
+      console.warn("Login error:", error);
       let errorMsg = "Email hoặc mật khẩu không chính xác.";
       const errorCode = getFirebaseErrorCode(error);
       const errorMessage = getFirebaseErrorMessage(error);
@@ -222,7 +281,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       await setDoc(doc(db, "users", uid), newUser);
       return { success: true, message: "Đăng ký thành công!" };
     } catch (error: unknown) {
-      console.error("Registration error:", error);
+      console.warn("Registration error:", error);
       let errorMsg = "Đăng ký thất bại.";
       const errorCode = getFirebaseErrorCode(error);
       const errorMessage = getFirebaseErrorMessage(error);
@@ -277,7 +336,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       await updatePassword(user, newPass);
       return { success: true, message: "Cập nhật mật khẩu thành công!" };
     } catch (error: unknown) {
-      console.error("Change password error:", error);
+      console.warn("Change password error:", error);
       let errorMsg = "Mật khẩu hiện tại không chính xác.";
       const errorCode = getFirebaseErrorCode(error);
       const errorMessage = getFirebaseErrorMessage(error);
@@ -364,23 +423,20 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     const currentUser = get().currentUser;
     if (!currentUser) return;
 
-    const updatedProfile = {
-      sellerStatus: "pending" as const,
-      sellerInfo: info,
-    };
-
-    const updatedUser = { ...currentUser, ...updatedProfile };
-    set({ currentUser: updatedUser });
-
     try {
-      const userRef = doc(db, "users", currentUser.id);
+      // 1. Upload images to Firebase Storage first (falls back to base64 if it fails)
+      const uploadedInfo = await uploadSellerImages(currentUser.id, info);
 
-      // Strip large base64 media fields from Firestore payload
-      const sanitizedInfo = { ...info };
-      delete sanitizedInfo.idCardFront;
-      delete sanitizedInfo.idCardBack;
-      delete sanitizedInfo.farmImages;
-      delete sanitizedInfo.shopLogo;
+      const updatedProfile = {
+        sellerStatus: "pending" as const,
+        sellerInfo: uploadedInfo,
+      };
+
+      const updatedUser = { ...currentUser, ...updatedProfile };
+      set({ currentUser: updatedUser });
+
+      const userRef = doc(db, "users", currentUser.id);
+      const sanitizedInfo = removeUndefinedFields({ ...uploadedInfo });
 
       await updateDoc(userRef, {
         sellerStatus: "pending",
@@ -388,6 +444,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       });
     } catch (err) {
       console.error("Firestore register seller update error:", err);
+      throw err;
     }
   },
 
@@ -448,42 +505,40 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     const currentUser = get().currentUser;
     if (!currentUser) return;
 
-    const updatedProfile = {
-      sellerInfo: info,
-    };
-
-    const updatedUser = { ...currentUser, ...updatedProfile };
-    set({ currentUser: updatedUser });
-
     try {
-      const userRef = doc(db, "users", currentUser.id);
+      // 1. Upload images to Firebase Storage first
+      const uploadedInfo = await uploadSellerImages(currentUser.id, info);
 
-      // Strip large base64 media fields from Firestore payload
-      const sanitizedInfo = { ...info };
-      delete sanitizedInfo.idCardFront;
-      delete sanitizedInfo.idCardBack;
-      delete sanitizedInfo.farmImages;
-      delete sanitizedInfo.shopLogo;
+      const updatedProfile = {
+        sellerInfo: uploadedInfo,
+      };
+
+      const updatedUser = { ...currentUser, ...updatedProfile };
+      set({ currentUser: updatedUser });
+
+      const userRef = doc(db, "users", currentUser.id);
+      const sanitizedInfo = removeUndefinedFields({ ...uploadedInfo });
 
       await updateDoc(userRef, {
         sellerInfo: sanitizedInfo,
       });
 
       await updateShop(currentUser.id, {
-        name: info.shopName,
-        logo: info.shopLogo || "https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?w=120&h=120&fit=crop",
-        location: info.province || "Lâm Đồng",
-        slogan: info.slogan || "Cung cấp nông sản sạch tươi ngon hữu cơ",
-        altitude: info.farmAddress || "Đà Lạt",
-        standard: info.farmingStandards?.join(", ") || "VietGAP",
-        description: info.description || "Nông sản sạch từ nông trại của tôi.",
-        farmImages: info.farmImages && info.farmImages.length > 0 ? info.farmImages : [
+        name: uploadedInfo.shopName,
+        logo: uploadedInfo.shopLogo || "https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?w=120&h=120&fit=crop",
+        location: uploadedInfo.province || "Lâm Đồng",
+        slogan: uploadedInfo.slogan || "Cung cấp nông sản sạch tươi ngon hữu cơ",
+        altitude: uploadedInfo.farmAddress || "Đà Lạt",
+        standard: uploadedInfo.farmingStandards?.join(", ") || "VietGAP",
+        description: uploadedInfo.description || "Nông sản sạch từ nông trại của tôi.",
+        farmImages: uploadedInfo.farmImages && uploadedInfo.farmImages.length > 0 ? uploadedInfo.farmImages : [
           "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=600&h=400&fit=crop",
         ],
-        mainCategories: info.mainCategories || ["Rau củ"],
+        mainCategories: uploadedInfo.mainCategories || ["Rau củ"],
       });
     } catch (err) {
       console.error("Firestore update seller info error:", err);
+      throw err;
     }
   },
 }));

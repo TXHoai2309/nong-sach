@@ -19,8 +19,10 @@ export const auth = getAuth(app);
 export const db   = getFirestore(app);
 export const rtdb = getDatabase(app);
 
-// Storage sẽ thêm sau khi cần upload ảnh thật
-// import { getStorage } from "firebase/storage";
-// export const storage = getStorage(app);
+import { getStorage } from "firebase/storage";
+const storageInstance = getStorage(app);
+storageInstance.maxUploadRetryTime = 3000; // 3 seconds
+storageInstance.maxOperationRetryTime = 3000; // 3 seconds
+export const storage = storageInstance;
 
 export default app;
