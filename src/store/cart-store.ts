@@ -1,10 +1,11 @@
 import { create } from "zustand";
 import { CartItem } from "@/types/cart";
 import { Product } from "@/types/product";
+import { getShopForProduct } from "@/lib/shops";
 
 interface CartState {
   items: CartItem[];
-  addToCart: (product: Product) => void;
+  addToCart: (product: Product) => void | Promise<void>;
   removeFromCart: (productId: string) => void;
   increaseQuantity: (productId: string) => void;
   decreaseQuantity: (productId: string) => void;
@@ -16,7 +17,7 @@ interface CartState {
   activeProductForModal: Product | null;
   defaultQuantityForModal: number;
   isOptionsModalOpen: boolean;
-  openOptionsModal: (product: Product, defaultQuantity?: number) => void;
+  openOptionsModal: (product: Product, defaultQuantity?: number) => void | Promise<void>;
   closeOptionsModal: () => void;
 
   // Toast states
@@ -33,7 +34,7 @@ export const useCartStore = create<CartState>((set, get) => ({
   items: [],
 
   // Legacy/compatibility fallback
-  addToCart: (product: Product) => {
+  addToCart: async (product: Product) => {
     // Parse weight from product ID if it exists (e.g. from reorder list)
     let weight: "500g" | "1kg" | "2kg" = "1kg";
     let baseId = product.id;
@@ -52,13 +53,27 @@ export const useCartStore = create<CartState>((set, get) => ({
     if (weight === "500g") priceFactor = 0.5;
     else if (weight === "2kg") priceFactor = 2.0;
 
-    const baseProduct: Product = {
+    let finalProduct: Product = {
       ...product,
       id: baseId,
       price: product.price / priceFactor,
     };
 
-    get().addToCartWithOptions(baseProduct, 1, weight);
+    if (!finalProduct.sellerId || !finalProduct.shopName) {
+      try {
+        const resolvedShop = await getShopForProduct(finalProduct);
+        if (resolvedShop) {
+          finalProduct.sellerId = resolvedShop.id;
+          finalProduct.shopName = resolvedShop.name;
+        }
+      } catch (err) {
+        console.error("Lỗi resolve shop:", err);
+      }
+    }
+    if (!finalProduct.sellerId) finalProduct.sellerId = "admin";
+    if (!finalProduct.shopName) finalProduct.shopName = "NôngSạch";
+
+    get().addToCartWithOptions(finalProduct, 1, weight);
   },
 
   addToCartWithOptions: (product: Product, quantity: number, weight: "500g" | "1kg" | "2kg") => {
@@ -100,8 +115,8 @@ export const useCartStore = create<CartState>((set, get) => ({
         image: product.image,
         quantity: quantity,
         stock: product.stock,
-        sellerId: product.sellerId,
-        shopName: product.shopName,
+        sellerId: product.sellerId || "admin",
+        shopName: product.shopName || "NôngSạch",
       };
 
       setTimeout(() => {
@@ -164,9 +179,24 @@ export const useCartStore = create<CartState>((set, get) => ({
   activeProductForModal: null,
   defaultQuantityForModal: 1,
   isOptionsModalOpen: false,
-  openOptionsModal: (product: Product, defaultQuantity = 1) => {
+  openOptionsModal: async (product: Product, defaultQuantity = 1) => {
+    let finalProduct = { ...product };
+    if (!product.sellerId || !product.shopName) {
+      try {
+        const resolvedShop = await getShopForProduct(product);
+        if (resolvedShop) {
+          finalProduct.sellerId = resolvedShop.id;
+          finalProduct.shopName = resolvedShop.name;
+        }
+      } catch (err) {
+        console.error("Lỗi resolve shop cho modal:", err);
+      }
+    }
+    if (!finalProduct.sellerId) finalProduct.sellerId = "admin";
+    if (!finalProduct.shopName) finalProduct.shopName = "NôngSạch";
+
     set({
-      activeProductForModal: product,
+      activeProductForModal: finalProduct,
       defaultQuantityForModal: defaultQuantity,
       isOptionsModalOpen: true,
     });

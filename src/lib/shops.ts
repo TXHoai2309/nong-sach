@@ -37,15 +37,6 @@ export async function getShopById(shopId: string): Promise<Shop | null> {
     if (docSnap.exists()) {
       return docSnap.data() as Shop;
     }
-
-    // Fallback về document đầu tiên trong collection
-    const shopsCol = collection(db, "shops");
-    const q = query(shopsCol, limit(1));
-    const querySnapshot = await getDocs(q);
-    if (!querySnapshot.empty) {
-      return querySnapshot.docs[0].data() as Shop;
-    }
-
     return null;
   } catch (error) {
     console.error("Error in getShopById:", error);

@@ -4,6 +4,21 @@ All notable changes to the **NôngSạch** project will be documented in this fi
 
 The format is based on **Keep a Changelog** and this project adheres to **Semantic Versioning**.
 
+## [0.5.7] - 2026-06-06
+
+### Sửa lỗi gán sai mã định danh cửa hàng (Shop ID Fallback Bug)
+
+### Fixed
+* **Khắc phục lỗi tự động gán cửa hàng mặc định (`src/lib/shops.ts`)**:
+  - Loại bỏ logic fallback tìm tài liệu đầu tiên trong Firestore khi không tìm thấy thông tin cửa hàng có ID tương ứng. Giờ đây `getShopById` sẽ trả về `null` ngay lập tức nếu không tìm thấy cửa hàng.
+* **Đồng bộ hóa bất đồng bộ trong Store Giỏ hàng (`src/store/cart-store.ts`)**:
+  - Nâng cấp `openOptionsModal` và `addToCart` sang bất đồng bộ (`async`) nhằm thực hiện phân giải và tự động điền `sellerId` và `shopName` từ cơ sở dữ liệu nếu thông tin bị thiếu từ sản phẩm, mặc định về `"admin"` và `"NôngSạch"` để tránh lỗi `undefined` trên Firestore khi tạo đơn hàng.
+* **Đồng bộ liên kết dữ liệu cửa hàng thực tế (`src/components/product/ProductDetail.tsx`, `src/app/shop/[id]/page.tsx`)**:
+  - Gắn và truyền trực tiếp thông tin `sellerId` và `shopName` từ đối tượng cửa hàng đang hiển thị vào sản phẩm trước khi mở modal tùy chọn mua hàng, giúp bỏ qua các truy vấn bổ sung và giữ độ chính xác tối đa về nguồn gốc gian hàng.
+
+### Verification
+* `npx tsc --noEmit` vượt qua hoàn toàn không lỗi.
+
 ---
 
 ## [0.5.6] - 2026-06-06

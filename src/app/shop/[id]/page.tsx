@@ -338,7 +338,12 @@ export default function ShopDetailPage({ params }: PageProps) {
   const handleMessageClick = () => alert(`Chức năng nhắn tin với "${shop?.name}" đang phát triển ở Phase 2!`);
   const handleAddToCart = (product: Product) => {
     if (!currentUser) { alert("Vui lòng đăng nhập để thêm vào giỏ hàng!"); return; }
-    openOptionsModal(product);
+    const productWithShop = {
+      ...product,
+      sellerId: shop?.id || product.sellerId,
+      shopName: shop?.name || product.shopName,
+    };
+    openOptionsModal(productWithShop);
   };
 
   // ── Open edit modal pre-filled ────────────────────────────────────────────

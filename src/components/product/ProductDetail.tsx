@@ -150,7 +150,12 @@ export default function ProductDetail({ product, relatedProducts }: ProductDetai
       router.push(`/login?redirect=${encodeURIComponent(`/products/${product.id}`)}`);
       return;
     }
-    openOptionsModal(product, quantity);
+    const productWithShop = {
+      ...product,
+      sellerId: shop?.id || product.sellerId,
+      shopName: shop?.name || product.shopName,
+    };
+    openOptionsModal(productWithShop, quantity);
   }
 
   function buyNow() {
@@ -160,7 +165,12 @@ export default function ProductDetail({ product, relatedProducts }: ProductDetai
       router.push(`/login?redirect=${encodeURIComponent(`/products/${product.id}`)}`);
       return;
     }
-    openOptionsModal(product, quantity);
+    const productWithShop = {
+      ...product,
+      sellerId: shop?.id || product.sellerId,
+      shopName: shop?.name || product.shopName,
+    };
+    openOptionsModal(productWithShop, quantity);
   }
 
   const handleCopyLink = () => {
