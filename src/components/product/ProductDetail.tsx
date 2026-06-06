@@ -79,7 +79,7 @@ export default function ProductDetail({ product, relatedProducts }: ProductDetai
       active = false;
     };
   }, [product]);
-  const addToCart = useCartStore((state) => state.addToCart);
+  const openOptionsModal = useCartStore((state) => state.openOptionsModal);
   const galleryImages =
     product.images && product.images.length > 0
       ? product.images
@@ -150,7 +150,7 @@ export default function ProductDetail({ product, relatedProducts }: ProductDetai
       router.push(`/login?redirect=${encodeURIComponent(`/products/${product.id}`)}`);
       return;
     }
-    Array.from({ length: quantity }).forEach(() => addToCart(product));
+    openOptionsModal(product, quantity);
   }
 
   function buyNow() {
@@ -160,8 +160,7 @@ export default function ProductDetail({ product, relatedProducts }: ProductDetai
       router.push(`/login?redirect=${encodeURIComponent(`/products/${product.id}`)}`);
       return;
     }
-    Array.from({ length: quantity }).forEach(() => addToCart(product));
-    router.push("/checkout");
+    openOptionsModal(product, quantity);
   }
 
   const handleCopyLink = () => {

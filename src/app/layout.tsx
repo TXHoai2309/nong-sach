@@ -4,6 +4,8 @@ import "./globals.css";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import AuthInitializer from "@/components/layout/AuthInitializer";
+import CartOptionsModal from "@/components/cart/CartOptionsModal";
+import CartAddedToast from "@/components/cart/CartAddedToast";
 import React from "react";
 
 const beVietnamPro = Be_Vietnam_Pro({
@@ -57,6 +59,8 @@ export default function RootLayout({
         <Header />
         <div className="flex-1">{children}</div>
         <Footer />
+        <CartOptionsModal />
+        <CartAddedToast />
       </body>
     </html>
   );

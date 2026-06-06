@@ -21,7 +21,7 @@ interface ProductCardProps {
 export default function ProductCard({ product }: ProductCardProps) {
   const router = useRouter();
   const { currentUser } = useAuthStore();
-  const addToCart = useCartStore((state) => state.addToCart);
+  const openOptionsModal = useCartStore((state) => state.openOptionsModal);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // Report states
@@ -39,7 +39,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       router.push(`/login?redirect=${encodeURIComponent(currentPath)}`);
       return;
     }
-    addToCart(product);
+    openOptionsModal(product);
   };
 
   const isOutOfStock = product.stock === 0;

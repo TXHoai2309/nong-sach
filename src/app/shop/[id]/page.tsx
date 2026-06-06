@@ -161,7 +161,7 @@ export default function ShopDetailPage({ params }: PageProps) {
   }, [isTopMenuOpen]);
 
   const { currentUser, updateSellerInfo } = useAuthStore();
-  const addToCart = useCartStore((state) => state.addToCart);
+  const openOptionsModal = useCartStore((state) => state.openOptionsModal);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setMounted(true), 0);
@@ -338,8 +338,7 @@ export default function ShopDetailPage({ params }: PageProps) {
   const handleMessageClick = () => alert(`Chức năng nhắn tin với "${shop?.name}" đang phát triển ở Phase 2!`);
   const handleAddToCart = (product: Product) => {
     if (!currentUser) { alert("Vui lòng đăng nhập để thêm vào giỏ hàng!"); return; }
-    addToCart(product);
-    alert(`Đã thêm "${product.name}" vào giỏ hàng!`);
+    openOptionsModal(product);
   };
 
   // ── Open edit modal pre-filled ────────────────────────────────────────────

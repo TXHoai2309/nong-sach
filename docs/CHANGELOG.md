@@ -6,6 +6,37 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
 
 ---
 
+## [0.5.6] - 2026-06-06
+
+### Tích hợp Modal Chọn Lựa Chọn và Toast Thông Báo Khi Thêm Vào Giỏ Hàng
+
+### Added
+* **Modal chọn tùy chọn trước khi thêm vào giỏ hàng (`src/components/cart/CartOptionsModal.tsx`)**:
+  - Khi nhấn "Thêm giỏ" hoặc "Thêm vào giỏ hàng" ở bất kỳ trang nào, hệ thống sẽ hiển thị một modal lớp phủ.
+  - Cho phép người dùng chọn khối lượng: `500g` (giá x0.5), `1kg` (giá x1.0), `2kg` (giá x2.0).
+  - Tích hợp bộ chọn số lượng có giới hạn theo tồn kho (`product.stock`) kèm tính năng tự động hiển thị số lượng còn lại.
+  - Tính toán số tiền tạm tính theo khối lượng và số lượng được chọn trong thời gian thực.
+  - Thao tác: "Thêm vào giỏ" và "Mua ngay" (tự động thêm sản phẩm và chuyển hướng sang trang checkout).
+* **Toast thông báo thêm thành công ở góc dưới bên phải (`src/components/cart/CartAddedToast.tsx`)**:
+  - Hiển thị thông báo Toast trượt mượt mà từ góc phải (`animate-slide-in`).
+  - Hiển thị tóm tắt sản phẩm bao gồm ảnh thu nhỏ, tên kèm hậu tố khối lượng (ví dụ `Cà chua hữu cơ (500g)`), và số lượng đã thêm.
+  - Cung cấp hai nút thao tác nhanh: "Xem giỏ hàng" (chuyển hướng sang `/cart`) và "Tiếp tục mua" (đóng thông báo Toast).
+  - Tự động đóng sau 5 giây hoặc khi bấm nút đóng (x).
+
+### Changed
+* **Mở rộng Store Giỏ hàng Zustand (`src/store/cart-store.ts`)**:
+  - Thêm state và actions quản lý Modal (`isOptionsModalOpen`, `activeProductForModal`, `defaultQuantityForModal`, `openOptionsModal`, `closeOptionsModal`).
+  - Thêm state và actions quản lý Toast (`isAddedToastOpen`, `addedItemForToast`, `openAddedToast`, `closeAddedToast`).
+  - Thêm `addToCartWithOptions` thực hiện phân tách các sản phẩm cùng ID nhưng có khối lượng khác nhau thành các dòng sản phẩm riêng biệt trong giỏ hàng (bằng cách cập nhật `productId` thành `${id}-${weight}` và bổ sung hậu tố vào tên).
+  - Cập nhật `addToCart` cũ tự động ánh xạ lại thành mặc định `1kg`, số lượng 1 để tương thích ngược với luồng mua lại đơn hàng trước.
+* **Tích hợp components toàn cục (`src/app/layout.tsx`)**:
+  - Gắn `<CartOptionsModal />` và `<CartAddedToast />` trực tiếp trong Layout gốc để các sự kiện thêm giỏ hàng hoạt động thông suốt từ tất cả các trang.
+* **Thay thế cơ chế thêm trực tiếp thành mở modal (`ProductCard.tsx`, `ProductDetail.tsx`, `src/app/shop/[id]/page.tsx`)**:
+  - Cập nhật toàn bộ các nút "Thêm giỏ" trên danh sách sản phẩm, trang chi tiết sản phẩm và danh mục sản phẩm của từng shop sang kích hoạt modal cấu hình thay vì thêm trực tiếp ngay lập tức.
+  - Đồng bộ số lượng được điều chỉnh trước ở trang chi tiết sản phẩm trực tiếp vào trường số lượng mặc định trong modal.
+
+---
+
 ## [0.5.5] - 2026-06-06
 
 ### Tái Cấu Trúc Bố Cục Checkout & Sửa Lỗi Hiển Thị Sizing Tailwind v4
