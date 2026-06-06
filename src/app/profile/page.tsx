@@ -117,6 +117,7 @@ function ProfileContent() {
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   // Seller registration form state
+  const [isSubmittingSeller, setIsSubmittingSeller] = useState(false);
   const [shopName, setShopName] = useState("");
   const [shopSlogan, setShopSlogan] = useState("");
   const [shopPhone, setShopPhone] = useState("");
@@ -453,7 +454,7 @@ function ProfileContent() {
     e.target.value = "";
   };
 
-  const handleRegisterSellerSubmit = (e: FormEvent) => {
+  const handleRegisterSellerSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
     if (!shopName.trim()) {
@@ -499,28 +500,36 @@ function ProfileContent() {
 
     const selectedProv = provinces.find((p) => p.code === Number(farmProvinceCode));
 
-    registerSeller({
-      shopName: shopName.trim(),
-      slogan: shopSlogan.trim(),
-      shopPhone: shopPhone.trim(),
-      shopZalo: shopZalo.trim(),
-      description: shopDescription.trim(),
-      shopLogo: shopLogo || undefined,
-      farmImages: farmImages.length > 0 ? farmImages : undefined,
-      mainCategories: selectedMainCategories,
-      province: selectedProv?.name || "Lâm Đồng",
-      farmAddress: farmAddress.trim(),
-      farmingStandards: selectedStandards,
-      farmingStandardsDetail: standardsDetail.trim() || undefined,
-      idCardNumber: idCardNumber.trim(),
-      idCardFront: idCardFront || undefined,
-      idCardBack: idCardBack || undefined,
-      bankName,
-      bankAccountNumber: bankAccountNumber.trim(),
-      bankAccountName: bankAccountName.trim().toUpperCase(),
-    });
-
-    showToast("Gửi hồ sơ đăng ký thành công!");
+    setIsSubmittingSeller(true);
+    try {
+      await registerSeller({
+        shopName: shopName.trim(),
+        slogan: shopSlogan.trim(),
+        shopPhone: shopPhone.trim(),
+        shopZalo: shopZalo.trim(),
+        description: shopDescription.trim(),
+        shopLogo: shopLogo || undefined,
+        coverImage: shopCoverImage || undefined,
+        farmImages: farmImages.length > 0 ? farmImages : undefined,
+        mainCategories: selectedMainCategories,
+        province: selectedProv?.name || "Lâm Đồng",
+        farmAddress: farmAddress.trim(),
+        farmingStandards: selectedStandards,
+        farmingStandardsDetail: standardsDetail.trim(),
+        idCardNumber: idCardNumber.trim(),
+        idCardFront: idCardFront || undefined,
+        idCardBack: idCardBack || undefined,
+        bankName,
+        bankAccountNumber: bankAccountNumber.trim(),
+        bankAccountName: bankAccountName.trim().toUpperCase(),
+      });
+      showToast("Gửi hồ sơ đăng ký thành công!");
+    } catch (error) {
+      console.error(error);
+      showToast("Đã có lỗi xảy ra khi đăng ký", "error");
+    } finally {
+      setIsSubmittingSeller(false);
+    }
   };
 
   const openEditShopModal = () => {
@@ -551,7 +560,7 @@ function ProfileContent() {
     setIsEditShopOpen(true);
   };
 
-  const handleEditShopSubmit = (e: FormEvent) => {
+  const handleEditShopSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
     if (!shopName.trim()) {
@@ -593,30 +602,37 @@ function ProfileContent() {
 
     const selectedProv = provinces.find((p) => p.code === Number(farmProvinceCode));
 
-    updateSellerInfo({
-      shopName: shopName.trim(),
-      slogan: shopSlogan.trim(),
-      shopPhone: shopPhone.trim(),
-      shopZalo: shopZalo.trim(),
-      description: shopDescription.trim(),
-      shopLogo: shopLogo || undefined,
-      coverImage: shopCoverImage || undefined,
-      farmImages: farmImages.length > 0 ? farmImages : undefined,
-      mainCategories: selectedMainCategories,
-      province: selectedProv?.name || "Lâm Đồng",
-      farmAddress: farmAddress.trim(),
-      farmingStandards: selectedStandards,
-      farmingStandardsDetail: standardsDetail.trim() || undefined,
-      idCardNumber: currentUser?.sellerInfo?.idCardNumber || "",
-      idCardFront: currentUser?.sellerInfo?.idCardFront,
-      idCardBack: currentUser?.sellerInfo?.idCardBack,
-      bankName,
-      bankAccountNumber: bankAccountNumber.trim(),
-      bankAccountName: bankAccountName.trim().toUpperCase(),
-    });
-
-    showToast("Cập nhật thông tin cửa hàng thành công!");
-    setIsEditShopOpen(false);
+    setIsSubmittingSeller(true);
+    try {
+      await updateSellerInfo({
+        shopName: shopName.trim(),
+        slogan: shopSlogan.trim(),
+        shopPhone: shopPhone.trim(),
+        shopZalo: shopZalo.trim(),
+        description: shopDescription.trim(),
+        shopLogo: shopLogo || undefined,
+        coverImage: shopCoverImage || undefined,
+        farmImages: farmImages.length > 0 ? farmImages : undefined,
+        mainCategories: selectedMainCategories,
+        province: selectedProv?.name || "Lâm Đồng",
+        farmAddress: farmAddress.trim(),
+        farmingStandards: selectedStandards,
+        farmingStandardsDetail: standardsDetail.trim(),
+        idCardNumber: currentUser?.sellerInfo?.idCardNumber || "",
+        idCardFront: currentUser?.sellerInfo?.idCardFront,
+        idCardBack: currentUser?.sellerInfo?.idCardBack,
+        bankName,
+        bankAccountNumber: bankAccountNumber.trim(),
+        bankAccountName: bankAccountName.trim().toUpperCase(),
+      });
+      showToast("Cập nhật thông tin cửa hàng thành công!");
+      setIsEditShopOpen(false);
+    } catch (error) {
+      console.error(error);
+      showToast("Đã có lỗi xảy ra khi cập nhật", "error");
+    } finally {
+      setIsSubmittingSeller(false);
+    }
   };
 
   const closeProductModal = () => {
@@ -1758,6 +1774,87 @@ function ProfileContent() {
                           Thông tin cửa hàng
                         </h4>
 
+                        {/* Cover Image upload */}
+                        <div className="space-y-2 mb-6">
+                          <label className="block text-[11px] font-bold text-[#3c4a42]/70">
+                            Ảnh bìa cửa hàng (Banner)
+                          </label>
+                          <div className="relative w-full h-32 rounded-2xl overflow-hidden bg-slate-100 border-2 border-dashed border-[#bbcabf]/40 group">
+                            {shopCoverImage ? (
+                              <>
+                                <Image
+                                  src={shopCoverImage}
+                                  alt="Ảnh bìa"
+                                  fill
+                                  unoptimized
+                                  className="object-cover"
+                                  sizes="(min-width: 640px) 420px, 100vw"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setShopCropSrc(shopCoverImage)}
+                                  className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer w-full h-full border-none p-0"
+                                >
+                                  <span className="text-white text-[10px] font-bold bg-black/40 px-3 py-1.5 rounded-full backdrop-blur-sm">
+                                    Cắt / Chỉnh sửa ảnh
+                                  </span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => { setShopCoverImage(""); setShopCoverUrl(""); }}
+                                  className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-all z-10 text-xs"
+                                  title="Xóa ảnh bìa"
+                                >✕</button>
+                              </>
+                            ) : (
+                              <div className="flex flex-col items-center justify-center h-full gap-1.5 text-[#3c4a42]/30">
+                                <span className="material-symbols-outlined text-3xl">add_photo_alternate</span>
+                                <span className="text-[10px] font-semibold">Chưa có ảnh bìa</span>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex gap-2 items-center flex-wrap">
+                            <label className="cursor-pointer inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#006c49]/10 text-[#006c49] hover:bg-[#006c49]/20 text-[10px] font-bold border border-[#006c49]/20 transition-all">
+                              <span className="material-symbols-outlined text-sm">upload</span>
+                              Tải ảnh lên
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (!file) return;
+                                  const reader = new FileReader();
+                                  reader.onload = (ev) => {
+                                    setShopCropSrc(ev.target?.result as string);
+                                  };
+                                  reader.readAsDataURL(file);
+                                  e.target.value = "";
+                                }}
+                              />
+                            </label>
+                            <span className="text-[#3c4a42]/40 text-[10px] font-semibold">hoặc URL:</span>
+                            <input
+                              type="url"
+                              value={shopCoverUrl.startsWith("data:") ? "" : shopCoverUrl}
+                              onChange={(e) => setShopCoverUrl(e.target.value)}
+                              onBlur={(e) => {
+                                const url = e.target.value.trim();
+                                if (url.startsWith("http")) setShopCropSrc(url);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  const url = shopCoverUrl.trim();
+                                  if (url.startsWith("http")) setShopCropSrc(url);
+                                }
+                              }}
+                              placeholder="https://..."
+                              className="flex-1 min-w-0 rounded-xl bg-[#f4f6fa] px-3 py-1.5 text-[10px] text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                            />
+                          </div>
+                        </div>
+
                         {/* Logo upload */}
                         <div className="flex flex-col items-center justify-center mb-6">
                           <label className="flex h-24 w-24 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#bbcabf]/50 bg-gray-50/50 hover:bg-gray-50 transition-all overflow-hidden relative">
@@ -2133,9 +2230,22 @@ function ProfileContent() {
                       <div className="text-center pt-2">
                         <button
                           type="submit"
-                          className="w-full rounded-2xl bg-[#006c49] py-4 text-sm font-bold text-white transition hover:opacity-90 shadow-md flex items-center justify-center gap-2"
+                          disabled={isSubmittingSeller}
+                          className={`w-full rounded-2xl bg-[#006c49] py-4 text-sm font-bold text-white transition hover:opacity-90 shadow-md flex items-center justify-center gap-2 ${
+                            isSubmittingSeller ? "opacity-75 cursor-not-allowed" : ""
+                          }`}
                         >
-                          Gửi đăng ký 🍃
+                          {isSubmittingSeller ? (
+                            <span className="flex items-center gap-2">
+                              <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                              </svg>
+                              Đang xử lý ảnh & gửi đăng ký...
+                            </span>
+                          ) : (
+                            "Gửi đăng ký 🍃"
+                          )}
                         </button>
                         <p className="text-[10px] text-gray-500 font-semibold mt-3 flex items-center justify-center gap-1">
                           <span className="material-symbols-outlined text-xs">lock</span>
@@ -3163,9 +3273,22 @@ function ProfileContent() {
                               </button>
                               <button
                                 type="submit"
-                                className="rounded-full bg-[#006c49] px-6 py-2 text-xs font-bold text-white transition hover:opacity-90 shadow-sm cursor-pointer"
+                                disabled={isSubmittingSeller}
+                                className={`rounded-full bg-[#006c49] px-6 py-2 text-xs font-bold text-white transition hover:opacity-90 shadow-sm cursor-pointer flex items-center gap-1.5 ${
+                                  isSubmittingSeller ? "opacity-75 cursor-not-allowed" : ""
+                                }`}
                               >
-                                Lưu thay đổi
+                                {isSubmittingSeller ? (
+                                  <>
+                                    <svg className="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                    </svg>
+                                    Đang lưu...
+                                  </>
+                                ) : (
+                                  "Lưu thay đổi"
+                                )}
                               </button>
                             </div>
                           </form>

@@ -10,6 +10,7 @@ export interface Shop {
   id: string;
   name: string;
   logo: string;
+  coverImage?: string;
   verified: boolean;
   rating: number;
   reviewCount: number;

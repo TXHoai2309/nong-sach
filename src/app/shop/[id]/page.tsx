@@ -10,6 +10,7 @@ import {
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import { getShopById, getAllShops, Shop } from "@/lib/shops";
 import { getAllProducts } from "@/lib/products";
+import { toggleFollow, subscribeToFollowStatus, subscribeToShopFollowers } from "@/lib/follows";
 import { useCartStore } from "@/store/cart-store";
 import { useAuthStore } from "@/store/auth-store";
 import { formatCurrency } from "@/lib/format";
@@ -48,11 +49,12 @@ function buildShopFromUser(
     id: user.id,
     name: info.shopName,
     logo: info.shopLogo || "https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?w=120&h=120&fit=crop",
+    coverImage: info.coverImage || "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=2000&q=90&fit=crop",
     verified: true,
     rating: 5.0,
     reviewCount: 0,
     productCount,
-    followerCount: "0",
+    followerCount: 0, // Will be updated by realtime listener
     joinDate: user.memberSince || "06/2026",
     location: info.province || "Lâm Đồng",
     slogan: info.slogan || "Cung cấp nông sản sạch tươi ngon hữu cơ",
@@ -285,20 +287,8 @@ export default function ShopDetailPage({ params }: PageProps) {
     };
   }, [mounted, id]);
 
-  // ── Follower Count Logic ──────────────────────────────────────────────────
+  // ── Follower Count Logic (Realtime) ──────────────────────────────────────────────────
   const [displayFollowers, setDisplayFollowers] = useState<string | number>(0);
-
-  // Helper to parse "2.4K" to 2400
-  const parseFollowers = (val: string | number): number => {
-    if (typeof val === "number") return val;
-    const match = val.match(/^(\d+(?:\.\d+)?)(K|M)?$/);
-    if (!match) return 0;
-    const num = parseFloat(match[1]);
-    const unit = match[2];
-    if (unit === "K") return num * 1000;
-    if (unit === "M") return num * 1000000;
-    return num;
-  };
 
   // Helper to format 2400 to "2.4K"
   const formatFollowers = (num: number): string | number => {
@@ -307,27 +297,42 @@ export default function ShopDetailPage({ params }: PageProps) {
     return (num / 1000000).toFixed(1).replace(/\.0$/, "") + "M";
   };
 
+  // Subscribe to follow status
   useEffect(() => {
-    if (shop) {
-      // Only reset display count when the shop ID changes or when shop data loads
-      const timer = window.setTimeout(() => setDisplayFollowers(shop.followerCount), 0);
-      return () => window.clearTimeout(timer);
-    }
-  }, [shop?.id, shop?.followerCount, shop]);
-
-  const handleToggleFollow = () => {
-    setIsFollowed((prevFollowed) => {
-      const nextFollowed = !prevFollowed;
-      
-      // Update follower count based on the new follow state
-      setDisplayFollowers((prevCount) => {
-        const currentNum = parseFollowers(prevCount);
-        const nextNum = nextFollowed ? currentNum + 1 : Math.max(0, currentNum - 1);
-        return formatFollowers(nextNum);
-      });
-
-      return nextFollowed;
+    if (!mounted || !currentUser || !id) return;
+    const unsubscribe = subscribeToFollowStatus(currentUser.id, id, (followed) => {
+      setIsFollowed(followed);
     });
+    return () => unsubscribe();
+  }, [mounted, currentUser, id]);
+
+  // Subscribe to shop follower count
+  useEffect(() => {
+    if (!mounted || !id) return;
+    const unsubscribe = subscribeToShopFollowers(id, (count) => {
+      setDisplayFollowers(formatFollowers(count));
+    });
+    return () => unsubscribe();
+  }, [mounted, id]);
+
+  const handleToggleFollow = async () => {
+    if (!currentUser) {
+      alert("Vui lòng đăng nhập để theo dõi shop!");
+      return;
+    }
+    
+    // Prevent owner from following their own shop
+    if (isOwner) {
+      alert("Bạn không thể theo dõi shop của chính mình!");
+      return;
+    }
+
+    try {
+      await toggleFollow(currentUser.id, id);
+    } catch (error) {
+      console.error("Lỗi khi theo dõi:", error);
+      alert("Đã có lỗi xảy ra. Vui lòng thử lại sau.");
+    }
   };
 
   const handleMessageClick = () => alert(`Chức năng nhắn tin với "${shop?.name}" đang phát triển ở Phase 2!`);
@@ -408,9 +413,9 @@ export default function ShopDetailPage({ params }: PageProps) {
     );
   }
 
-  // Cover image — custom sellers can set their own; static shops use curated photos
-  const coverImage = currentUser?.sellerInfo?.coverImage && shop.id === currentUser.id
-    ? currentUser.sellerInfo.coverImage
+  // Cover image — prioritizes the coverImage from the shop object (which is synced with Firebase)
+  const coverImage = shop.coverImage 
+    ? shop.coverImage
     : shop.id === "vuon-sach-da-lat"
       ? "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=2000&q=90&fit=crop"
       : shop.id === "nong-trai-xanh"
@@ -1004,6 +1009,50 @@ export default function ShopDetailPage({ params }: PageProps) {
                 <p className="text-[10px] text-on-surface-variant/50 font-medium mt-1.5">
                   Ảnh sẽ được cắt theo tỉ lệ 16:5 để khớp với banner cửa hàng.
                 </p>
+              </div>
+
+              {/* ── Logo Shop (Avatar) ───────────────────────────────────────── */}
+              <div className="flex flex-col items-center justify-center py-4 bg-slate-50/50 rounded-2xl border border-slate-100">
+                <label className="block text-xs font-bold text-on-surface-variant mb-3 uppercase tracking-wider text-center w-full">
+                  Logo / Ảnh đại diện shop
+                </label>
+                <div className="relative">
+                  <label className="flex h-24 w-24 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-white hover:border-primary transition-all overflow-hidden relative shadow-sm">
+                    {editLogo ? (
+                      <Image src={editLogo} alt="Logo preview" fill unoptimized className="object-cover" sizes="96px" />
+                    ) : (
+                      <>
+                        <Upload className="w-6 h-6 text-slate-400" />
+                        <span className="text-[10px] font-bold text-slate-500 mt-1">Tải ảnh</span>
+                      </>
+                    )}
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setEditLogo(reader.result as string);
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                  </label>
+                  {editLogo && (
+                    <button
+                      type="button"
+                      onClick={() => setEditLogo("")}
+                      className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow-md hover:bg-red-600 transition-all z-10"
+                      title="Xóa logo"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* ── Divider ──────────────────────────────────────────────────── */}

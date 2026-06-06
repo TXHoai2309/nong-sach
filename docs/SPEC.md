@@ -388,6 +388,7 @@ interface SellerInfo {
   shopZalo: string;
   description: string;
   shopLogo?: string;
+  coverImage?: string; // Ảnh bìa banner
   farmImages?: string[];
   mainCategories: string[];
   province: string;
@@ -400,6 +401,26 @@ interface SellerInfo {
   bankName: string;
   bankAccountNumber: string;
   bankAccountName: string;
+}
+
+interface Shop {
+  id: string;
+  name: string;
+  logo: string;
+  coverImage?: string;
+  verified: boolean;
+  rating: number;
+  reviewCount: number;
+  productCount: number;
+  followerCount: string | number;
+  joinDate: string;
+  location: string;
+  slogan: string;
+  altitude: string;
+  standard: string;
+  description: string;
+  farmImages: string[];
+  mainCategories: string[];
 }
 ```
 

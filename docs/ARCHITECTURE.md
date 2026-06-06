@@ -234,6 +234,30 @@ interface Order {
 }
 ```
 
+## Shop
+
+```ts
+interface Shop {
+  id: string
+  name: string
+  logo: string
+  coverImage?: string
+  verified: boolean
+  rating: number
+  reviewCount: number
+  productCount: number
+  followerCount: string | number
+  joinDate: string
+  location: string
+  slogan: string
+  altitude: string
+  standard: string
+  description: string
+  farmImages: string[]
+  mainCategories: string[]
+}
+```
+
 ---
 
 # 7. State Management

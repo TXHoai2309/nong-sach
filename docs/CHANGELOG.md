@@ -6,6 +6,54 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
 
 ---
 
+## [0.5.1] - 2026-06-06
+
+### Sprint 5.1 — Tính năng Theo dõi Cửa hàng Real-time (Real-time Follow Shop)
+
+### Added
+* **Thư viện Theo dõi (`src/lib/follows.ts`)**: 
+  * Triển khai hàm `toggleFollow` để xử lý việc theo dõi/bỏ theo dõi một shop một cách nguyên tử (atomic).
+  * Hàm `subscribeToFollowStatus` giúp lắng nghe trạng thái theo dõi của một người dùng đối với một shop cụ thể theo thời gian thực.
+  * Hàm `subscribeToShopFollowers` giúp lắng nghe và cập nhật số lượng người theo dõi của shop ngay khi có thay đổi trên Firebase.
+* **Quy trình Real-time trên Firebase**: Thiết lập cơ chế tự động chuyển đổi định dạng `followerCount` từ chuỗi (string) sang số (number) trong Firestore để hỗ trợ tính toán chính xác bằng `increment()`.
+
+### Changed
+* **Nâng cấp Trang Chi tiết Cửa hàng (`src/app/shop/[id]/page.tsx`)**:
+  * Tích hợp các listener thời gian thực để cập nhật nút "Theo dõi" và số lượng người theo dõi ngay lập tức mà không cần tải lại trang.
+  * Bổ sung ràng buộc xác thực: Yêu cầu người dùng đăng nhập mới có thể thực hiện hành động theo dõi.
+  * Chặn hành động tự theo dõi chính shop của mình dành cho chủ sở hữu.
+* **Đồng bộ hóa Auth Store (`src/store/auth-store.ts`)**: Khởi tạo trường `followerCount` là kiểu số (0) khi phê duyệt người bán mới để đảm bảo tính nhất quán của kiểu dữ liệu trên toàn hệ thống.
+
+### Verification
+* Chạy `npx tsc --noEmit` hoàn thành thành công.
+* Kiểm tra thực tế: Nút Theo dõi cập nhật trạng thái và số lượng đồng bộ trên nhiều cửa sổ trình duyệt khác nhau thông qua Firebase Real-time listeners.
+
+---
+
+## [0.5.0] - 2026-06-06
+
+### Sprint 5.0 — Nâng cấp hồ sơ Cửa hàng: Ảnh bìa, Avatar & Đồng bộ hóa Firebase toàn diện
+
+### Added
+* **Mở rộng Model Shop (`src/lib/shops.ts`)**: Bổ sung trường `coverImage` (ảnh bìa) vào giao diện dữ liệu Cửa hàng để hỗ trợ đầy đủ các thành phần nhận diện thương hiệu.
+* **Tích hợp Ảnh bìa vào Đăng ký người bán (`src/app/profile/page.tsx`)**: Bổ sung mục tải lên và công cụ cắt ảnh (Crop) cho Banner cửa hàng ngay trong quy trình đăng ký 4 bước.
+
+### Changed
+* **Tối ưu hóa luồng đồng bộ Firebase (`src/store/auth-store.ts`)**:
+  * Nâng cấp hàm `uploadSellerImages` để xử lý tải lên tự động cả **Avatar (Logo)** và **Ảnh bìa (Banner)** lên Firebase Storage.
+  * Tự động đồng bộ hóa URL ảnh từ Storage vào cả hồ sơ người dùng (`users`) và tài liệu cửa hàng (`shops`) trên Firestore sau khi tải lên thành công.
+  * Đảm bảo tính nhất quán dữ liệu: Khi phê duyệt người bán (`approveSeller`) hoặc cập nhật thông tin (`updateSellerInfo`), toàn bộ thông tin hình ảnh thực tế sẽ được cập nhật đồng thời trên hệ thống.
+* **Nâng cấp tính năng Chỉnh sửa Shop (`src/app/shop/[id]/page.tsx`)**:
+  * Mở rộng Modal chỉnh sửa thông tin cửa hàng cho phép chủ shop cập nhật lại cả **Logo (Avatar)** và **Ảnh bìa (Banner)** sau khi đã được phê duyệt.
+  * Tích hợp công cụ cắt ảnh cho ảnh bìa trong modal chỉnh sửa để đảm bảo tỉ lệ hiển thị chuẩn 16:5.
+* **Cập nhật dữ liệu mẫu (`src/data/shops.ts`)**: Bổ sung ảnh bìa thực tế cho các cửa hàng tĩnh (`STATIC_SHOPS`) để đồng bộ giao diện Material Design 3 trên toàn site.
+
+### Verification
+* `npx tsc --noEmit` hoàn thành thành công.
+* Toàn bộ luồng đăng ký, phê duyệt và chỉnh sửa shop với ảnh thực tế hoạt động trơn tru trên Firebase.
+
+---
+
 ## [0.4.9] - 2026-06-06
 
 ### Sprint 4.9 — Tối ưu hóa hiệu năng tải ảnh lên Firebase Storage & Khắc phục giao diện lỗi xác thực Firebase Auth
