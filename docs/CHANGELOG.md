@@ -34,6 +34,8 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
 * **Thay thế cơ chế thêm trực tiếp thành mở modal (`ProductCard.tsx`, `ProductDetail.tsx`, `src/app/shop/[id]/page.tsx`)**:
   - Cập nhật toàn bộ các nút "Thêm giỏ" trên danh sách sản phẩm, trang chi tiết sản phẩm và danh mục sản phẩm của từng shop sang kích hoạt modal cấu hình thay vì thêm trực tiếp ngay lập tức.
   - Đồng bộ số lượng được điều chỉnh trước ở trang chi tiết sản phẩm trực tiếp vào trường số lượng mặc định trong modal.
+* **Nhóm giỏ hàng theo gian hàng bán (`src/app/cart/page.tsx`)**:
+  - Gom các sản phẩm trong giỏ hàng có chung tên cửa hàng (`item.shopName`) hiển thị trong một khung chung có tiêu đề "Gian hàng của [Tên Shop]" kèm biểu tượng cửa hàng thay vì hiển thị các nhãn badge rời rạc, cải thiện cấu trúc thị giác và UX.
 
 ---
 

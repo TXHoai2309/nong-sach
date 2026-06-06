@@ -100,17 +100,15 @@ export default function CartPage() {
   const finalDiscount = Math.min(discount, subtotal);
   const total = Math.max(0, subtotal - finalDiscount);
 
-  // Origin badges styled colors
-  const getOriginBadgeStyle = (orig: string) => {
-    const o = orig.toLowerCase();
-    if (o.includes("tiền giang")) {
-      return "bg-[#e0f7fa] text-[#006064] text-[10px] font-bold px-2 py-0.5 rounded-md border border-[#b2ebf2]";
+  // Group items by shopName
+  const groupedItems = items.reduce((groups, item) => {
+    const shop = item.shopName || "NôngSạch";
+    if (!groups[shop]) {
+      groups[shop] = [];
     }
-    if (o.includes("lâm đồng") || o.includes("đà lạt")) {
-      return "bg-[#e8f5e9] text-[#2e7d32] text-[10px] font-bold px-2 py-0.5 rounded-md border border-[#c8e6c9]";
-    }
-    return "bg-[#f0f3ff] text-primary text-[10px] font-bold px-2 py-0.5 rounded-md border border-[#bbcabf]/30";
-  };
+    groups[shop].push(item);
+    return groups;
+  }, {} as Record<string, typeof items>);
 
   return (
     <div className="page-surface min-h-screen py-8">
@@ -134,86 +132,97 @@ export default function CartPage() {
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-          {/* Left Column: Cart Items List */}
-          <div className="space-y-4 lg:col-span-8">
-            {items.map((item) => {
-              const origin = item.shopName || "NôngSạch";
-              // Low stock warning (stock <= 5)
-              const isLowStock = item.stock <= 5;
-
-              return (
-                <div
-                  key={item.productId}
-                  className="page-card lift-hover relative flex items-center gap-4 rounded-3xl p-5"
-                >
-                  {/* Remove Button (X) at Top Right */}
-                  <button
-                    onClick={() => removeFromCart(item.productId)}
-                    className="absolute top-4 right-4 text-on-surface-variant hover:text-error transition-colors p-1 cursor-pointer"
-                    aria-label={`Xóa ${item.name} khỏi giỏ hàng`}
-                  >
-                    <span className="material-symbols-outlined text-[20px]">close</span>
-                  </button>
-
-                  {/* Product image */}
-                  <div className="relative w-20 h-20 rounded-2xl overflow-hidden shrink-0 bg-background border border-outline-variant/10">
-                    <Image
-                      src={item.image}
-                      alt={item.name}
-                      fill
-                      sizes="80px"
-                      className="object-cover"
-                    />
-                  </div>
-
-                  {/* Middle Area: Name, Origin, Stock warning, and Pill Qty Select */}
-                  <div className="flex-1 min-w-0 pr-6 space-y-1">
-                    <h3 className="font-bold text-on-surface text-base sm:text-lg truncate">
-                      {item.name}
-                    </h3>
-                    <div className="flex flex-wrap gap-1">
-                      <span className={getOriginBadgeStyle(origin)}>
-                        {origin.toUpperCase()}
-                      </span>
-                    </div>
-                    {isLowStock && (
-                      <p className="text-xs text-error font-medium flex items-center gap-1 mt-1">
-                        <span>⚠️</span> Chỉ còn {item.stock} sản phẩm
-                      </p>
-                    )}
-
-                    {/* Pill selector quantity */}
-                    <div className="flex items-center gap-2 mt-3 bg-surface-container-low border border-outline-variant/40 rounded-full w-fit px-1.5 py-0.5">
-                      <button
-                        onClick={() => decreaseQuantity(item.productId)}
-                        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container-lowest text-on-surface-variant transition-colors cursor-pointer"
-                        aria-label="Giảm số lượng"
-                      >
-                        <span className="text-[18px] font-semibold">-</span>
-                      </button>
-                      <span className="w-6 text-center text-sm font-bold text-on-surface">
-                        {item.quantity}
-                      </span>
-                      <button
-                        onClick={() => increaseQuantity(item.productId)}
-                        disabled={item.quantity >= item.stock}
-                        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container-lowest text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
-                        aria-label="Tăng số lượng"
-                      >
-                        <span className="text-[18px] font-semibold">+</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Total price for the item */}
-                  <div className="text-right shrink-0 mt-auto sm:mt-0">
-                    <p className="text-lg font-bold text-on-background">
-                      {formatCurrency(item.price * item.quantity)}
-                    </p>
-                  </div>
+          {/* Left Column: Grouped Cart Items List by Shop */}
+          <div className="space-y-6 lg:col-span-8">
+            {Object.entries(groupedItems).map(([shopName, shopItems]) => (
+              <div
+                key={shopName}
+                className="page-card rounded-3xl overflow-hidden border border-outline-variant/20 bg-white/90 shadow-lg"
+              >
+                {/* Shop Header banner */}
+                <div className="bg-slate-50/80 px-5 py-3.5 border-b border-slate-100/80 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-[22px]">store</span>
+                  <h2 className="text-sm font-bold text-on-surface">
+                    Gian hàng của <span className="text-primary font-extrabold">{shopName}</span>
+                  </h2>
                 </div>
-              );
-            })}
+
+                {/* Items list under this shop */}
+                <div className="divide-y divide-slate-100/80 p-5 space-y-4 [&>*:not(:first-child)]:pt-4">
+                  {shopItems.map((item) => {
+                    const isLowStock = item.stock <= 5;
+
+                    return (
+                      <div
+                        key={item.productId}
+                        className="relative flex flex-col sm:flex-row items-start sm:items-center gap-4"
+                      >
+                        {/* Remove Button (X) at Top Right on mobile, or next to price on desktop */}
+                        <button
+                          onClick={() => removeFromCart(item.productId)}
+                          className="absolute -top-1 -right-1 sm:relative sm:top-auto sm:right-auto sm:order-last text-slate-400 hover:text-error transition-colors p-1 cursor-pointer"
+                          aria-label={`Xóa ${item.name} khỏi giỏ hàng`}
+                        >
+                          <span className="material-symbols-outlined text-[20px]">close</span>
+                        </button>
+
+                        {/* Product image */}
+                        <div className="relative w-20 h-20 rounded-2xl overflow-hidden shrink-0 bg-background border border-outline-variant/10">
+                          <Image
+                            src={item.image}
+                            alt={item.name}
+                            fill
+                            sizes="80px"
+                            className="object-cover"
+                          />
+                        </div>
+
+                        {/* Middle Area: Name, Stock warning, and Pill Qty Select */}
+                        <div className="flex-1 min-w-0 pr-6 space-y-1">
+                          <h3 className="font-bold text-on-surface text-base sm:text-lg truncate">
+                            {item.name}
+                          </h3>
+                          {isLowStock && (
+                            <p className="text-xs text-error font-semibold flex items-center gap-1 mt-1">
+                              <span>⚠️</span> Chỉ còn {item.stock} sản phẩm
+                            </p>
+                          )}
+
+                          {/* Pill selector quantity */}
+                          <div className="flex items-center gap-2 mt-3 bg-surface-container-low border border-outline-variant/40 rounded-full w-fit px-1.5 py-0.5">
+                            <button
+                              onClick={() => decreaseQuantity(item.productId)}
+                              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container-lowest text-on-surface-variant transition-colors cursor-pointer"
+                              aria-label="Giảm số lượng"
+                            >
+                              <span className="text-[18px] font-semibold">-</span>
+                            </button>
+                            <span className="w-6 text-center text-sm font-bold text-on-surface">
+                              {item.quantity}
+                            </span>
+                            <button
+                              onClick={() => increaseQuantity(item.productId)}
+                              disabled={item.quantity >= item.stock}
+                              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container-lowest text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                              aria-label="Tăng số lượng"
+                            >
+                              <span className="text-[18px] font-semibold">+</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Total price for the item */}
+                        <div className="text-left sm:text-right shrink-0 mt-3 sm:mt-0 min-w-[100px]">
+                          <p className="text-lg font-bold text-primary">
+                            {formatCurrency(item.price * item.quantity)}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
 
             {/* Bottom bar: Continue shopping link & Promo Code Apply box */}
             <div className="flex flex-col sm:flex-row justify-between items-center gap-6 pt-4 border-t border-outline-variant/10">
