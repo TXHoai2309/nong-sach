@@ -87,7 +87,7 @@ interface AuthState {
   isAuthLoading: boolean;
   initAuth: () => void;
   login: (email: string, password: string) => Promise<{ success: boolean; message: string }>;
-  register: (name: string, email: string, password: string) => Promise<{ success: boolean; message: string }>;
+  register: (name: string, email: string, phone: string, password: string) => Promise<{ success: boolean; message: string }>;
   logout: () => Promise<void>;
   updateProfile: (profile: Partial<User>) => Promise<void>;
   changePassword: (currentPass: string, newPass: string) => Promise<{ success: boolean; message: string }>;
@@ -262,7 +262,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     }
   },
 
-  register: async (name, email, password) => {
+  register: async (name, email, phone, password) => {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
       const uid = userCredential.user.uid;
@@ -271,7 +271,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         id: uid,
         name: name.trim(),
         email: email.toLowerCase().trim(),
-        phone: "",
+        phone: phone.trim(),
         dob: "",
         gender: "",
         memberSince: new Date().toLocaleDateString("vi-VN", { month: "2-digit", year: "numeric" }),
@@ -308,12 +308,14 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     const currentUser = get().currentUser;
     if (!currentUser) return;
 
-    const updatedUser = { ...currentUser, ...profile };
+    // Filter out undefined properties to prevent Firestore error
+    const sanitizedProfile = removeUndefinedFields({ ...profile });
+    const updatedUser = { ...currentUser, ...sanitizedProfile };
     set({ currentUser: updatedUser });
 
     try {
       const userRef = doc(db, "users", currentUser.id);
-      await updateDoc(userRef, profile);
+      await updateDoc(userRef, sanitizedProfile);
     } catch (err) {
       console.error("Lỗi cập nhật profile trên Firestore:", err);
     }

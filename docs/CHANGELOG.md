@@ -6,6 +6,68 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
 
 ---
 
+## [0.5.5] - 2026-06-06
+
+### Tái Cấu Trúc Bố Cục Checkout & Sửa Lỗi Hiển Thị Sizing Tailwind v4
+
+### Changed
+* **Gộp các khối thông tin tại Checkout (`src/app/checkout/page.tsx`)**:
+  * Gộp 3 phần riêng biệt ("Thông tin giao hàng", "Phương thức giao hàng", "Phương thức thanh toán") thành duy nhất một thẻ tổng hợp "Thông tin giao hàng" để giao diện gọn gàng hơn.
+* **Chuyển lựa chọn sang dạng Dropdown (`src/app/checkout/page.tsx`)**:
+  * Thay thế các nút radio to và cồng kềnh cho phương thức giao hàng và thanh toán thành 2 thẻ `<select>` dropdown nằm song song nhau (bố cục 2 cột).
+  * Đồng bộ hóa giao diện của các thẻ dropdown này với thiết kế chung của toàn bộ form (`inputClass()`).
+
+### Fixed
+* **Khắc phục lỗi co hẹp chiều rộng (Squeezed Container Bug) (`src/app/checkout/page.tsx`, `src/app/seed/page.tsx`)**:
+  * Do hệ thống định nghĩa tỷ lệ khoảng cách tùy chỉnh trong Tailwind v4 (ví dụ `--spacing-lg: 40px`, `--spacing-sm: 16px`), các lớp `max-w-lg`, `max-w-sm` và `max-w-md` bị hiểu sai thành giới hạn cực kỳ hẹp (tương ứng 40px, 16px, 24px).
+  * Đã chuyển đổi các lớp này thành kích thước pixel tuyệt đối: `max-w-[512px]` cho hộp thoại chọn địa chỉ, `max-w-[384px]` cho thông báo Toast, và `max-w-[448px]` cho khung thẻ seed dữ liệu.
+
+### Verification
+* Dự án chạy thành công `npm run build` hoàn toàn không có lỗi.
+
+---
+
+## [0.5.4] - 2026-06-06
+
+### Tối ưu hóa Luồng Cập Nhật Profile & Đăng Ký Tài Khoản & Cải Thiện UX Checkout
+
+### Added
+* **Lưu số điện thoại khi đăng ký (`src/app/register/page.tsx`, `src/store/auth-store.ts`)**:
+  * Lưu trữ thông tin số điện thoại của người dùng trực tiếp vào Firestore ngay khi đăng ký tài khoản thành công.
+* **Chế độ xem trước & Nút Sửa thông tin cá nhân (`src/app/profile/page.tsx`)**:
+  * Thêm trạng thái `isEditing` để khóa/mở các trường thông tin cá nhân.
+  * Chỉ cho phép chỉnh sửa thông tin sau khi nhấn nút "Sửa thông tin".
+  * Thêm nút "Hủy" để khôi phục dữ liệu ban đầu nếu không muốn thay đổi.
+  * Ngăn ngừa lỗi xung đột React DOM reconciliation khiến form tự động gửi đi khi nhấn nút chỉnh sửa bằng cách thêm `key` định danh riêng cho các nút thao tác.
+* **Tự động điền số điện thoại & địa chỉ mặc định tại Checkout (`src/app/checkout/page.tsx`)**:
+  * Tự động lấy số điện thoại của người dùng đang đăng nhập điền vào form thanh toán.
+  * Tự động điền địa chỉ giao hàng mặc định (bao gồm Tỉnh/Thành phố, Quận/Huyện, Địa chỉ cụ thể) của người dùng nếu họ đã lưu địa chỉ trong trang cá nhân.
+* **Nút & Modal "Chọn địa chỉ khác" tại Checkout (`src/app/checkout/page.tsx`)**:
+  * Nếu người dùng có trên 1 địa chỉ đã lưu, hiển thị nút "Chọn địa chỉ khác" mở ra một modal danh sách địa chỉ nhận hàng để chuyển đổi nhanh chóng và tiện lợi.
+* **Hiệu ứng trượt Toast Notification (`src/app/globals.css`)**:
+  * Bổ sung `@keyframes slide-in` và class `.animate-slide-in` trong CSS toàn cục để mang lại hoạt ảnh mượt mà cho thông báo lỗi.
+
+### Changed
+* **Tối ưu hóa UI của ô chọn Giới tính (`src/app/profile/page.tsx`)**:
+  * Tăng độ rõ nét (100% opacity, scale 1.05, bold label) cho tùy chọn giới tính được chọn ở chế độ xem (khi disable).
+  * Làm mờ các tùy chọn chưa được chọn (30% opacity) để dễ dàng phân biệt.
+* **Tối ưu hóa độ phình trang bằng thẻ địa chỉ rút gọn (`src/app/checkout/page.tsx`)**:
+  * Thay vì luôn hiển thị toàn bộ biểu mẫu nhập thông tin địa chỉ dài dòng, trang sẽ mặc định hiển thị thẻ địa chỉ tóm tắt rút gọn khi phát hiện địa chỉ có sẵn, giúp tối ưu hóa chiều cao trang và tập trung UX.
+* **Chuyển đổi thông báo lỗi nhập thiếu tại Checkout (`src/app/checkout/page.tsx`)**:
+  * Thay thế các nhãn văn bản báo lỗi màu đỏ nằm dưới các trường nhập liệu bằng thông báo Toast góc trên bên phải màn hình để tối ưu hóa trải nghiệm người dùng (UX).
+* **Dọn dẹp code & Cảnh báo linter (`src/app/checkout/page.tsx`)**:
+  * Loại bỏ state `provinceMessage` không dùng đến để tránh cảnh báo của ESLint, đồng thời chuyển lỗi tải API tỉnh/thành phố sang thông báo qua Toast.
+
+### Fixed
+* **Sửa lỗi cập nhật profile (`src/store/auth-store.ts`)**:
+  * Sử dụng helper `removeUndefinedFields` trước khi cập nhật document lên Firestore để loại bỏ hoàn toàn lỗi "Unsupported field value: undefined" liên quan đến trường `gender`.
+
+### Verification
+* `npx tsc --noEmit` hoàn thành thành công không lỗi.
+* `npm run lint` hoàn thành thành công chỉ với 10 cảnh báo tĩnh cũ (không có lỗi hay cảnh báo mới trên trang checkout).
+
+---
+
 ## [0.5.3] - 2026-06-06
 
 ### Đồng bộ Notification đơn hàng realtime và hiển thị đầy đủ trạng thái giao hàng

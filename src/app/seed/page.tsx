@@ -27,7 +27,7 @@ export default function SeedPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 page-surface">
-      <div className="max-w-md w-full bg-white rounded-3xl border border-outline-variant/30 p-8 shadow-xl space-y-6 text-center page-card">
+      <div className="max-w-[448px] w-full bg-white rounded-3xl border border-outline-variant/30 p-8 shadow-xl space-y-6 text-center page-card">
         {/* Icon Header */}
         <div className="w-16 h-16 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto shadow-sm">
           <Database className="w-8 h-8" />

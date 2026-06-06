@@ -203,6 +203,7 @@ function ProfileContent() {
   const [phone, setPhone] = useState("");
   const [dob, setDob] = useState("");
   const [gender, setGender] = useState<ProfileGender>("");
+  const [isEditing, setIsEditing] = useState(false);
 
   // Change Password State
   const [currentPassword, setCurrentPassword] = useState("");
@@ -834,9 +835,20 @@ function ProfileContent() {
       name: fullName.trim(),
       phone: phone.trim(),
       dob,
-      gender: gender || undefined,
+      gender: gender || "",
     });
     showToast("Cập nhật thông tin cá nhân thành công!");
+    setIsEditing(false);
+  };
+
+  const handleCancelEdit = () => {
+    if (currentUser) {
+      setFullName(currentUser.name || "");
+      setPhone(currentUser.phone || "");
+      setDob(currentUser.dob || "");
+      setGender(currentUser.gender || "");
+    }
+    setIsEditing(false);
   };
 
   // 2. Change Password
@@ -1083,6 +1095,7 @@ function ProfileContent() {
                           onClick={() => {
                             setActiveTab(item.id);
                             setIsAddressFormOpen(false);
+                            setIsEditing(false);
                             router.push(`/profile?tab=${item.id}`, { scroll: false });
                           }}
                           className={`flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left text-sm transition-all ${btnClass}`}
@@ -1156,7 +1169,12 @@ function ProfileContent() {
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
                         placeholder="Nguyễn Văn A"
-                        className="w-full rounded-2xl border-none bg-[#f4f6fa] px-4 py-3 text-sm text-[#3c4a42] outline-none transition focus:ring-2 focus:ring-[#006c49]"
+                        disabled={!isEditing}
+                        className={`w-full rounded-2xl border-none px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-[#006c49] ${
+                          !isEditing
+                            ? "bg-[#eef2f6] text-[#3c4a42]/60 cursor-not-allowed"
+                            : "bg-[#f4f6fa] text-[#3c4a42] cursor-text"
+                        }`}
                         required
                       />
                     </div>
@@ -1188,7 +1206,12 @@ function ProfileContent() {
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         placeholder="0123 456 789"
-                        className="w-full rounded-2xl border-none bg-[#f4f6fa] px-4 py-3 text-sm text-[#3c4a42] outline-none transition focus:ring-2 focus:ring-[#006c49]"
+                        disabled={!isEditing}
+                        className={`w-full rounded-2xl border-none px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-[#006c49] ${
+                          !isEditing
+                            ? "bg-[#eef2f6] text-[#3c4a42]/60 cursor-not-allowed"
+                            : "bg-[#f4f6fa] text-[#3c4a42] cursor-text"
+                        }`}
                       />
                     </div>
                     {/* DOB */}
@@ -1201,7 +1224,12 @@ function ProfileContent() {
                         type="date"
                         value={dob}
                         onChange={(e) => setDob(e.target.value)}
-                        className="w-full rounded-2xl border-none bg-[#f4f6fa] px-4 py-3 text-sm text-[#3c4a42] outline-none transition focus:ring-2 focus:ring-[#006c49]"
+                        disabled={!isEditing}
+                        className={`w-full rounded-2xl border-none px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-[#006c49] ${
+                          !isEditing
+                            ? "bg-[#eef2f6] text-[#3c4a42]/60 cursor-not-allowed"
+                            : "bg-[#f4f6fa] text-[#3c4a42] cursor-text"
+                        }`}
                       />
                     </div>
                   </div>
@@ -1214,30 +1242,67 @@ function ProfileContent() {
                         { value: "Nam", label: "Nam" },
                         { value: "Nữ", label: "Nữ" },
                         { value: "Khác", label: "Khác" },
-                      ].map((item) => (
-                        <label key={item.value} className="flex cursor-pointer items-center gap-2 text-sm text-[#3c4a42] font-medium">
-                          <input
-                            type="radio"
-                            name="gender"
-                            value={item.value}
-                            checked={gender === item.value}
-                            onChange={() => setGender(item.value as ProfileGender)}
-                            className="h-4.5 w-4.5 border-gray-300 text-[#006c49] focus:ring-[#006c49]"
-                          />
-                          {item.label}
-                        </label>
-                      ))}
+                      ].map((item) => {
+                        const isChecked = gender === item.value;
+                        return (
+                          <label 
+                            key={item.value} 
+                            className={`flex items-center gap-2 text-sm font-medium transition-all ${
+                              !isEditing 
+                                ? `cursor-not-allowed ${isChecked ? "text-[#3c4a42] font-bold" : "text-[#3c4a42]/50"}` 
+                                : "text-[#3c4a42] cursor-pointer"
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="gender"
+                              value={item.value}
+                              checked={isChecked}
+                              disabled={!isEditing}
+                              onChange={() => setGender(item.value as ProfileGender)}
+                              className={`h-4.5 w-4.5 border-gray-300 text-[#006c49] focus:ring-[#006c49] transition-all ${
+                                !isEditing 
+                                  ? isChecked ? "opacity-100 scale-105" : "opacity-30" 
+                                  : "opacity-100"
+                              }`}
+                            />
+                            {item.label}
+                          </label>
+                        );
+                      })}
                     </div>
                   </div>
 
-                  {/* Save button */}
-                  <div className="pt-2">
-                    <button
-                      type="submit"
-                      className="rounded-full bg-[#006c49] px-8 py-3.5 text-sm font-bold text-white transition hover:opacity-90 shadow-sm"
-                    >
-                      Lưu thay đổi
-                    </button>
+                  {/* Action buttons */}
+                  <div className="pt-2 flex gap-3">
+                    {!isEditing ? (
+                      <button
+                        key="btn-edit"
+                        type="button"
+                        onClick={() => setIsEditing(true)}
+                        className="rounded-full bg-[#006c49] px-8 py-3.5 text-sm font-bold text-white transition hover:opacity-90 shadow-sm"
+                      >
+                        Sửa thông tin
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          key="btn-save"
+                          type="submit"
+                          className="rounded-full bg-[#006c49] px-8 py-3.5 text-sm font-bold text-white transition hover:opacity-90 shadow-sm"
+                        >
+                          Lưu thay đổi
+                        </button>
+                        <button
+                          key="btn-cancel"
+                          type="button"
+                          onClick={handleCancelEdit}
+                          className="rounded-full border border-[#bbcabf] px-8 py-3.5 text-sm font-bold text-[#3c4a42] transition hover:bg-gray-50 shadow-sm"
+                        >
+                          Hủy
+                        </button>
+                      </>
+                    )}
                   </div>
                 </form>
               </div>

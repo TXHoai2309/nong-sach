@@ -239,3 +239,20 @@ body {
   outline-offset: 2px;
   border-radius: 4px;
 }
+
+/* Toast animations */
+@keyframes slide-in {
+  from {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 350ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+

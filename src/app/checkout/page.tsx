@@ -102,15 +102,36 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<"cod" | "bank" | "credit" | "wallet">("cod");
   const [errors, setErrors] = useState<FormErrors>({});
 
+  const [showAddressForm, setShowAddressForm] = useState(true);
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  const showToast = (message: string, type: "success" | "error" = "error") => {
+    setToast({ message, type });
+  };
+
+  useEffect(() => {
+    if (toast) {
+      const timer = window.setTimeout(() => setToast(null), 3000);
+      return () => window.clearTimeout(timer);
+    }
+  }, [toast]);
+
   const [provinces, setProvinces] = useState<ProvinceApiItem[]>([]);
   const [provinceCode, setProvinceCode] = useState<number | "">("");
   const [districtCode, setDistrictCode] = useState<number | "">("");
   const [isLoadingProvinces, setIsLoadingProvinces] = useState(true);
-  const [provinceMessage, setProvinceMessage] = useState("");
 
   const selectedProvince = provinces.find((province) => province.code === Number(provinceCode));
   const districtOptions = selectedProvince?.districts ?? [];
   const selectedDistrict = districtOptions.find((district) => district.code === Number(districtCode));
+
+  const activeSavedAddress = currentUser?.addresses?.find(
+    (addr) =>
+      addr.streetAddress === address &&
+      addr.provinceCode === provinceCode &&
+      addr.districtCode === districtCode
+  );
 
   useEffect(() => {
     const timer = window.setTimeout(() => setMounted(true), 0);
@@ -128,6 +149,19 @@ export default function CheckoutPage() {
     const timer = window.setTimeout(() => {
       setFullName((prev) => prev || currentUser.name || "");
       setEmail((prev) => prev || currentUser.email || "");
+      setPhone((prev) => prev || currentUser.phone || "");
+
+      if (currentUser.addresses && currentUser.addresses.length > 0) {
+        const defaultAddr = currentUser.addresses.find((a) => a.isDefault) ?? currentUser.addresses[0];
+        setFullName(defaultAddr.fullName || currentUser.name || "");
+        setPhone(defaultAddr.phone || currentUser.phone || "");
+        setAddress(defaultAddr.streetAddress || "");
+        setProvinceCode(defaultAddr.provinceCode);
+        setDistrictCode(defaultAddr.districtCode);
+        setShowAddressForm(false);
+      } else {
+        setShowAddressForm(true);
+      }
     }, 0);
     return () => window.clearTimeout(timer);
   }, [currentUser]);
@@ -145,22 +179,30 @@ export default function CheckoutPage() {
         if (!isActive) return;
 
         const usableData = data.length > 0 ? data : fallbackProvinces;
-        const defaultProvince =
-          usableData.find((province) => province.codename === "thanh_pho_ho_chi_minh") ??
-          usableData[0];
-
         setProvinces(usableData);
-        setProvinceCode(defaultProvince?.code ?? "");
-        setDistrictCode(defaultProvince?.districts?.[0]?.code ?? "");
-        setProvinceMessage("");
+
+        setProvinceCode((prev) => {
+          if (prev !== "") return prev;
+          const defaultProvince =
+            usableData.find((province) => province.codename === "thanh_pho_ho_chi_minh") ??
+            usableData[0];
+          return defaultProvince?.code ?? "";
+        });
+
+        setDistrictCode((prev) => {
+          if (prev !== "") return prev;
+          const defaultProvince =
+            usableData.find((province) => province.codename === "thanh_pho_ho_chi_minh") ??
+            usableData[0];
+          return defaultProvince?.districts?.[0]?.code ?? "";
+        });
       } catch {
         if (!isActive) return;
 
-        const defaultProvince = fallbackProvinces[0];
         setProvinces(fallbackProvinces);
-        setProvinceCode(defaultProvince.code);
-        setDistrictCode(defaultProvince.districts[0]?.code ?? "");
-        setProvinceMessage("Không tải được API tỉnh/thành, đang dùng dữ liệu dự phòng.");
+        setProvinceCode((prev) => (prev !== "" ? prev : fallbackProvinces[0].code));
+        setDistrictCode((prev) => (prev !== "" ? prev : fallbackProvinces[0].districts[0]?.code ?? ""));
+        showToast("Không tải được API tỉnh/thành, đang dùng dữ liệu dự phòng.", "error");
       } finally {
         if (isActive) setIsLoadingProvinces(false);
       }
@@ -224,7 +266,15 @@ export default function CheckoutPage() {
     if (!selectedDistrict) nextErrors.district = "Vui lòng chọn quận/huyện";
 
     setErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
+    if (Object.keys(nextErrors).length > 0) {
+      const firstErrorKey = Object.keys(nextErrors)[0] as keyof FormErrors;
+      const firstErrorMessage = nextErrors[firstErrorKey];
+      if (firstErrorMessage) {
+        showToast(firstErrorMessage, "error");
+      }
+      return false;
+    }
+    return true;
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -233,7 +283,9 @@ export default function CheckoutPage() {
 
     const timestamp = Date.now();
     const orderIdBase = `NS-${timestamp}`;
-    const fullAddress = `${address.trim()}, ${selectedDistrict?.name ?? ""}, ${selectedProvince?.name ?? ""}`;
+    const districtName = selectedDistrict?.name ?? activeSavedAddress?.districtName ?? "";
+    const provinceName = selectedProvince?.name ?? activeSavedAddress?.provinceName ?? "";
+    const fullAddress = `${address.trim()}${districtName ? `, ${districtName}` : ""}${provinceName ? `, ${provinceName}` : ""}`;
 
     // Group items by sellerId
     const itemsBySeller = items.reduce((acc, item) => {
@@ -369,92 +421,230 @@ export default function CheckoutPage() {
         <form onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-[1fr_360px]">
           <div className="space-y-5">
             <section className="page-card rounded-3xl p-5 sm:p-6">
-              <h1 className="mb-5 flex items-center gap-2 text-xl font-bold text-on-surface">
-                <span className="material-symbols-outlined text-primary">local_shipping</span>
-                Thông tin giao hàng
-              </h1>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Họ và tên" error={errors.fullName}>
-                  <input
-                    id="fullName"
-                    type="text"
-                    value={fullName}
-                    onChange={(event) => {
-                      setFullName(event.target.value);
-                      updateError("fullName");
-                    }}
-                    placeholder="Nguyễn Văn A"
-                    className={inputClass(errors.fullName)}
-                  />
-                </Field>
-
-                <Field label="Số điện thoại" error={errors.phone}>
-                  <input
-                    id="phone"
-                    type="tel"
-                    value={phone}
-                    onChange={(event) => {
-                      setPhone(event.target.value);
-                      updateError("phone");
-                    }}
-                    placeholder="0901 234 567"
-                    className={inputClass(errors.phone)}
-                  />
-                </Field>
-
-                <Field label="Email" error={errors.email} className="sm:col-span-2">
-                  <input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(event) => {
-                      setEmail(event.target.value);
-                      updateError("email");
-                    }}
-                    placeholder="email@example.com"
-                    className={inputClass(errors.email)}
-                  />
-                </Field>
-
-                <Field label="Tỉnh / Thành phố" error={errors.province}>
-                  <div className="relative">
-                    <select
-                      id="province"
-                      value={provinceCode}
-                      onChange={(event) => handleProvinceChange(event.target.value)}
-                      disabled={isLoadingProvinces}
-                      className={`${inputClass(errors.province)} appearance-none pr-10 disabled:cursor-not-allowed disabled:opacity-70`}
+              <div className="mb-5 flex items-center justify-between flex-wrap gap-2">
+                <h1 className="flex items-center gap-2 text-xl font-bold text-on-surface">
+                  <span className="material-symbols-outlined text-primary">local_shipping</span>
+                  Thông tin giao hàng
+                </h1>
+                
+                {/* Address actions */}
+                <div className="flex gap-2 text-xs">
+                  {currentUser?.addresses && currentUser.addresses.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setIsAddressModalOpen(true)}
+                      className="text-primary font-bold hover:underline"
                     >
-                      {provinces.map((province) => (
-                        <option key={province.code} value={province.code}>
-                          {province.name}
-                        </option>
-                      ))}
-                    </select>
-                    <span className="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant">
-                      expand_more
-                    </span>
-                  </div>
-                </Field>
-
-                <Field label="Quận / Huyện" error={errors.district}>
-                  <div className="relative">
-                    <select
-                      id="district"
-                      value={districtCode}
-                      onChange={(event) => {
-                        setDistrictCode(Number(event.target.value));
-                        updateError("district");
+                      Chọn địa chỉ khác
+                    </button>
+                  )}
+                  {currentUser?.addresses && currentUser.addresses.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFullName("");
+                        setPhone("");
+                        setAddress("");
+                        setShowAddressForm(true);
                       }}
-                      disabled={isLoadingProvinces || districtOptions.length === 0}
-                      className={`${inputClass(errors.district)} appearance-none pr-10 disabled:cursor-not-allowed disabled:opacity-70`}
+                      className={`text-[#3c4a42]/70 font-semibold hover:underline ${
+                        currentUser.addresses.length > 1 ? "border-l border-outline-variant/60 pl-2" : ""
+                      }`}
                     >
-                      {districtOptions.map((district) => (
-                        <option key={district.code} value={district.code}>
-                          {district.name}
-                        </option>
-                      ))}
+                      Nhập địa chỉ mới
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {!showAddressForm ? (
+                /* Compact saved address card */
+                <div className="space-y-4">
+                  <div className="rounded-2xl border border-primary/20 bg-emerald-50/10 p-4 space-y-2.5 shadow-sm">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-sm font-bold text-on-surface flex items-center gap-2">
+                          {fullName}
+                          <span className="text-xs font-normal text-on-surface-variant">|</span>
+                          <span className="text-xs font-semibold text-on-surface-variant">{phone}</span>
+                        </p>
+                        <p className="text-xs text-on-surface-variant mt-0.5">{email}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowAddressForm(true)}
+                        className="text-xs text-primary font-bold flex items-center gap-1 hover:underline"
+                      >
+                        <span className="material-symbols-outlined text-sm">edit</span>
+                        Sửa
+                      </button>
+                    </div>
+                    <div className="border-t border-outline-variant/30 pt-2.5 text-xs text-on-surface-variant leading-5">
+                      <p><strong>Địa chỉ nhận hàng:</strong> {address}, {selectedDistrict?.name}, {selectedProvince?.name}</p>
+                    </div>
+                  </div>
+
+                  <Field label="Ghi chú đơn hàng">
+                    <textarea
+                      id="note"
+                      rows={2}
+                      value={note}
+                      onChange={(event) => setNote(event.target.value)}
+                      placeholder="Lưu ý cho người giao hàng..."
+                      className={inputClass()}
+                    />
+                  </Field>
+                </div>
+              ) : (
+                /* Full form inputs */
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Họ và tên">
+                    <input
+                      id="fullName"
+                      type="text"
+                      value={fullName}
+                      onChange={(event) => {
+                        setFullName(event.target.value);
+                        updateError("fullName");
+                      }}
+                      placeholder="Nguyễn Văn A"
+                      className={inputClass(errors.fullName)}
+                    />
+                  </Field>
+
+                  <Field label="Số điện thoại">
+                    <input
+                      id="phone"
+                      type="tel"
+                      value={phone}
+                      onChange={(event) => {
+                        setPhone(event.target.value);
+                        updateError("phone");
+                      }}
+                      placeholder="0901 234 567"
+                      className={inputClass(errors.phone)}
+                    />
+                  </Field>
+
+                  <Field label="Email" className="sm:col-span-2">
+                    <input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(event) => {
+                        setEmail(event.target.value);
+                        updateError("email");
+                      }}
+                      placeholder="email@example.com"
+                      className={inputClass(errors.email)}
+                    />
+                  </Field>
+
+                  <Field label="Tỉnh / Thành phố">
+                    <div className="relative">
+                      <select
+                        id="province"
+                        value={provinceCode}
+                        onChange={(event) => handleProvinceChange(event.target.value)}
+                        disabled={isLoadingProvinces}
+                        className={`${inputClass(errors.province)} appearance-none pr-10 disabled:cursor-not-allowed disabled:opacity-70`}
+                      >
+                        {provinces.map((province) => (
+                          <option key={province.code} value={province.code}>
+                            {province.name}
+                          </option>
+                        ))}
+                      </select>
+                      <span className="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant">
+                        expand_more
+                      </span>
+                    </div>
+                  </Field>
+
+                  <Field label="Quận / Huyện">
+                    <div className="relative">
+                      <select
+                        id="district"
+                        value={districtCode}
+                        onChange={(event) => {
+                          setDistrictCode(Number(event.target.value));
+                          updateError("district");
+                        }}
+                        disabled={isLoadingProvinces || districtOptions.length === 0}
+                        className={`${inputClass(errors.district)} appearance-none pr-10 disabled:cursor-not-allowed disabled:opacity-70`}
+                      >
+                        {districtOptions.map((district) => (
+                          <option key={district.code} value={district.code}>
+                            {district.name}
+                          </option>
+                        ))}
+                      </select>
+                      <span className="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant">
+                        expand_more
+                      </span>
+                    </div>
+                  </Field>
+
+                  <Field label="Địa chỉ cụ thể" className="sm:col-span-2">
+                    <input
+                      id="address"
+                      type="text"
+                      value={address}
+                      onChange={(event) => {
+                        setAddress(event.target.value);
+                        updateError("address");
+                      }}
+                      placeholder="Số nhà, tên đường..."
+                      className={inputClass(errors.address)}
+                    />
+                  </Field>
+
+                  <Field label="Ghi chú đơn hàng" className="sm:col-span-2">
+                    <textarea
+                      id="note"
+                      rows={2}
+                      value={note}
+                      onChange={(event) => setNote(event.target.value)}
+                      placeholder="Lưu ý cho người giao hàng..."
+                      className={inputClass()}
+                    />
+                  </Field>
+
+                  {currentUser?.addresses && currentUser.addresses.length > 0 && (
+                    <div className="sm:col-span-2 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const defaultAddr = currentUser.addresses?.find((a) => a.isDefault) ?? currentUser.addresses?.[0];
+                          if (defaultAddr) {
+                            setFullName(currentUser.name || "");
+                            setPhone(currentUser.phone || "");
+                            setAddress(defaultAddr.streetAddress);
+                            setProvinceCode(defaultAddr.provinceCode);
+                            setDistrictCode(defaultAddr.districtCode);
+                          }
+                          setShowAddressForm(false);
+                        }}
+                        className="text-xs text-primary font-bold hover:underline"
+                      >
+                        Quay lại địa chỉ đã lưu
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+              {/* Shipping & Payment Options */}
+              <div className="mt-5 pt-5 border-t border-outline-variant/30 grid gap-4 sm:grid-cols-2">
+                <Field label="Phương thức giao hàng">
+                  <div className="relative">
+                    <select
+                      value={shippingMethod}
+                      onChange={(e) => setShippingMethod(e.target.value as any)}
+                      className={`${inputClass()} appearance-none pr-10`}
+                    >
+                      <option value="standard">Tiêu chuẩn (2-4h) — Miễn phí</option>
+                      <option value="fast">Giao hỏa tốc (1-2h) — 15.000 đ</option>
+                      <option value="pickup">Nhận tại cửa hàng — Miễn phí</option>
                     </select>
                     <span className="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant">
                       expand_more
@@ -462,111 +652,27 @@ export default function CheckoutPage() {
                   </div>
                 </Field>
 
-                <Field label="Địa chỉ cụ thể" error={errors.address} className="sm:col-span-2">
-                  <input
-                    id="address"
-                    type="text"
-                    value={address}
-                    onChange={(event) => {
-                      setAddress(event.target.value);
-                      updateError("address");
-                    }}
-                    placeholder="Số nhà, tên đường..."
-                    className={inputClass(errors.address)}
-                  />
+                <Field label="Phương thức thanh toán">
+                  <div className="relative">
+                    <select
+                      value={paymentMethod}
+                      onChange={(e) => setPaymentMethod(e.target.value as any)}
+                      className={`${inputClass()} appearance-none pr-10`}
+                    >
+                      <option value="cod">Thanh toán khi nhận hàng (COD)</option>
+                      <option value="bank">Chuyển khoản ngân hàng</option>
+                      <option value="credit">Thẻ Visa / Mastercard</option>
+                      <option value="wallet">Ví điện tử</option>
+                    </select>
+                    <span className="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant">
+                      expand_more
+                    </span>
+                  </div>
                 </Field>
-
-                <Field label="Ghi chú đơn hàng" className="sm:col-span-2">
-                  <textarea
-                    id="note"
-                    rows={3}
-                    value={note}
-                    onChange={(event) => setNote(event.target.value)}
-                    placeholder="Lưu ý cho người giao hàng..."
-                    className={inputClass()}
-                  />
-                </Field>
-              </div>
-
-              {provinceMessage && (
-                <p className="mt-4 rounded-xl bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
-                  {provinceMessage}
-                </p>
-              )}
-            </section>
-
-            <section className="page-card rounded-3xl p-5 sm:p-6">
-              <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-on-surface">
-                <span className="material-symbols-outlined text-primary">package_2</span>
-                Phương thức giao hàng
-              </h2>
-              <div className="space-y-3">
-                <ChoiceCard
-                  name="shipping"
-                  value="standard"
-                  checked={shippingMethod === "standard"}
-                  onChange={() => setShippingMethod("standard")}
-                  title="Tiêu chuẩn (2-4h)"
-                  description="Dành cho các đơn hàng không gấp"
-                  price="Miễn phí"
-                  highlight
-                />
-                <ChoiceCard
-                  name="shipping"
-                  value="fast"
-                  checked={shippingMethod === "fast"}
-                  onChange={() => setShippingMethod("fast")}
-                  title="Giao hỏa tốc (1-2h)"
-                  description="Giao nhanh từ nông trại đến bếp của bạn"
-                  price={formatCurrency(15000)}
-                />
-                <ChoiceCard
-                  name="shipping"
-                  value="pickup"
-                  checked={shippingMethod === "pickup"}
-                  onChange={() => setShippingMethod("pickup")}
-                  title="Nhận tại cửa hàng"
-                  description="Nhận tại cửa hàng gần nhất của NôngSạch"
-                  price="Miễn phí"
-                  highlight
-                />
-              </div>
-            </section>
-
-            <section className="page-card rounded-3xl p-5 sm:p-6">
-              <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-on-surface">
-                <span className="material-symbols-outlined text-primary">payments</span>
-                Phương thức thanh toán
-              </h2>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <PaymentCard
-                  value="cod"
-                  checked={paymentMethod === "cod"}
-                  onChange={() => setPaymentMethod("cod")}
-                  label="Thanh toán khi nhận hàng"
-                />
-                <PaymentCard
-                  value="bank"
-                  checked={paymentMethod === "bank"}
-                  onChange={() => setPaymentMethod("bank")}
-                  label="Chuyển khoản ngân hàng"
-                />
-                <PaymentCard
-                  value="credit"
-                  checked={paymentMethod === "credit"}
-                  onChange={() => setPaymentMethod("credit")}
-                  label="Thẻ Visa / Mastercard"
-                />
-                <PaymentCard
-                  value="wallet"
-                  checked={paymentMethod === "wallet"}
-                  onChange={() => setPaymentMethod("wallet")}
-                  label="Ví điện tử"
-                />
               </div>
 
               {paymentMethod === "bank" && (
-                <div className="mt-4 rounded-2xl border border-primary/15 bg-emerald-50/70 p-4 text-sm">
+                <div className="mt-4 rounded-2xl border border-primary/15 bg-emerald-50/70 p-4 text-sm max-w-[600px] animate-in fade-in slide-in-from-top-1 duration-200">
                   <p className="mb-3 text-on-surface-variant">
                     Vui lòng chuyển khoản với nội dung: <strong>[Họ tên] [Số điện thoại]</strong>
                   </p>
@@ -657,6 +763,142 @@ export default function CheckoutPage() {
           </aside>
         </form>
       </div>
+
+      {/* Address Selector Modal */}
+      {isAddressModalOpen && currentUser?.addresses && (
+        <div className="fixed inset-0 z-[9990] flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/45 backdrop-blur-sm transition-opacity"
+            onClick={() => setIsAddressModalOpen(false)}
+          />
+          {/* Modal Content */}
+          <div className="relative w-full max-w-[512px] transform rounded-3xl bg-white p-6 shadow-2xl transition-all border border-outline-variant/30 max-h-[85vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-outline-variant/30 pb-4 mb-4">
+              <h2 className="text-lg font-bold text-on-surface flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">local_shipping</span>
+                Chọn địa chỉ nhận hàng
+              </h2>
+              <button
+                type="button"
+                onClick={() => setIsAddressModalOpen(false)}
+                className="rounded-full p-1.5 text-on-surface-variant hover:bg-surface-container-high transition flex items-center justify-center"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            {/* List of addresses */}
+            <div className="flex-1 overflow-y-auto space-y-3 pr-1 py-1">
+              {currentUser.addresses.map((addr) => {
+                const isSelected =
+                  address === addr.streetAddress &&
+                  provinceCode === addr.provinceCode &&
+                  districtCode === addr.districtCode;
+                return (
+                  <div
+                    key={addr.id}
+                    onClick={() => {
+                      setFullName(addr.fullName || currentUser.name || "");
+                      setPhone(addr.phone || currentUser.phone || "");
+                      setAddress(addr.streetAddress);
+                      setProvinceCode(addr.provinceCode);
+                      setDistrictCode(addr.districtCode);
+                      setShowAddressForm(false);
+                      setIsAddressModalOpen(false);
+                    }}
+                    className={`group relative cursor-pointer rounded-2xl border p-4 transition text-left ${
+                      isSelected
+                        ? "border-primary bg-emerald-50/20 shadow-sm"
+                        : "border-outline-variant/60 bg-white hover:border-primary/50 hover:bg-surface-container-lowest"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-sm font-bold text-on-surface">{addr.fullName}</p>
+                          <span className="text-xs text-on-surface-variant">|</span>
+                          <p className="text-xs font-semibold text-on-surface-variant">{addr.phone}</p>
+                          {addr.isDefault && (
+                            <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+                              Mặc định
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-on-surface-variant leading-relaxed">
+                          {addr.streetAddress}, {addr.districtName}, {addr.provinceName}
+                        </p>
+                      </div>
+                      <div className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border border-outline-variant/80 group-hover:border-primary transition group-hover:scale-105">
+                        {isSelected && (
+                          <div className="h-3 w-3 rounded-full bg-primary" />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Footer / Actions */}
+            <div className="border-t border-outline-variant/30 pt-4 mt-4 flex justify-between items-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setFullName("");
+                  setPhone("");
+                  setAddress("");
+                  setShowAddressForm(true);
+                  setIsAddressModalOpen(false);
+                }}
+                className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+              >
+                <span className="material-symbols-outlined text-sm">add</span>
+                Thêm địa chỉ mới
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsAddressModalOpen(false)}
+                className="rounded-xl bg-surface-container-high px-4 py-2 text-xs font-bold text-on-surface hover:bg-surface-container-highest transition"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <div
+          className={`fixed top-6 right-6 z-[9999] flex max-w-[384px] animate-slide-in items-center gap-3 rounded-2xl border p-4 shadow-xl backdrop-blur-md transition-all duration-300 bg-white/95 ${
+            toast.type === "success"
+              ? "border-primary/20 text-on-surface"
+              : "border-error/20 text-on-surface"
+          }`}
+        >
+          <div
+            className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full ${
+              toast.type === "success" ? "bg-primary/15 text-primary" : "bg-error/15 text-error"
+            }`}
+          >
+            <span className="material-symbols-outlined text-xl">
+              {toast.type === "success" ? "check_circle" : "error"}
+            </span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold leading-5 text-on-surface">{toast.message}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setToast(null)}
+            className="rounded-lg p-1 text-on-surface-variant hover:bg-surface-container transition flex-shrink-0"
+          >
+            <span className="material-symbols-outlined text-sm">close</span>
+          </button>
+        </div>
+      )}
     </main>
   );
 }
@@ -726,24 +968,22 @@ function ChoiceCard({
   value: string;
 }) {
   return (
-    <label
-      className={`flex cursor-pointer items-center gap-3 rounded-2xl border p-4 transition hover:bg-surface-container-low ${
-        checked ? "border-primary bg-emerald-50/70" : "border-outline-variant/70 bg-white"
-      }`}
-    >
+    <label className="flex cursor-pointer items-center gap-3 py-2 text-sm text-on-surface hover:text-primary transition-colors">
       <input
         type="radio"
         name={name}
         value={value}
         checked={checked}
         onChange={onChange}
-        className="h-5 w-5 text-primary"
+        className="h-4.5 w-4.5 text-primary shrink-0"
       />
-      <span className="min-w-0 flex-1">
-        <span className="block text-sm font-bold text-on-surface">{title}</span>
-        <span className="block text-sm text-on-surface-variant">{description}</span>
-      </span>
-      <span className={`text-sm font-bold ${highlight ? "text-primary" : "text-on-surface"}`}>{price}</span>
+      <div className="flex-1 flex justify-between items-center gap-2">
+        <div className="min-w-0">
+          <span className="font-bold text-on-surface block sm:inline">{title}</span>
+          <span className="text-xs text-on-surface-variant block sm:inline sm:ml-2">{description}</span>
+        </div>
+        <span className={`font-bold shrink-0 ${highlight ? "text-primary" : "text-on-surface"}`}>{price}</span>
+      </div>
     </label>
   );
 }
@@ -760,20 +1000,16 @@ function PaymentCard({
   value: string;
 }) {
   return (
-    <label
-      className={`flex cursor-pointer items-center gap-3 rounded-2xl border p-4 text-sm font-semibold transition hover:bg-surface-container-low ${
-        checked ? "border-primary bg-emerald-50/70 text-on-surface" : "border-outline-variant/70 text-on-surface"
-      }`}
-    >
+    <label className="flex cursor-pointer items-center gap-3 py-2 text-sm text-on-surface hover:text-primary transition-colors">
       <input
         type="radio"
         name="payment"
         value={value}
         checked={checked}
         onChange={onChange}
-        className="h-5 w-5 text-primary"
+        className="h-4.5 w-4.5 text-primary shrink-0"
       />
-      {label}
+      <span className="font-bold">{label}</span>
     </label>
   );
 }
