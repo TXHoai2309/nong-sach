@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, useMemo, type FormEvent } from "react";
 import { MoreHorizontal, Pencil, Share2, Flag, HelpCircle, AlertCircle, X, Check } from "lucide-react";
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import { useCartStore } from "@/store/cart-store";
@@ -13,6 +13,8 @@ import { CATEGORY_LABELS, Product } from "@/types/product";
 import { getShopForProduct, Shop } from "@/lib/shops";
 import { useReportStore } from "@/store/report-store";
 import { REPORT_REASONS } from "@/types/report";
+import { getReviewsByProductId } from "@/lib/reviews";
+import { Review } from "@/types/review";
 
 interface ProductDetailProps {
   product: Product;
@@ -20,6 +22,7 @@ interface ProductDetailProps {
 }
 
 type TabKey = "description" | "info" | "reviews";
+type ReviewFilter = "all" | 1 | 2 | 3 | 4 | 5;
 
 const categoryGalleryImages: Partial<Record<Product["category"], string[]>> = {
   vegetables: [
@@ -102,6 +105,59 @@ export default function ProductDetail({ product, relatedProducts }: ProductDetai
   const [reportDetails, setReportDetails] = useState("");
   const [reportSubmitting, setReportSubmitting] = useState(false);
   const addReport = useReportStore((state) => state.addReport);
+
+  // Reviews state
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [reviewFilter, setReviewFilter] = useState<ReviewFilter>("all");
+
+  useEffect(() => {
+    let active = true;
+    async function loadReviews() {
+      try {
+        setReviewsLoading(true);
+        const data = await getReviewsByProductId(product.id);
+        if (active) {
+          setReviews(data);
+        }
+      } catch (err) {
+        console.error("Lỗi khi load reviews:", err);
+      } finally {
+        if (active) {
+          setReviewsLoading(false);
+        }
+      }
+    }
+    loadReviews();
+    return () => {
+      active = false;
+    };
+  }, [product.id]);
+
+  const { averageRating, reviewCount } = useMemo(() => {
+    if (reviews.length === 0) {
+      return { averageRating: 0, reviewCount: 0 };
+    }
+    const sum = reviews.reduce((acc, r) => acc + r.rating, 0);
+    const avg = Math.round((sum / reviews.length) * 10) / 10;
+    return { averageRating: avg, reviewCount: reviews.length };
+  }, [reviews]);
+
+  const reviewStarCounts = useMemo(() => {
+    return reviews.reduce<Record<1 | 2 | 3 | 4 | 5, number>>(
+      (acc, review) => {
+        const rating = Math.min(5, Math.max(1, Math.round(review.rating))) as 1 | 2 | 3 | 4 | 5;
+        acc[rating] += 1;
+        return acc;
+      },
+      { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+    );
+  }, [reviews]);
+
+  const filteredReviews = useMemo(() => {
+    if (reviewFilter === "all") return reviews;
+    return reviews.filter((review) => Math.round(review.rating) === reviewFilter);
+  }, [reviews, reviewFilter]);
 
   const isOutOfStock = product.stock === 0;
   const smallestSelectedSide = Math.min(selectedImageSize.width, selectedImageSize.height);
@@ -366,14 +422,39 @@ export default function ProductDetail({ product, relatedProducts }: ProductDetai
 
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center text-[#FFB800]">
-              {["star", "star", "star", "star", "star_half"].map((star, index) => (
-                <span key={`${star}-${index}`} className="material-symbols-outlined [font-variation-settings:'FILL'_1]">
-                  {star}
-                </span>
-              ))}
-              <span className="ml-1 font-bold text-on-surface">4.8</span>
+              {(() => {
+                const stars = [];
+                const fullStars = Math.floor(averageRating);
+                const hasHalf = averageRating - fullStars >= 0.3 && averageRating - fullStars <= 0.7;
+                const roundedFull = fullStars + (averageRating - fullStars > 0.7 ? 1 : 0);
+                for (let i = 1; i <= 5; i++) {
+                  if (i <= roundedFull) {
+                    stars.push(
+                      <span key={i} className="material-symbols-outlined [font-variation-settings:'FILL'_1]">
+                        star
+                      </span>
+                    );
+                  } else if (i === roundedFull + 1 && hasHalf) {
+                    stars.push(
+                      <span key={i} className="material-symbols-outlined [font-variation-settings:'FILL'_1]">
+                        star_half
+                      </span>
+                    );
+                  } else {
+                    stars.push(
+                      <span key={i} className="material-symbols-outlined text-slate-300">
+                        star
+                      </span>
+                    );
+                  }
+                }
+                return stars;
+              })()}
+              <span className="ml-1.5 font-extrabold text-on-surface">{averageRating.toFixed(1)}</span>
             </div>
-            <span className="text-sm font-medium text-on-surface-variant">(32 đánh giá)</span>
+            <span className="text-sm font-medium text-on-surface-variant">
+              ({reviewCount > 0 ? `${reviewCount} đánh giá` : "Chưa có đánh giá"})
+            </span>
           </div>
 
           <div className="text-2xl font-semibold leading-8 text-primary">
@@ -519,7 +600,7 @@ export default function ProductDetail({ product, relatedProducts }: ProductDetai
           {[
             ["description", "Mô tả"],
             ["info", "Thông tin"],
-            ["reviews", "Đánh giá (32)"],
+            ["reviews", `Đánh giá (${reviewCount})`],
           ].map(([key, label]) => (
             <button
               key={key}
@@ -569,41 +650,147 @@ export default function ProductDetail({ product, relatedProducts }: ProductDetai
         {activeTab === "reviews" && (
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
             <div className="flex flex-col items-center justify-center rounded-2xl bg-surface-container-low p-8 text-center lg:col-span-4">
-              <div className="text-4xl font-bold text-primary">4.8</div>
+              <div className="text-4xl font-bold text-primary">{averageRating.toFixed(1)}</div>
               <div className="mb-2 flex text-[#FFB800]">
-                {["star", "star", "star", "star", "star_half"].map((star, index) => (
-                  <span key={`${star}-${index}`} className="material-symbols-outlined [font-variation-settings:'FILL'_1]">
-                    {star}
-                  </span>
-                ))}
+                {(() => {
+                  const stars = [];
+                  const fullStars = Math.floor(averageRating);
+                  const hasHalf = averageRating - fullStars >= 0.3 && averageRating - fullStars <= 0.7;
+                  const roundedFull = fullStars + (averageRating - fullStars > 0.7 ? 1 : 0);
+                  for (let i = 1; i <= 5; i++) {
+                    if (i <= roundedFull) {
+                      stars.push(
+                        <span key={i} className="material-symbols-outlined [font-variation-settings:'FILL'_1]">
+                          star
+                        </span>
+                      );
+                    } else if (i === roundedFull + 1 && hasHalf) {
+                      stars.push(
+                        <span key={i} className="material-symbols-outlined [font-variation-settings:'FILL'_1]">
+                          star_half
+                        </span>
+                      );
+                    } else {
+                      stars.push(
+                        <span key={i} className="material-symbols-outlined text-slate-300">
+                          star
+                        </span>
+                      );
+                    }
+                  }
+                  return stars;
+                })()}
               </div>
-              <div className="text-sm font-medium text-on-surface-variant">Dựa trên 32 đánh giá</div>
+              <div className="text-sm font-medium text-on-surface-variant">
+                {reviewCount > 0 ? `Dựa trên ${reviewCount} đánh giá` : "Chưa có đánh giá"}
+              </div>
             </div>
             <div className="space-y-5 lg:col-span-8">
-              {[
-                ["NH", "Nguyễn Hạnh", `${product.name} rất tươi, đóng gói cẩn thận và giao nhanh. Gia đình mình rất hài lòng.`],
-                ["TM", "Trần Minh", "Hàng rất tốt, sản phẩm có mùi thơm tự nhiên rất khác so với mua ở chợ. Giao hàng nhanh."],
-              ].map(([initials, name, content]) => (
-                <article key={name} className="page-card rounded-3xl p-5 lift-hover">
-                  <div className="mb-4 flex items-center gap-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary-container font-bold text-on-secondary-container">
-                      {initials}
-                    </div>
-                    <div>
-                      <div className="font-bold text-on-surface">{name}</div>
-                      <div className="flex text-[#FFB800]">
-                        {Array.from({ length: 5 }).map((_, index) => (
-                          <span key={index} className="material-symbols-outlined text-[16px] [font-variation-settings:'FILL'_1]">
-                            star
-                          </span>
-                        ))}
+              {!reviewsLoading && reviews.length > 0 && (
+                <div className="flex flex-wrap gap-2 rounded-2xl border border-outline-variant/20 bg-[#fff7e6] p-3">
+                  {(["all", 5, 4, 3, 2, 1] as ReviewFilter[]).map((filter) => {
+                    const isActive = reviewFilter === filter;
+                    const count = filter === "all" ? reviewCount : reviewStarCounts[filter];
+                    return (
+                      <button
+                        key={filter}
+                        type="button"
+                        onClick={() => setReviewFilter(filter)}
+                        className={[
+                          "rounded-xl border px-4 py-2 text-xs font-extrabold transition",
+                          isActive
+                            ? "border-[#F5A400] bg-white text-[#9a5a00] shadow-sm"
+                            : "border-transparent bg-white/60 text-on-surface-variant hover:bg-white",
+                        ].join(" ")}
+                      >
+                        {filter === "all" ? "Tất cả" : `${filter} sao`} ({count})
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              {reviewsLoading ? (
+                <div className="py-8 text-center text-on-surface-variant/65">
+                  <p className="text-sm font-semibold animate-pulse">Đang tải đánh giá...</p>
+                </div>
+              ) : reviews.length === 0 ? (
+                <div className="py-12 text-center text-[#3c4a42]/60 bg-[#f8fafc] rounded-3xl border border-slate-100">
+                  <span className="material-symbols-outlined mb-2 text-[40px] text-[#3c4a42]/20">
+                    rate_review
+                  </span>
+                  <p className="text-sm font-semibold">Chưa có đánh giá nào cho sản phẩm này.</p>
+                  <p className="text-xs text-[#3c4a42]/50 mt-1">Hãy mua sản phẩm và chia sẻ cảm nhận đầu tiên của bạn!</p>
+                </div>
+              ) : filteredReviews.length === 0 ? (
+                <div className="py-10 text-center text-[#3c4a42]/60 bg-[#f8fafc] rounded-3xl border border-slate-100">
+                  <span className="material-symbols-outlined mb-2 text-[36px] text-[#3c4a42]/20">
+                    filter_alt_off
+                  </span>
+                  <p className="text-sm font-semibold">Chưa có đánh giá {reviewFilter} sao.</p>
+                </div>
+              ) : (
+                filteredReviews.map((rev) => {
+                  const getInitials = (name: string) => {
+                    const parts = name.trim().split(/\s+/);
+                    if (parts.length === 0) return "NS";
+                    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+                    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+                  };
+                  const formatReviewTime = (createdAt: string) => {
+                    const date = new Date(createdAt);
+                    if (isNaN(date.getTime())) return "Gần đây";
+                    return date.toLocaleDateString("vi-VN", { day: "numeric", month: "numeric", year: "numeric" });
+                  };
+                  return (
+                    <article key={rev.id} className="page-card rounded-3xl p-5 border border-slate-100 shadow-sm transition-transform hover:translate-y-[-2px] duration-300">
+                      <div className="mb-4 flex items-center gap-4">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#006c49]/10 font-bold text-[#006c49]">
+                          {getInitials(rev.userName)}
+                        </div>
+                        <div>
+                          <div className="font-bold text-on-surface">{rev.userName}</div>
+                          <div className="flex text-[#FFB800] mt-0.5">
+                            {Array.from({ length: 5 }).map((_, index) => {
+                              const isActive = index < rev.rating;
+                              return (
+                                <span key={index} className={`material-symbols-outlined text-[16px] ${isActive ? "[font-variation-settings:'FILL'_1]" : "text-slate-200"}`}>
+                                  star
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </div>
+                        <span className="ml-auto text-xs font-semibold italic text-on-surface-variant">
+                          {formatReviewTime(rev.createdAt)}
+                        </span>
                       </div>
-                    </div>
-                    <span className="ml-auto text-xs font-semibold italic text-on-surface-variant">2 ngày trước</span>
-                  </div>
-                  <p className="text-on-surface-variant">{content}</p>
-                </article>
-              ))}
+                      <p className="text-on-surface-variant text-sm pl-1">{rev.comment}</p>
+                      {rev.images && rev.images.length > 0 && (
+                        <div className="mt-4 flex flex-wrap gap-2 pl-1">
+                          {rev.images.map((image, index) => (
+                            <button
+                              key={`${rev.id}-image-${index}`}
+                              type="button"
+                              onClick={() => setSelectedImage(image)}
+                              className="relative h-20 w-20 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 transition hover:border-[#F5A400]"
+                              title="Xem ảnh đánh giá"
+                            >
+                              <Image
+                                src={image}
+                                alt={`Ảnh đánh giá ${index + 1}`}
+                                fill
+                                sizes="80px"
+                                unoptimized
+                                className="object-cover"
+                              />
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </article>
+                  );
+                })
+              )}
             </div>
           </div>
         )}

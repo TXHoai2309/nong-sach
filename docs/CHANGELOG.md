@@ -4,6 +4,113 @@ All notable changes to the **NôngSạch** project will be documented in this fi
 
 The format is based on **Keep a Changelog** and this project adheres to **Semantic Versioning**.
 
+## [0.6.3] - 2026-06-07
+
+### Tối ưu thông báo người bán và hiển thị chi tiết đánh giá/đơn hàng
+
+### Added
+* **Bảng con xem chi tiết đánh giá trong thông báo shop (`src/app/profile/page.tsx`, `src/types/notification.ts`)**:
+  - Thêm metadata cho thông báo đánh giá gồm `actionType: "review_detail"`, `reviewId` và `productId`.
+  - Với thông báo **Đánh giá sản phẩm mới**, thay nút `Xem đơn hàng` bằng nút `Xem đánh giá`.
+  - Khi bấm `Xem đánh giá`, mở bảng con ngay trong tab Thông báo để hiển thị ảnh sản phẩm, tên sản phẩm, mã đơn hàng, số sao, nội dung đánh giá và ảnh đánh giá nếu có.
+  - Với thông báo đánh giá cũ chưa có metadata, tự fallback lấy review theo `orderId`.
+* **Hiển thị đánh giá ngay trong chi tiết đơn đã mua (`src/app/profile/page.tsx`, `src/lib/reviews.ts`)**:
+  - Thêm `getReviewsByOrderId` để tải lại review theo mã đơn hàng.
+  - Sau khi người mua đánh giá thành công, phần chi tiết đơn hàng hiển thị ngay số sao, bình luận và ảnh đánh giá dưới sản phẩm đã đánh giá.
+* **Điều hướng thông báo đơn mới tới đúng đơn của shop (`src/app/profile/page.tsx`)**:
+  - Với thông báo `Đơn mới`, nút thao tác chuyển sang `Kênh người bán > Đơn hàng của shop` thay vì trang `checkout/success`.
+  - Truyền mã đơn qua URL dạng `/profile?tab=seller&sellerTab=orders&orderId={orderId}`.
+  - Tự scroll tới đúng card đơn hàng theo `orderId`, highlight card bằng viền xanh và badge `Đơn từ thông báo`.
+  - Trong card đơn hàng của shop, hiển thị danh sách sản phẩm khách đã mua gồm ảnh, tên, ID sản phẩm, số lượng và tổng tiền từng dòng.
+
+### Changed
+* **Fallback ảnh đánh giá khi Firebase Storage timeout (`src/lib/reviews.ts`, `src/app/profile/page.tsx`, `src/components/product/ProductDetail.tsx`)**:
+  - Nếu upload ảnh đánh giá lên Firebase Storage bị timeout/retry limit, vẫn lưu ảnh đã nén dạng data URL vào review để trang chi tiết sản phẩm vẫn hiển thị ảnh.
+  - Giảm kích thước ảnh đánh giá trước khi lưu xuống tối đa `640x640`, quality `0.72`.
+  - Dùng `unoptimized` khi render ảnh đánh giá để tránh lỗi optimize với URL Firebase Storage hoặc data URL.
+
+### Verification
+* `npm.cmd run lint` hoàn thành thành công, còn các warning cũ không chặn build.
+* `npx.cmd tsc --noEmit --incremental false` hoàn thành thành công.
+
+---
+
+## [0.6.2] - 2026-06-07
+
+### Tích hợp Thông báo người bán khi có đánh giá sản phẩm mới
+
+### Added
+* **Thông báo đánh giá sản phẩm cho người bán (`src/app/profile/page.tsx`)**:
+  - Tự động tạo và gửi thông báo hệ thống (`type: "system"`) đến tài khoản người bán (`sellerId`) khi sản phẩm thuộc gian hàng của họ nhận được đánh giá từ khách hàng.
+  - Thông báo hiển thị chi tiết tên khách hàng, số sao, tên sản phẩm và mã đơn hàng liên quan.
+
+---
+
+## [0.6.1] - 2026-06-07
+
+### Nâng cấp UX đánh giá sản phẩm và điều hướng từ đơn hàng
+
+### Added
+* **Tải ảnh đánh giá sản phẩm (`src/app/profile/page.tsx`, `src/lib/reviews.ts`, `src/types/review.ts`)**:
+  - Cho phép người mua tải tối đa 5 ảnh khi gửi đánh giá sản phẩm trong modal đánh giá ở trang cá nhân.
+  - Nén ảnh đánh giá trước khi lưu để giảm dung lượng upload.
+  - Upload ảnh đánh giá lên Firebase Storage tại đường dẫn `reviews/{userId}/{orderId}_{productId}/...` trước khi ghi dữ liệu đánh giá vào Firestore.
+  - Mở rộng kiểu dữ liệu `Review` với `productImage` và `images` để lưu ảnh sản phẩm gốc và danh sách ảnh đánh giá.
+* **Bộ lọc đánh giá theo số sao (`src/components/product/ProductDetail.tsx`)**:
+  - Thêm bộ lọc nhanh theo kiểu sàn thương mại điện tử: `Tất cả`, `5 sao`, `4 sao`, `3 sao`, `2 sao`, `1 sao`.
+  - Hiển thị số lượng đánh giá tương ứng trên từng nút lọc.
+  - Hiển thị trạng thái trống riêng khi mức sao được chọn chưa có đánh giá.
+
+### Changed
+* **Giao diện sao đánh giá (`src/app/profile/page.tsx`, `src/components/product/ProductDetail.tsx`)**:
+  - Đổi sao chọn đánh giá trong modal sang ký tự sao đặc màu vàng đậm, giảm phụ thuộc vào icon font/emoji để tránh lỗi font.
+  - Loại bỏ chuỗi emoji sao trong mô tả cảm xúc của modal đánh giá để hạn chế lỗi encoding.
+* **Tính điểm trung bình sản phẩm (`src/components/product/ProductDetail.tsx`)**:
+  - Giữ tính điểm trung bình dựa trên dữ liệu review thật trong Firestore.
+  - Khi sản phẩm chưa có đánh giá, điểm trung bình hiển thị `0.0` thay vì fallback `5.0` để tránh gây hiểu nhầm.
+* **Hiển thị ảnh đánh giá (`src/components/product/ProductDetail.tsx`)**:
+  - Hiển thị các ảnh người mua đã tải lên trong từng thẻ đánh giá.
+  - Cho phép bấm ảnh đánh giá để đổi ảnh đang xem ở gallery sản phẩm.
+* **Điều hướng từ ảnh sản phẩm trong đơn hàng (`src/app/profile/page.tsx`, `src/app/checkout/success/page.tsx`)**:
+  - Bọc ảnh sản phẩm trong trang `Đơn hàng của tôi` bằng link tới trang chi tiết sản phẩm tương ứng.
+  - Bọc cả ảnh sản phẩm trong phần chi tiết đơn hàng mở rộng bằng link tới chi tiết sản phẩm.
+  - Bọc ảnh sản phẩm ở trang đặt hàng thành công bằng link tới chi tiết sản phẩm.
+  - Chuẩn hóa ID sản phẩm trước khi điều hướng bằng cách loại bỏ hậu tố khối lượng như `-500g`, `-1kg`, `-2kg`.
+* **Firebase Storage (`src/lib/firebase.ts`)**:
+  - Tăng thời gian retry upload/operation của Firebase Storage lên 10 giây để ổn định hơn khi tải ảnh đánh giá.
+
+### Verification
+* `npm.cmd run lint` hoàn thành thành công, còn các warning cũ không chặn build.
+* `npx.cmd tsc --noEmit --incremental false` hoàn thành thành công.
+
+---
+
+## [0.6.0] - 2026-06-07
+
+### Tích hợp Chức năng Đánh giá sản phẩm & Sử dụng dữ liệu thật từ Firestore
+
+### Added
+* **Kiểu dữ liệu đánh giá (`src/types/review.ts`)**:
+  - Định nghĩa interface `Review` để quản lý các trường của một đánh giá: `id` (`${orderId}_${productId}`), `productId`, `productName`, `userId`, `userName`, `rating`, `comment`, `orderId`, `createdAt`.
+* **Thư viện Firestore cho đánh giá (`src/lib/reviews.ts`)**:
+  - `addReview`: Lưu đánh giá mới vào Firestore collection `"reviews"`.
+  - `getReviewsByProductId`: Lấy danh sách đánh giá của sản phẩm và sắp xếp theo thứ tự mới nhất.
+  - `checkReviewedItems`: Kiểm tra xem các sản phẩm trong một đơn hàng đã được đánh giá chưa.
+* **Giao diện đánh giá sản phẩm ở Trang cá nhân (`src/app/profile/page.tsx`)**:
+  - Thêm nút **Đánh giá** bên cạnh mỗi sản phẩm trong chi tiết đơn hàng đã giao thành công (`status === "delivered"`).
+  - Tích hợp Modal đánh giá (`ReviewModal`) hỗ trợ chọn số sao (1-5 sao trực quan) và nhập nội dung bình luận. Sau khi gửi, nút chuyển thành **Đã đánh giá** để ngăn chặn đánh giá lặp lại.
+
+### Changed
+* **Hiển thị đánh giá thực tế trên Trang chi tiết sản phẩm (`src/components/product/ProductDetail.tsx`)**:
+  - Thay thế toàn bộ đánh giá và điểm số giả lập bằng dữ liệu thật từ collection `"reviews"` trong Firestore.
+  - Tự động tính điểm trung bình (`averageRating`) và tổng số đánh giá (`reviewCount`) dựa trên dữ liệu thật thu thập được, đồng thời cập nhật giao diện hiển thị số sao động.
+  - Hiển thị thông báo khi chưa có đánh giá nào cho sản phẩm.
+
+### Verification
+* Chạy thành công `npm run build` không có bất kỳ lỗi TypeScript hay lỗi biên dịch nào.
+
+---
+
 ## [0.5.8] - 2026-06-07
 
 ### Cải thiện form đăng ký bán hàng và upload ảnh trang trại

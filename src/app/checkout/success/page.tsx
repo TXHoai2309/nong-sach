@@ -86,6 +86,8 @@ function SuccessContent() {
     }
   };
 
+  const getBaseProductId = (productId: string) => productId.replace(/-500g$|-1kg$|-2kg$/, "");
+
   // Get items list to display
   const displayItems = order?.items || [];
   const displayTotal = order?.totalAmount ?? totalParam;
@@ -197,7 +199,11 @@ function SuccessContent() {
                 <div className="space-y-4 max-h-[220px] overflow-y-auto pr-1">
                   {displayItems.map((item) => (
                     <div key={item.productId} className="flex gap-sm items-center">
-                      <div className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 bg-background border border-outline-variant/10">
+                      <Link
+                        href={`/products/${getBaseProductId(item.productId)}`}
+                        className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 bg-background border border-outline-variant/10 transition hover:ring-2 hover:ring-primary/30"
+                        title="Xem chi tiết sản phẩm"
+                      >
                         <Image
                           src={item.image}
                           alt={item.name}
@@ -205,7 +211,7 @@ function SuccessContent() {
                           sizes="48px"
                           className="object-cover"
                         />
-                      </div>
+                      </Link>
                       <div className="flex-1 min-w-0">
                         <h4 className="text-sm font-bold text-on-surface truncate">
                           {item.name}

@@ -18,6 +18,8 @@ import { Product, ProductCategory } from "@/types/product";
 import { UserAddress, User } from "@/types/user";
 import CoverImageCropper from "@/components/ui/CoverImageCropper";
 import { getAllProducts, addProduct, deleteProduct } from "@/lib/products";
+import { addReview, checkReviewedItems, getBaseProductId, getReviewsByOrderId } from "@/lib/reviews";
+import { Review } from "@/types/review";
 
 const PROVINCES_API = "https://provinces.open-api.vn/api/v1/?depth=2";
 
@@ -120,6 +122,8 @@ function ProfileContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
+  const sellerTabParam = searchParams.get("sellerTab");
+  const sellerOrderIdParam = searchParams.get("orderId");
   const [mounted, setMounted] = useState(false);
   const {
     currentUser,
@@ -160,6 +164,25 @@ function ProfileContent() {
   }, [tabParam]);
 
   const [sellerSubTab, setSellerSubTab] = useState<"products" | "orders">("products");
+  const [focusedSellerOrderId, setFocusedSellerOrderId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (tabParam !== "seller") return;
+    if (sellerTabParam === "orders") {
+      const timer = window.setTimeout(() => setSellerSubTab("orders"), 0);
+      return () => window.clearTimeout(timer);
+    }
+    if (sellerTabParam === "products") {
+      const timer = window.setTimeout(() => setSellerSubTab("products"), 0);
+      return () => window.clearTimeout(timer);
+    }
+  }, [tabParam, sellerTabParam]);
+
+  useEffect(() => {
+    if (tabParam !== "seller" || sellerTabParam !== "orders" || !sellerOrderIdParam) return;
+    const timer = window.setTimeout(() => setFocusedSellerOrderId(sellerOrderIdParam), 0);
+    return () => window.clearTimeout(timer);
+  }, [tabParam, sellerTabParam, sellerOrderIdParam]);
 
   // Notifications/Toasts
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
@@ -230,10 +253,24 @@ function ProfileContent() {
 
   // Provinces data
   const [provinces, setProvinces] = useState<ProvinceOption[]>([]);
+  const [expandedReviewNotificationId, setExpandedReviewNotificationId] = useState<string | null>(null);
+  const [notificationReviewDetails, setNotificationReviewDetails] = useState<Record<string, Review | null>>({});
+  const [loadingReviewNotificationId, setLoadingReviewNotificationId] = useState<string | null>(null);
 
   // Order filter
   const [orderFilter, setOrderFilter] = useState<"all" | "processing" | "completed">("all");
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+
+  // Review states
+  const [reviewedItemsMap, setReviewedItemsMap] = useState<Record<string, boolean>>({});
+  const [orderReviewsMap, setOrderReviewsMap] = useState<Record<string, Review>>({});
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [reviewOrder, setReviewOrder] = useState<Order | null>(null);
+  const [reviewProduct, setReviewProduct] = useState<{ productId: string; name: string; image: string; sellerId?: string } | null>(null);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewImages, setReviewImages] = useState<string[]>([]);
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
   // Show toast helper
   const showToast = (message: string, type: "success" | "error" = "success") => {
@@ -358,6 +395,46 @@ function ProfileContent() {
     }
   }, [mounted, activeTab, sellerSubTab, currentUser?.id, fetchOrdersBySellerId]);
 
+  useEffect(() => {
+    if (activeTab !== "seller" || sellerSubTab !== "orders" || !focusedSellerOrderId) return;
+    const timer = window.setTimeout(() => {
+      document
+        .getElementById(`seller-order-${focusedSellerOrderId}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [activeTab, sellerSubTab, focusedSellerOrderId, sellerOrders.length]);
+
+  useEffect(() => {
+    if (!currentUser || !userOrders.length) return;
+    
+    const deliveredOrders = userOrders.filter(o => o.status === "delivered");
+    if (deliveredOrders.length === 0) return;
+    
+    async function loadReviewedStatus() {
+      const newMap: Record<string, boolean> = {};
+      const newReviewsMap: Record<string, Review> = {};
+      for (const order of deliveredOrders) {
+        try {
+          const reviewedForOrder = await checkReviewedItems(order.id);
+          Object.keys(reviewedForOrder).forEach(prodId => {
+            newMap[`${order.id}_${prodId}`] = true;
+          });
+          const reviewsForOrder = await getReviewsByOrderId(order.id);
+          Object.entries(reviewsForOrder).forEach(([key, review]) => {
+            newReviewsMap[key] = review;
+            newMap[key] = true;
+          });
+        } catch (err) {
+          console.error("Lỗi khi loadReviewedStatus:", err);
+        }
+      }
+      setReviewedItemsMap((prev) => ({ ...prev, ...newMap }));
+      setOrderReviewsMap((prev) => ({ ...prev, ...newReviewsMap }));
+    }
+    
+    loadReviewedStatus();
+  }, [userOrders, currentUser]);
   // Image compression helper
   const compressImage = (
     base64Str: string,
@@ -524,6 +601,33 @@ function ProfileContent() {
         }
       })();
     }
+    e.target.value = "";
+  };
+
+  const handleReviewImagesUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const remainingCount = 5 - reviewImages.length;
+    if (remainingCount <= 0) {
+      showToast("Toi da 5 anh cho moi danh gia", "error");
+      e.target.value = "";
+      return;
+    }
+
+    const filesArray = Array.from(files).slice(0, remainingCount);
+    void (async () => {
+      for (const file of filesArray) {
+        try {
+          const originalBase64 = await readFileAsDataUrl(file);
+          const compressed = await compressImage(originalBase64, 640, 640, 0.72, "image/webp");
+          setReviewImages((prev) => (prev.length >= 5 ? prev : [...prev, compressed]));
+        } catch {
+          showToast("Co 1 anh danh gia khong xu ly duoc va da bi bo qua", "error");
+        }
+      }
+    })();
+
     e.target.value = "";
   };
 
@@ -825,6 +929,84 @@ function ProfileContent() {
     }
   };
 
+  const closeReviewModal = () => {
+    setIsReviewModalOpen(false);
+    setReviewComment("");
+    setReviewImages([]);
+    setReviewRating(5);
+  };
+
+  const handleReviewSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!currentUser || !reviewOrder || !reviewProduct) return;
+    if (!reviewComment.trim()) {
+      showToast("Vui lòng nhập nội dung đánh giá", "error");
+      return;
+    }
+
+    setIsSubmittingReview(true);
+    try {
+      const baseProductId = getBaseProductId(reviewProduct.productId);
+      const reviewId = `${reviewOrder.id}_${baseProductId}`;
+      const reviewData: Review = {
+        id: reviewId,
+        productId: baseProductId,
+        productName: reviewProduct.name,
+        productImage: reviewProduct.image,
+        userId: currentUser.id,
+        userName: currentUser.name || "Khách hàng NôngSạch",
+        rating: reviewRating,
+        comment: reviewComment.trim(),
+        images: reviewImages,
+        orderId: reviewOrder.id,
+        createdAt: new Date().toISOString()
+      };
+
+      const savedReview = await addReview(reviewData);
+
+      // Gửi thông báo cho người bán
+      if (reviewProduct.sellerId) {
+        try {
+          await addNotification({
+            userId: reviewProduct.sellerId,
+            title: "Đánh giá sản phẩm mới",
+            message: `Khách hàng "${currentUser.name || "Khách hàng NôngSạch"}" đã đánh giá ${reviewRating} sao cho sản phẩm "${reviewProduct.name}" từ đơn hàng #${reviewOrder.id}.`,
+            type: "system",
+            actionType: "review_detail",
+            orderId: reviewOrder.id,
+            reviewId: savedReview.id,
+            productId: savedReview.productId,
+          });
+        } catch (errNoti) {
+          console.error("Lỗi gửi thông báo cho người bán:", errNoti);
+        }
+      }
+
+      // Cập nhật local state
+      setReviewedItemsMap((prev) => ({
+        ...prev,
+        [reviewId]: true,
+        [`${reviewOrder.id}_${reviewProduct.productId}`]: true
+      }));
+      setOrderReviewsMap((prev) => ({
+        ...prev,
+        [reviewId]: savedReview,
+        [`${reviewOrder.id}_${reviewProduct.productId}`]: savedReview,
+      }));
+
+      showToast("Đánh giá sản phẩm thành công!");
+      setIsReviewModalOpen(false);
+      setReviewComment("");
+      setReviewImages([]);
+      setReviewRating(5);
+    } catch (err) {
+      console.error(err);
+      showToast("Đã xảy ra lỗi khi gửi đánh giá", "error");
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
+
   if (!mounted || !currentUser) {
     return (
       <main className="flex min-h-[450px] items-center justify-center bg-[#f9f9ff] px-6">
@@ -1007,6 +1189,54 @@ function ProfileContent() {
     });
     showToast("Đã thêm các sản phẩm vào giỏ hàng!");
     router.push("/cart");
+  };
+
+  const isReviewNotification = (noti: Notification) => {
+    return noti.actionType === "review_detail" || noti.title.toLowerCase().includes("đánh giá sản phẩm");
+  };
+
+  const openSellerOrdersFromNotification = (noti: Notification) => {
+    markAsRead(noti.id);
+    setActiveTab("seller");
+    setSellerSubTab("orders");
+    setFocusedSellerOrderId(noti.orderId || null);
+    router.push(`/profile?tab=seller&sellerTab=orders${noti.orderId ? `&orderId=${encodeURIComponent(noti.orderId)}` : ""}`);
+  };
+
+  const toggleReviewNotificationDetail = async (noti: Notification) => {
+    if (!noti.orderId) return;
+    if (expandedReviewNotificationId === noti.id) {
+      setExpandedReviewNotificationId(null);
+      return;
+    }
+
+    setExpandedReviewNotificationId(noti.id);
+    markAsRead(noti.id);
+
+    if (notificationReviewDetails[noti.id] !== undefined) return;
+
+    setLoadingReviewNotificationId(noti.id);
+    try {
+      const reviewsForOrder = await getReviewsByOrderId(noti.orderId);
+      const detail =
+        (noti.reviewId ? Object.values(reviewsForOrder).find((review) => review.id === noti.reviewId) : undefined) ||
+        (noti.productId ? reviewsForOrder[`${noti.orderId}_${getBaseProductId(noti.productId)}`] : undefined) ||
+        Object.values(reviewsForOrder)[0] ||
+        null;
+
+      setNotificationReviewDetails((prev) => ({
+        ...prev,
+        [noti.id]: detail,
+      }));
+    } catch (error) {
+      console.error("Lỗi khi tải chi tiết đánh giá từ thông báo:", error);
+      setNotificationReviewDetails((prev) => ({
+        ...prev,
+        [noti.id]: null,
+      }));
+    } finally {
+      setLoadingReviewNotificationId(null);
+    }
   };
 
   // Filtered Orders
@@ -1400,7 +1630,12 @@ function ProfileContent() {
                             <div className="flex items-center justify-between gap-4">
                               <div className="flex items-center gap-2 overflow-x-auto py-1">
                                 {order.items.slice(0, 3).map((item, idx) => (
-                                  <div key={idx} className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-gray-100">
+                                  <Link
+                                    key={idx}
+                                    href={`/products/${getBaseProductId(item.productId)}`}
+                                    className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-gray-100 transition hover:ring-2 hover:ring-[#006c49]/25"
+                                    title={`Xem chi tiết ${item.name}`}
+                                  >
                                     <Image
                                       src={item.image}
                                       alt={item.name}
@@ -1411,7 +1646,7 @@ function ProfileContent() {
                                     <span className="absolute bottom-0.5 right-0.5 flex h-4.5 min-w-[18px] items-center justify-center rounded-md bg-[#3c4a42]/80 px-1 text-[9px] font-bold text-white">
                                       x{item.quantity}
                                     </span>
-                                  </div>
+                                  </Link>
                                 ))}
                                 {order.items.length > 3 && (
                                   <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-gray-50 border border-gray-100 text-xs font-bold text-[#3c4a42]/60">
@@ -1442,15 +1677,106 @@ function ProfileContent() {
                               
                               {/* Order items detail list */}
                               <div className="border-t border-[#bbcabf]/15 pt-3 mt-3">
-                                <p className="font-bold mb-2 text-[#3c4a42]">Chi tiết sản phẩm:</p>
-                                <ul className="space-y-1.5">
-                                  {order.items.map((item, idx) => (
-                                    <li key={idx} className="flex justify-between">
-                                      <span>{item.name} <span className="text-[#3c4a42]/50 font-medium">x{item.quantity}</span></span>
-                                      <span className="font-semibold">{formatCurrency(item.price * item.quantity)}</span>
-                                    </li>
-                                  ))}
-                                </ul>
+                                <p className="font-bold mb-3 text-[#3c4a42] text-xs sm:text-sm">Chi tiết sản phẩm:</p>
+                                <div className="space-y-3">
+                                  {order.items.map((item, idx) => {
+                                    const baseProductId = getBaseProductId(item.productId);
+                                    const reviewForItem = orderReviewsMap[`${order.id}_${baseProductId}`] || orderReviewsMap[`${order.id}_${item.productId}`];
+                                    const isReviewed = Boolean(reviewForItem) || reviewedItemsMap[`${order.id}_${baseProductId}`] || reviewedItemsMap[`${order.id}_${item.productId}`];
+                                    return (
+                                      <div key={idx} className="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm">
+                                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                          <div className="flex items-center gap-3">
+                                            <Link
+                                              href={`/products/${baseProductId}`}
+                                              className="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-slate-100 transition hover:ring-2 hover:ring-[#006c49]/25"
+                                              title={`Xem chi tiết ${item.name}`}
+                                            >
+                                              <Image
+                                                src={item.image}
+                                                alt={item.name}
+                                                fill
+                                                className="object-cover"
+                                                sizes="44px"
+                                              />
+                                            </Link>
+                                            <div>
+                                              <p className="font-bold text-[#3c4a42] text-xs sm:text-sm">{item.name}</p>
+                                              <p className="text-slate-400 font-medium text-[10px] mt-0.5">Số lượng: x{item.quantity} • {formatCurrency(item.price)}/kg</p>
+                                            </div>
+                                          </div>
+                                          <div className="flex items-center justify-between sm:justify-end gap-3 border-t border-slate-50 pt-2 sm:border-t-0 sm:pt-0">
+                                            <span className="font-bold text-[#006c49] text-xs sm:text-sm">{formatCurrency(item.price * item.quantity)}</span>
+                                            {order.status === "delivered" && (
+                                              isReviewed ? (
+                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-400 bg-slate-50 border border-slate-200 rounded-full px-2.5 py-1">
+                                                  <span className="material-symbols-outlined text-[12px] font-bold text-slate-400 [font-variation-settings:'FILL'_1]">check_circle</span>
+                                                  Đã đánh giá
+                                                </span>
+                                              ) : (
+                                                <button
+                                                  type="button"
+                                                  onClick={() => {
+                                                    setReviewOrder(order);
+                                                    setReviewProduct({
+                                                      productId: item.productId,
+                                                      name: item.name,
+                                                      image: item.image,
+                                                      sellerId: item.sellerId || order.sellerId
+                                                    });
+                                                    setReviewRating(5);
+                                                    setReviewComment("");
+                                                    setReviewImages([]);
+                                                    setIsReviewModalOpen(true);
+                                                  }}
+                                                  className="rounded-full bg-[#006c49] px-4 py-1.5 text-[10px] font-bold text-white transition hover:opacity-90 shadow-sm cursor-pointer"
+                                                >
+                                                  Đánh giá
+                                                </button>
+                                              )
+                                            )}
+                                          </div>
+                                        </div>
+                                        {reviewForItem && (
+                                          <div className="mt-3 rounded-2xl border border-amber-100 bg-amber-50/60 p-3">
+                                            <div className="mb-2 flex items-center justify-between gap-3">
+                                              <div className="flex items-center gap-1 text-[#F5A400]">
+                                                {Array.from({ length: 5 }).map((_, starIndex) => (
+                                                  <span
+                                                    key={starIndex}
+                                                    className={`text-[18px] leading-none ${starIndex < reviewForItem.rating ? "text-[#F5A400]" : "text-slate-300"}`}
+                                                  >
+                                                    ★
+                                                  </span>
+                                                ))}
+                                              </div>
+                                              <span className="text-[10px] font-bold text-[#3c4a42]/50">
+                                                Đánh giá của bạn
+                                              </span>
+                                            </div>
+                                            <p className="text-xs font-medium leading-5 text-[#3c4a42]/75">{reviewForItem.comment}</p>
+                                            {reviewForItem.images && reviewForItem.images.length > 0 && (
+                                              <div className="mt-3 flex flex-wrap gap-2">
+                                                {reviewForItem.images.map((image, imageIndex) => (
+                                                  <div key={`${reviewForItem.id}-${imageIndex}`} className="relative h-16 w-16 overflow-hidden rounded-xl border border-white bg-white shadow-sm">
+                                                    <Image
+                                                      src={image}
+                                                      alt={`Ảnh đánh giá ${imageIndex + 1}`}
+                                                      fill
+                                                      sizes="64px"
+                                                      unoptimized={image.startsWith("data:")}
+                                                      className="object-cover"
+                                                    />
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
                               </div>
                             </div>
                           )}
@@ -1821,6 +2147,10 @@ function ProfileContent() {
                   ) : (
                     userNotifications.map((noti) => {
                       const meta = notificationMeta[noti.type] ?? notificationMeta.system;
+                      const isReviewNoti = isReviewNotification(noti);
+                      const isNewOrderNoti = noti.type === "new_order";
+                      const reviewDetail = notificationReviewDetails[noti.id];
+                      const isReviewDetailOpen = expandedReviewNotificationId === noti.id;
                       return (
                       <div
                         key={noti.id}
@@ -1853,7 +2183,111 @@ function ProfileContent() {
                             <p className="mt-1.5 text-xs leading-5 text-[#3c4a42]/70 font-medium">
                               {noti.message}
                             </p>
-                            {noti.orderId && (
+                            {isReviewNoti && noti.orderId ? (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    void toggleReviewNotificationDetail(noti);
+                                  }}
+                                  className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[11px] font-bold text-[#006c49] ring-1 ring-[#006c49]/15 transition hover:bg-[#e6f4ea]"
+                                >
+                                  <span className="material-symbols-outlined text-sm">
+                                    {isReviewDetailOpen ? "expand_less" : "rate_review"}
+                                  </span>
+                                  {isReviewDetailOpen ? "Thu gọn đánh giá" : "Xem đánh giá"}
+                                </button>
+
+                                {isReviewDetailOpen && (
+                                  <div
+                                    className="mt-4 rounded-2xl border border-amber-100 bg-amber-50/60 p-4"
+                                    onClick={(event) => event.stopPropagation()}
+                                  >
+                                    {loadingReviewNotificationId === noti.id ? (
+                                      <p className="text-xs font-bold text-[#3c4a42]/55">Đang tải chi tiết đánh giá...</p>
+                                    ) : reviewDetail ? (
+                                      <div className="space-y-3">
+                                        <div className="flex items-start gap-3">
+                                          {reviewDetail.productImage && (
+                                            <Link
+                                              href={`/products/${getBaseProductId(reviewDetail.productId)}`}
+                                              className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-white bg-white shadow-sm transition hover:ring-2 hover:ring-[#006c49]/25"
+                                              title={`Xem sản phẩm ${reviewDetail.productName}`}
+                                            >
+                                              <Image
+                                                src={reviewDetail.productImage}
+                                                alt={reviewDetail.productName}
+                                                fill
+                                                sizes="56px"
+                                                unoptimized={reviewDetail.productImage.startsWith("data:")}
+                                                className="object-cover"
+                                              />
+                                            </Link>
+                                          )}
+                                          <div className="min-w-0 flex-1">
+                                            <p className="text-sm font-extrabold text-[#3c4a42]">{reviewDetail.productName}</p>
+                                            <p className="mt-0.5 text-[11px] font-bold text-[#3c4a42]/50">
+                                              Đơn hàng #{reviewDetail.orderId}
+                                            </p>
+                                            <div className="mt-1 flex items-center gap-1 text-[#F5A400]">
+                                              {Array.from({ length: 5 }).map((_, index) => (
+                                                <span
+                                                  key={index}
+                                                  className={`text-[18px] leading-none ${index < reviewDetail.rating ? "text-[#F5A400]" : "text-slate-300"}`}
+                                                >
+                                                  ★
+                                                </span>
+                                              ))}
+                                              <span className="ml-1 text-[11px] font-extrabold text-[#3c4a42]/60">
+                                                {reviewDetail.rating}/5
+                                              </span>
+                                            </div>
+                                          </div>
+                                        </div>
+
+                                        <div className="rounded-xl bg-white/75 p-3 text-xs font-medium leading-5 text-[#3c4a42]/75">
+                                          {reviewDetail.comment}
+                                        </div>
+
+                                        {reviewDetail.images && reviewDetail.images.length > 0 && (
+                                          <div className="flex flex-wrap gap-2">
+                                            {reviewDetail.images.map((image, index) => (
+                                              <div key={`${reviewDetail.id}-${index}`} className="relative h-16 w-16 overflow-hidden rounded-xl border border-white bg-white shadow-sm">
+                                                <Image
+                                                  src={image}
+                                                  alt={`Ảnh đánh giá ${index + 1}`}
+                                                  fill
+                                                  sizes="64px"
+                                                  unoptimized
+                                                  className="object-cover"
+                                                />
+                                              </div>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <p className="text-xs font-bold text-[#3c4a42]/55">
+                                        Chưa tìm thấy dữ liệu đánh giá cho thông báo này.
+                                      </p>
+                                    )}
+                                  </div>
+                                )}
+                              </>
+                            ) : isNewOrderNoti && noti.orderId ? (
+                              <button
+                                type="button"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  openSellerOrdersFromNotification(noti);
+                                }}
+                                className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[11px] font-bold text-[#006c49] ring-1 ring-[#006c49]/15 transition hover:bg-[#e6f4ea]"
+                              >
+                                <span className="material-symbols-outlined text-sm">storefront</span>
+                                Xem đơn hàng shop
+                              </button>
+                            ) : noti.orderId && (
                               <Link
                                 href={`/checkout/success?orderId=${noti.orderId}&readonly=true`}
                                 onClick={(event) => {
@@ -2692,12 +3126,29 @@ function ProfileContent() {
                           </div>
                         ) : (
                           <div className="space-y-4">
-                            {sellerOrders.map((order) => (
-                              <div key={order.id} className="border border-[#bbcabf]/20 rounded-2xl p-4 space-y-3 hover:border-[#006c49]/30 transition-all bg-white shadow-sm">
+                            {sellerOrders.map((order) => {
+                              const isFocusedSellerOrder = focusedSellerOrderId === order.id;
+                              return (
+                              <div
+                                key={order.id}
+                                id={`seller-order-${order.id}`}
+                                className={`rounded-2xl p-4 space-y-3 transition-all bg-white shadow-sm ${
+                                  isFocusedSellerOrder
+                                    ? "border-2 border-[#006c49] ring-4 ring-[#006c49]/10"
+                                    : "border border-[#bbcabf]/20 hover:border-[#006c49]/30"
+                                }`}
+                              >
                                 <div className="flex justify-between items-start">
                                   <div>
                                     <p className="text-[10px] font-bold text-[#3c4a42]/50 uppercase">Mã đơn hàng</p>
-                                    <p className="text-xs font-extrabold text-[#006c49]">#{order.id}</p>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <p className="text-xs font-extrabold text-[#006c49]">#{order.id}</p>
+                                      {isFocusedSellerOrder && (
+                                        <span className="rounded-full bg-[#e6f4ea] px-2 py-0.5 text-[9px] font-extrabold text-[#006c49] ring-1 ring-[#006c49]/15">
+                                          Đơn từ thông báo
+                                        </span>
+                                      )}
+                                    </div>
                                   </div>
                                   <div className="text-right">
                                     <p className="text-[10px] font-bold text-[#3c4a42]/50 uppercase">Trạng thái</p>
@@ -2713,6 +3164,40 @@ function ProfileContent() {
                                        order.status === "shipping" ? "Đang giao" :
                                        order.status === "delivered" ? "Đã giao" : "Đã hủy"}
                                     </span>
+                                  </div>
+                                </div>
+
+                                <div className="space-y-2 rounded-2xl bg-[#f9f9ff] p-3 border border-[#bbcabf]/10">
+                                  <p className="text-[10px] font-bold text-[#3c4a42]/50 uppercase">Sản phẩm khách đã mua</p>
+                                  <div className="space-y-2">
+                                    {order.items.map((item, itemIndex) => (
+                                      <div key={`${order.id}-${item.productId}-${itemIndex}`} className="flex items-center gap-3 rounded-xl bg-white p-2 border border-slate-100">
+                                        <Link
+                                          href={`/products/${getBaseProductId(item.productId)}`}
+                                          className="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-slate-100 transition hover:ring-2 hover:ring-[#006c49]/25"
+                                          title={`Xem chi tiết ${item.name}`}
+                                        >
+                                          <Image
+                                            src={item.image}
+                                            alt={item.name}
+                                            fill
+                                            sizes="44px"
+                                            unoptimized={item.image.startsWith("data:")}
+                                            className="object-cover"
+                                          />
+                                        </Link>
+                                        <div className="min-w-0 flex-1">
+                                          <p className="truncate text-xs font-extrabold text-[#3c4a42]">{item.name}</p>
+                                          <p className="mt-0.5 text-[10px] font-bold text-[#3c4a42]/50">
+                                            ID: {getBaseProductId(item.productId)}
+                                          </p>
+                                        </div>
+                                        <div className="text-right">
+                                          <p className="text-[10px] font-bold text-[#3c4a42]/55">x{item.quantity}</p>
+                                          <p className="text-xs font-extrabold text-[#006c49]">{formatCurrency(item.price * item.quantity)}</p>
+                                        </div>
+                                      </div>
+                                    ))}
                                   </div>
                                 </div>
 
@@ -2777,7 +3262,8 @@ function ProfileContent() {
                                   </Link>
                                 </div>
                               </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         )}
                       </div>
@@ -3494,6 +3980,154 @@ function ProfileContent() {
         }}
         onCancel={() => setShopCropSrc(null)}
       />
+    )}
+
+    {/* ── Review Product Modal ───────────────────────────────────────────── */}
+    {isReviewModalOpen && reviewProduct && (
+      <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeReviewModal} />
+        <div className="relative w-full max-w-[520px] max-h-[92vh] overflow-hidden rounded-3xl bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+          <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+            <h2 className="text-lg font-bold text-[#3c4a42] flex items-center gap-2">
+              <span className="material-symbols-outlined text-[#006c49]">rate_review</span>
+              Đánh giá sản phẩm
+            </h2>
+            <button 
+              onClick={closeReviewModal} 
+              className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-all cursor-pointer border-none"
+            >
+              <span className="material-symbols-outlined text-sm text-slate-600">close</span>
+            </button>
+          </div>
+
+          <form onSubmit={handleReviewSubmit} className="max-h-[calc(92vh-76px)] overflow-y-auto p-6 space-y-5">
+            {/* Product details */}
+            <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100">
+              <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-slate-200">
+                <Image
+                  src={reviewProduct.image}
+                  alt={reviewProduct.name}
+                  fill
+                  className="object-cover"
+                  sizes="48px"
+                />
+              </div>
+              <div>
+                <p className="font-bold text-[#3c4a42] text-sm">{reviewProduct.name}</p>
+                <p className="text-xs text-[#3c4a42]/60 font-semibold mt-0.5">Đơn hàng: #{reviewOrder?.id}</p>
+              </div>
+            </div>
+
+            {/* Stars Selector */}
+            <div className="space-y-2 text-center">
+              <label className="block text-xs font-bold text-[#3c4a42]/70 uppercase tracking-wider">Chọn số sao đánh giá</label>
+              <div className="flex items-center justify-center gap-2">
+                {[1, 2, 3, 4, 5].map((star) => {
+                  const isActive = star <= reviewRating;
+                  return (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setReviewRating(star)}
+                      className="text-4xl transition-transform hover:scale-110 active:scale-90 cursor-pointer border-none bg-transparent"
+                    >
+                      <span className={`select-none text-[42px] leading-none ${isActive ? "text-[#F5A400] drop-shadow-[0_2px_3px_rgba(245,164,0,0.28)]" : "text-slate-300"}`}>
+                        ★
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-xs font-bold text-[#3c4a42]/65">
+                {reviewRating === 5 && "Cực kỳ hài lòng"}
+                {reviewRating === 4 && "Hài lòng"}
+                {reviewRating === 3 && "Bình thường"}
+                {reviewRating === 2 && "Không hài lòng"}
+                {reviewRating === 1 && "Rất kém"}
+              </p>
+            </div>
+
+            {/* Comment details */}
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-[#3c4a42]/70 uppercase tracking-wider">Nội dung đánh giá</label>
+              <textarea
+                value={reviewComment}
+                onChange={(e) => setReviewComment(e.target.value)}
+                rows={4}
+                required
+                className="w-full px-4 py-3 border border-slate-200 rounded-2xl text-sm outline-none focus:border-[#006c49] focus:ring-2 focus:ring-[#006c49]/10 transition-all resize-none bg-slate-50 text-[#3c4a42]"
+                placeholder="Nhập cảm nhận của bạn về sản phẩm này (độ tươi ngon, đóng gói, giao hàng...)"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold text-[#3c4a42]/70 uppercase tracking-wider">Hình ảnh đánh giá</label>
+                <span className="text-[11px] font-bold text-[#3c4a42]/45">{reviewImages.length}/5 ảnh</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {reviewImages.map((image, index) => (
+                  <div key={`${image}-${index}`} className="relative h-20 w-20 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+                    <Image
+                      src={image}
+                      alt={`Ảnh đánh giá ${index + 1}`}
+                      fill
+                      sizes="80px"
+                      unoptimized={image.startsWith("data:")}
+                      className="object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setReviewImages((prev) => prev.filter((_, idx) => idx !== index))}
+                      className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white transition hover:bg-black/75"
+                      title="Xóa ảnh"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">close</span>
+                    </button>
+                  </div>
+                ))}
+
+                {reviewImages.length < 5 && (
+                  <label className="flex h-20 w-20 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#bbcabf]/70 bg-slate-50 text-[#006c49] transition hover:bg-[#006c49]/5">
+                    <span className="material-symbols-outlined text-[22px]">add_a_photo</span>
+                    <span className="mt-1 text-[10px] font-extrabold">Thêm ảnh</span>
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={handleReviewImagesUpload}
+                      className="hidden"
+                    />
+                  </label>
+                )}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={closeReviewModal}
+                className="flex-1 px-6 py-2.5 rounded-full border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all cursor-pointer"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmittingReview}
+                className="flex-1 px-6 py-2.5 rounded-full bg-[#006c49] text-white text-sm font-bold hover:bg-[#006c49]/90 transition-all disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer border-none"
+              >
+                {isSubmittingReview ? (
+                  <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <span className="material-symbols-outlined text-sm">send</span>
+                )}
+                {isSubmittingReview ? "Đang gửi..." : "Gửi đánh giá"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     )}
     </>
   );

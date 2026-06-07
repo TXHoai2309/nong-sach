@@ -21,8 +21,8 @@ export const rtdb = getDatabase(app);
 
 import { getStorage } from "firebase/storage";
 const storageInstance = getStorage(app);
-storageInstance.maxUploadRetryTime = 3000; // 3 seconds
-storageInstance.maxOperationRetryTime = 3000; // 3 seconds
+storageInstance.maxUploadRetryTime = 10000; // 10 seconds
+storageInstance.maxOperationRetryTime = 10000; // 10 seconds
 export const storage = storageInstance;
 
 export default app;
