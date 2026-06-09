@@ -6,23 +6,31 @@ The format is based on **Keep a Changelog** and this project adheres to **Semant
 
 ## [0.6.6] - 2026-06-09
 
-### Kiểm duyệt chất lượng & Quy trình từ chối/gửi lại hồ sơ người bán (Seller Profile Audit & Rejection/Resubmission Flow)
+### Quy trình kiểm duyệt, Giao diện 3 trạng thái của Người bán & Quy trình gửi lại hồ sơ (Seller Registration Audit, UI States & Resubmission Flow)
 
 ### Added
-* **Hộp thoại xem chi tiết hồ sơ chờ duyệt (`SellerDetailsModal`)**: Thiết kế modal chi tiết cho phép Admin kiểm tra thông tin cửa hàng, thông tin nông trại (kèm danh sách ảnh thực tế), xem tài khoản ngân hàng và xem ảnh thẻ CCCD mặt trước/sau (hỗ trợ zoom/preview ảnh đầy đủ qua overlay).
+* **Giao diện 3 trạng thái trực quan cho người bán (`src/app/profile/page.tsx`)**: Thiết kế lại giao diện phân tách rõ ràng theo 3 trạng thái với phong cách UI cao cấp:
+  * *Chờ duyệt (Pending)*: Sử dụng tông màu Hổ phách (Amber), biểu tượng đồng hồ cát chuyển động chậm kèm lưới thông tin chi tiết hồ sơ.
+  * *Bị từ chối (Rejected)*: Sử dụng tông màu Hồng/Đỏ (Rose/Red), hiển thị banner cảnh báo, lý do từ chối cụ thể và nút bấm để xử lý lại hồ sơ.
+  * *Đã duyệt (Approved)*: Mở khóa toàn bộ Kênh người bán (Seller Dashboard) với đầy đủ thống kê, quản lý sản phẩm và đơn hàng.
+* **Cơ chế tải lại dữ liệu (Resubmit Flow)**: Bổ sung nút "Chỉnh sửa & gửi lại hồ sơ" trong giao diện Bị từ chối, hỗ trợ người bán đưa dữ liệu đã điền trước đó ngược trở lại biểu mẫu để chỉnh sửa nhanh.
+* **Hộp thoại xem chi tiết hồ sơ chờ duyệt (`SellerDetailsModal` in `src/app/admin/page.tsx`)**: Thiết kế modal chi tiết cho phép Admin kiểm tra thông tin cửa hàng, thông tin nông trại (kèm danh sách ảnh thực tế), xem tài khoản ngân hàng và xem ảnh thẻ CCCD mặt trước/sau (hỗ trợ zoom/preview ảnh đầy đủ qua overlay).
 * **Hộp thoại nhập lý do từ chối**: Admin có thể chọn "Từ chối" để mở modal phụ nhập lý do từ chối.
-* **Giao diện cảnh báo từ chối cho người bán**: Bổ sung tab cảnh báo màu đỏ có biểu tượng cảnh báo khi hồ sơ bị từ chối, hiển thị rõ lý do từ chối từ admin.
-* **Nút "Chỉnh sửa & gửi lại hồ sơ"**: Cho phép người bán bấm nút để mở biểu mẫu và tự động tải lại các thông tin, hình ảnh cũ đã điền để chỉnh sửa nhanh.
 * **Thông báo về tài khoản người bán**: Tự động gửi thông báo thuộc loại `account_update` kèm lý do từ chối cho người bán khi hồ sơ bị từ chối.
 
 ### Changed
+* **Đồng bộ hóa logic kiểm tra quyền người bán**: Điều chỉnh điều kiện kiểm tra để hiển thị menu Kênh người bán, các bước chỉ báo (step indicators) và nội dung Dashboard dựa trên cả hai điều kiện: `currentUser.role === "seller"` HOẶC `currentUser.sellerStatus === "approved"`.
+* **Dọn dẹp mã nguồn client-side**: Loại bỏ hook `approveSeller` khỏi phần destructuring ở đầu file `page.tsx` do quy trình duyệt đã được chuyển giao hoàn toàn cho phía Admin.
 * **Mở rộng mô hình dữ liệu User (`src/types/user.ts`)**: Bổ sung giá trị `"rejected"` vào trạng thái người bán (`sellerStatus`) và thêm trường `sellerRejectionReason?: string` để lưu lý do từ chối.
 * **Cập nhật State Store (`src/store/auth-store.ts`)**: Cập nhật hàm `approveSeller` và `registerSeller` để làm sạch lý do từ chối (`sellerRejectionReason: ""`), tránh giữ lại dữ liệu cũ khi phê duyệt hoặc gửi lại hồ sơ.
 * **Sửa lỗi co hẹp modal trang Admin (`src/app/admin/page.tsx`)**: Đưa các modal (`SellerDetailsModal` và modal nhập lý do từ chối) ra ngoài thẻ container hoạt ảnh `.page-enter` để khắc phục lỗi modal bị bóp nghẹt kích thước theo chiều dọc.
 
+### Removed
+* **Gỡ bỏ tính năng giả lập tự động phê duyệt**: Xóa bỏ hoàn toàn khối chức năng "Khu vực thử nghiệm / Demo Helper" (Simulation helper card) và nút bấm phê duyệt nhanh ở client-side trong giao diện Chờ duyệt. Quy trình phê duyệt/từ chối hiện tại bắt buộc phải xử lý thủ công bởi Admin tại `/admin`.
+
 ### Verification
-* `npx tsc --noEmit` chạy thành công không có lỗi kiểu dữ liệu.
-* `npm run lint` hoàn thành không lỗi.
+* **Type Safety & Build**: Chạy lệnh `npx tsc --noEmit` và `npm run build` thành công, hệ thống đảm bảo an toàn kiểu dữ liệu và đóng gói thành công (exit code 0).
+* **Linter**: `npm run lint` hoàn thành không lỗi.
 
 ---
 
