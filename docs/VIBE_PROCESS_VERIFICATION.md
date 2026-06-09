@@ -38,6 +38,7 @@ Trước khi thực hiện bất kỳ thay đổi nào trong mã nguồn, hệ t
   - **Cải thiện giao diện Ảnh bìa Shop (UX Polish)**: Thu ngắn chiều cao banner, áp dụng thiết kế bo góc dưới (`rounded-b-3xl`) và giới hạn chiều rộng trong `site-container` để tăng tính thẩm mỹ và sự đồng bộ toàn trang.
   - **Xác thực Admin & Trang quản trị (/admin) (Sprint 5)**: Phân quyền vai trò `"admin"`, thiết lập đồng bộ cookie để hỗ trợ Edge Middleware bảo vệ các route `/admin` ở server-side. Xây dựng layout Admin có sidebar điều hướng, header và nút đăng xuất riêng biệt. Thiết kế dashboard thống kê số lượng thực tế của hệ thống, duyệt hồ sơ người bán (seller) từ `pending` sang `approved`/`rejected`, quản lý phân quyền các vai trò của tài khoản. Ẩn Header/Footer storefront khi truy cập `/admin`, đồng thời bổ sung lối tắt "Trang quản trị" trên Header storefront cho người dùng admin.
   - **Nâng cấp Dashboard Admin & Biểu đồ SVG Line (Sprint 5.1)**: Triển khai 4 thẻ KPI dựa trên Firestore thật (Tổng người dùng, Seller chờ, Đơn hôm nay, Doanh thu). Thiết kế biểu đồ SVG Line tuỳ biến hiển thị doanh số và số đơn hàng với bộ lọc 7/30 ngày và chuyển đổi metric hiển thị. Tích hợp hiệu ứng tương tác hover dọc và tooltip lơ lửng cho từng điểm dữ liệu.
+  - **Kiểm duyệt chất lượng & Quy trình từ chối/gửi lại hồ sơ (Sprint 5.2)**: Xây dựng modal xem chi tiết hồ sơ `SellerDetailsModal` (bao gồm xem đầy đủ ảnh CCCD phóng to, thông tin nông trại và ngân hàng). Tích hợp chức năng từ chối kèm lý do, tự động gửi thông báo đến seller. Thiết kế cảnh báo đỏ hiển thị lý do từ chối trên hồ sơ seller và nút "Chỉnh sửa & gửi lại hồ sơ" điền sẵn thông tin cũ để người bán nộp lại.
 
 ---
 
@@ -45,14 +46,14 @@ Trước khi thực hiện bất kỳ thay đổi nào trong mã nguồn, hệ t
 
 Tất cả các thay đổi về logic, cấu trúc dữ liệu và giao diện đều được cập nhật vào hệ thống tài liệu chính thức của dự án:
 
-1. **Cập nhật Đặc tả tính năng ([SPEC.md](file:///d:/Th%E1%BB%B1c%20t%E1%BA%ADp/Buoi3/nong-sach/docs/SPEC.md))**:
-   - Ghi nhận đầy đủ mô tả chi tiết, tiêu chí nghiệm thu (Acceptance Criteria) cho các tính năng mới ở **Sprint 3.4 đến 4.2** (bao gồm Trang cá nhân, API Địa chỉ, Đổi mật khẩu, Mua lại đơn hàng, Đăng ký Người bán, Dashboard, CRUD Sản phẩm, Banner thông tin Shop và Trang chi tiết Shop).
-2. **Cập nhật Kiến trúc hệ thống ([ARCHITECTURE.md](file:///d:/Th%E1%BB%B1c%20t%E1%BA%ADp/Buoi3/nong-sach/docs/ARCHITECTURE.md))**:
-   - Làm rõ cấu trúc các store trạng thái Zustand (`cartStore` và `authStore`), cơ chế lọc ảnh `partialize` để tránh tràn bộ nhớ, giải thuật nén ảnh Hybrid, cách thức xử lý luồng dữ liệu khi người bán quản lý sản phẩm CRUD và luồng điều hướng/phân quyền cửa hàng.
-3. **Cập nhật Lịch sử thay đổi ([CHANGELOG.md](file:///d:/Th%E1%BB%B1c%20t%E1%BA%ADp/Buoi3/nong-sach/docs/CHANGELOG.md))**:
-   - Ghi lại chi tiết từng tệp tin được thêm mới, sửa đổi hoặc sửa lỗi (fix bug) qua từng sprint (đặc biệt là các chỉnh sửa ở Sprint 4.0 và 4.2) cùng mốc thời gian hoàn thành cụ thể.
-4. **Cập nhật Hướng dẫn sử dụng ([guideline.md](file:///d:/Th%E1%BB%B1c%20t%E1%BA%ADp/Buoi3/nong-sach/docs/guideline.md))**:
-   - Viết lại toàn bộ hướng dẫn khởi chạy dự án, tài khoản demo kiểm thử nhanh, mô tả chi tiết cách tương tác với các tính năng đăng ký người bán, quản lý sản phẩm CRUD, banner thông tin shop và các thao tác trên trang cửa hàng tương tác.
+1. **Cập nhật Đặc tả tính năng ([SPEC.md](file:///d:/Download/BaiHoia/nong-sach/docs/SPEC.md))**:
+   - Ghi nhận đầy đủ mô tả chi tiết, tiêu chí nghiệm thu (Acceptance Criteria) cho các tính năng mới ở **Sprint 3.4 đến 5.2** (bao gồm Trang cá nhân, API Địa chỉ, Đổi mật khẩu, Mua lại đơn hàng, Đăng ký Người bán, Dashboard, CRUD Sản phẩm, Banner thông tin Shop, Trang chi tiết Shop, Admin Dashboard, và Quy trình duyệt/từ chối/gửi lại hồ sơ người bán).
+2. **Cập nhật Kiến trúc hệ thống ([ARCHITECTURE.md](file:///d:/Download/BaiHoia/nong-sach/docs/ARCHITECTURE.md))**:
+   - Làm rõ cấu trúc các store trạng thái Zustand (`cartStore` và `authStore`), cơ chế lọc ảnh `partialize` để tránh tràn bộ nhớ, giải thuật nén ảnh Hybrid, cách thức xử lý luồng dữ liệu khi người bán quản lý sản phẩm CRUD, luồng điều hướng/phân quyền cửa hàng và luồng phê duyệt/từ chối chất lượng từ Admin.
+3. **Cập nhật Lịch sử thay đổi ([CHANGELOG.md](file:///d:/Download/BaiHoia/nong-sach/docs/CHANGELOG.md))**:
+   - Ghi lại chi tiết từng tệp tin được thêm mới, sửa đổi hoặc sửa lỗi (fix bug) qua từng sprint (đặc biệt là các chỉnh sửa ở Sprint 4.0, 4.2, 5.1 và 5.2) cùng mốc thời gian hoàn thành cụ thể.
+4. **Cập nhật Hướng dẫn sử dụng ([guideline.md](file:///d:/Download/BaiHoia/nong-sach/docs/guideline.md))**:
+   - Viết lại toàn bộ hướng dẫn khởi chạy dự án, tài khoản demo kiểm thử nhanh, mô tả chi tiết cách tương tác với các tính năng đăng ký người bán, quản lý sản phẩm CRUD, banner thông tin shop, các thao tác trên trang cửa hàng tương tác, và hướng dẫn cho Admin duyệt/từ chối hoặc Seller xem lý do và gửi lại hồ sơ.
 
 ---
 
@@ -163,13 +164,19 @@ Các ảnh chụp màn hình và video kiểm thử được lưu trữ trực t
 | **TC-29: Chặn truy cập /admin khi chưa đăng nhập** | Cố gắng truy cập `http://localhost:3000/admin`. | Edge Middleware chặn lại và chuyển hướng về `/login?redirect=/admin`. | ✅ Pass |
 | **TC-30: Chặn truy cập /admin bằng tài khoản Buyer** | Đăng nhập tài khoản `nguyenvana@gmail.com` rồi truy cập `/admin`. | Bị Edge Middleware chuyển hướng về trang chủ `/`. | ✅ Pass |
 | **TC-31: Cho phép truy cập /admin bằng tài khoản Admin** | Đăng nhập tài khoản `admin@nongsach.vn` và truy cập `/admin`. | Truy cập thành công vào giao diện Admin Dashboard. Ẩn toàn bộ Header và Footer storefront. | ✅ Pass |
-| **TC-32: Duyệt hồ sơ người bán** | Click "Duyệt" (Approve) đối với tài khoản nông dân pending trong hồ sơ chờ duyệt. | Trạng thái chuyển đổi thành công. Tài khoản đổi sang role `seller`, tự động tạo dữ liệu gian hàng ở collection `shops` trên Firestore và gửi thông báo về chuông. | ✅ Pass |
+| **TC-32: Duyệt hồ sơ người bán** | Click "Xem chi tiết" -> click "Phê duyệt" đối với tài khoản nông dân pending. | Trạng thái chuyển đổi thành công. Tài khoản đổi sang role `seller`, trạng thái `approved`, tự động tạo dữ liệu gian hàng ở collection `shops` trên Firestore và gửi thông báo về chuông. | ✅ Pass |
 | **TC-33: Quản lý role thủ công** | Click "Lên Admin" hoặc "Lên Shop" / "Bỏ Shop" ở bảng người dùng. | Thay đổi vai trò người dùng thành công và đồng bộ tức thì trên giao diện/CSDL Firestore. | ✅ Pass |
 | **TC-34: Lối tắt truy cập Admin trên Header** | Đăng nhập bằng tài khoản Admin và quan sát thanh điều hướng Header storefront. | Nút "Trang quản trị" xuất hiện cạnh tên tài khoản trên cả Desktop và Mobile menu. | ✅ Pass |
 | **TC-35: Lọc thời gian 7/30 ngày của biểu đồ** | Chọn bộ lọc "7 ngày" và "30 ngày" trên biểu đồ hiệu suất nền tảng. | Biểu đồ thay đổi số điểm mốc thời gian tương ứng từ 7 xuống 30 ngày và trục X tự động giãn cách mốc nhãn ngày sạch đẹp. | ✅ Pass |
 | **TC-36: Chuyển đổi Metric của biểu đồ** | Chọn nút chuyển chỉ số "Doanh thu" và "Số đơn hàng". | Biểu đồ vẽ lại đường line, đổi màu chỉ số tương ứng (xanh lá sang xanh dương) và điều chỉnh đơn vị trục Y thích hợp. | ✅ Pass |
 | **TC-37: Tooltip hover tương tác** | Di chuột qua điểm mốc trên biểu đồ đường SVG. | Tooltip hiển thị động chứa Ngày chuẩn `DD/MM/YYYY`, Doanh thu và Số đơn hàng cùng đường nét đứt định vị chính xác. | ✅ Pass |
 | **TC-38: Cập nhật thẻ KPI Firestore** | Đặt đơn hàng mới thành công và vào dashboard Admin xem lại. | Thẻ "Đơn hôm nay" và "Doanh thu" tăng tương ứng theo đơn hàng mới mà không cần reload cứng trang, dữ liệu truy vấn trực tiếp từ Firestore. | ✅ Pass |
+| **TC-39: Xem chi tiết hồ sơ chờ duyệt** | Ở trang Admin, click "Xem chi tiết" hồ sơ pending. | Hộp thoại chi tiết hiển thị đầy đủ thông tin đại diện, nông trại, tài khoản ngân hàng và thẻ CCCD. | ✅ Pass |
+| **TC-40: Phóng to ảnh thẻ CCCD** | Trong modal chi tiết hồ sơ, click vào ảnh CCCD mặt trước/sau. | Overlay mở ra hiển thị ảnh thẻ phóng to toàn màn hình sắc nét. | ✅ Pass |
+| **TC-41: Từ chối hồ sơ kèm lý do** | Trong modal chi tiết, click "Từ chối", nhập lý do và bấm xác nhận. | Hồ sơ chuyển sang trạng thái `"rejected"`, cập nhật lý do từ chối vào Firestore, gửi thông báo chuông loại `account_update` đến seller. | ✅ Pass |
+| **TC-42: Giao diện cảnh báo từ chối** | Đăng nhập tài khoản bị từ chối, truy cập trang Cá nhân. | Sidebar hiển thị menu "Hồ sơ bị từ chối" kèm biểu tượng cảnh báo màu đỏ; trang hiển thị box đỏ nêu rõ lý do bị từ chối cùng nút "Chỉnh sửa & gửi lại hồ sơ". | ✅ Pass |
+| **TC-43: Chỉnh sửa & gửi lại hồ sơ** | Ở trang cảnh báo từ chối, click "Chỉnh sửa & gửi lại hồ sơ", chỉnh sửa form và submit. | Biểu mẫu 4 bước hiển thị với thông tin cũ được tự động điền sẵn (prefilled). Sau khi nộp lại, trạng thái chuyển về `"pending"`, lý do từ chối cũ bị làm sạch và hồ sơ xuất hiện lại trên hàng đợi Admin. | ✅ Pass |
+| **TC-44: Sửa lỗi co hẹp modal trang Admin** | Mở modal chi tiết hồ sơ hoặc modal từ chối trên màn hình Admin. | Modal hiển thị đúng vị trí cố định, không bị méo mó hay co hẹp theo chiều dọc do đã di chuyển ra ngoài container hoạt ảnh. | ✅ Pass |
 
 ---
 

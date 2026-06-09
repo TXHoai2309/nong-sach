@@ -189,6 +189,7 @@ function ProfileContent() {
 
   // Seller registration form state
   const [isSubmittingSeller, setIsSubmittingSeller] = useState(false);
+  const [isReRegistering, setIsReRegistering] = useState(false);
   const [shopName, setShopName] = useState("");
   const [shopSlogan, setShopSlogan] = useState("");
   const [shopPhone, setShopPhone] = useState("");
@@ -703,11 +704,43 @@ function ProfileContent() {
         bankAccountName: bankAccountName.trim().toUpperCase(),
       });
       showToast("Gửi hồ sơ đăng ký thành công!");
+      setIsReRegistering(false);
     } catch (error) {
       console.error(error);
       showToast("Đã có lỗi xảy ra khi đăng ký", "error");
     } finally {
       setIsSubmittingSeller(false);
+    }
+  };
+
+  const handleLoadPreviousInfo = () => {
+    if (currentUser && currentUser.sellerInfo) {
+      const info = currentUser.sellerInfo;
+      setShopName(info.shopName || "");
+      setShopSlogan(info.slogan || "");
+      setShopPhone(info.shopPhone || "");
+      setShopZalo(info.shopZalo || "");
+      setIsZaloSame(info.shopZalo === info.shopPhone);
+      setShopDescription(info.description || "");
+      setShopLogo(info.shopLogo || null);
+      setShopCoverImage(info.coverImage || "");
+      setShopCoverUrl(info.coverImage || "");
+      setFarmImages(info.farmImages || []);
+      setSelectedMainCategories(info.mainCategories || []);
+      
+      const prov = provinces.find((p) => p.name === info.province);
+      setFarmProvinceCode(prov ? prov.code : "");
+      
+      setFarmAddress(info.farmAddress || "");
+      setSelectedStandards(info.farmingStandards || []);
+      setStandardsDetail(info.farmingStandardsDetail || "");
+      setIdCardNumber(info.idCardNumber || "");
+      setIdCardFront(info.idCardFront || null);
+      setIdCardBack(info.idCardBack || null);
+      setBankName(info.bankName || "Vietcombank");
+      setBankAccountNumber(info.bankAccountNumber || "");
+      setBankAccountName(info.bankAccountName || "");
+      setIsReRegistering(true);
     }
   };
 
@@ -1318,6 +1351,9 @@ function ProfileContent() {
                     sellerIcon = "store";
                   } else if (currentUser.sellerStatus === "pending") {
                     sellerLabel = "Đăng ký bán hàng";
+                  } else if (currentUser.sellerStatus === "rejected") {
+                    sellerLabel = "Hồ sơ bị từ chối";
+                    sellerIcon = "error";
                   }
 
                   menuItems.push({ id: "seller", label: sellerLabel, icon: sellerIcon });
@@ -2336,12 +2372,27 @@ function ProfileContent() {
                 )}
 
                 {/* State 1: Form UI */}
-                {!currentUser.sellerStatus && (
+                {(!currentUser.sellerStatus || isReRegistering) && (
                   <div>
                     {/* Header Banner */}
-                    <div className="mb-6 text-center sm:text-left">
-                      <h3 className="text-xl font-extrabold text-[#006c49]">Đăng ký bán hàng</h3>
-                      <p className="text-xs text-[#3c4a42]/70 mt-1">Bổ sung thông tin để trở thành đối tác của NôngSạch</p>
+                    <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                      <div className="text-center sm:text-left">
+                        <h3 className="text-xl font-extrabold text-[#006c49]">
+                          {isReRegistering ? "Cập nhật hồ sơ đăng ký" : "Đăng ký bán hàng"}
+                        </h3>
+                        <p className="text-xs text-[#3c4a42]/70 mt-1">
+                          {isReRegistering ? "Chỉnh sửa thông tin hồ sơ bán hàng của bạn" : "Bổ sung thông tin để trở thành đối tác của NôngSạch"}
+                        </p>
+                      </div>
+                      {isReRegistering && (
+                        <button
+                          type="button"
+                          onClick={() => setIsReRegistering(false)}
+                          className="px-4 py-2 rounded-full border border-slate-300 hover:bg-slate-50 text-[#3c4a42] text-xs font-bold transition shadow-sm cursor-pointer bg-white"
+                        >
+                          Quay lại
+                        </button>
+                      )}
                     </div>
 
                     {/* Three Feature Cards */}
@@ -2903,6 +2954,82 @@ function ProfileContent() {
                         <span className="material-symbols-outlined text-sm">done</span>
                         Phê duyệt hồ sơ ngay (Demo/Test)
                       </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* State 2b: Rejected Approval UI */}
+                {currentUser.sellerStatus === "rejected" && !isReRegistering && (
+                  <div className="rounded-3xl border border-rose-200 bg-white p-6 shadow-sm text-center max-w-[580px] mx-auto py-10 animate-fade-in">
+                    <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mb-6 mx-auto border border-rose-200 shadow-sm">
+                      <span className="material-symbols-outlined text-[36px]">report</span>
+                    </div>
+
+                    <h3 className="text-lg font-bold text-rose-700">Hồ sơ đăng ký bị từ chối</h3>
+                    
+                    {/* Rejection Reason Box */}
+                    <div className="mt-4 p-4.5 bg-rose-50/50 border border-rose-100 rounded-2xl text-left shadow-sm">
+                      <p className="text-xs font-bold text-rose-800 flex items-center gap-1.5 mb-1.5">
+                        <span className="material-symbols-outlined text-sm">info</span>
+                        Lý do từ chối từ Ban quản trị:
+                      </p>
+                      <p className="text-xs text-rose-700 leading-relaxed font-semibold">
+                        {currentUser.sellerRejectionReason || "Không có lý do chi tiết được cung cấp."}
+                      </p>
+                    </div>
+
+                    <p className="text-xs text-[#3c4a42]/70 mt-4 leading-relaxed max-w-[400px] mx-auto">
+                      Vui lòng kiểm tra lại thông tin hồ sơ bên dưới, bấm chỉnh sửa để cập nhật thông tin chính xác và gửi lại cho chúng tôi xét duyệt.
+                    </p>
+
+                    {/* Action button */}
+                    <div className="mt-6 flex justify-center">
+                      <button
+                        type="button"
+                        onClick={handleLoadPreviousInfo}
+                        className="rounded-full bg-[#006c49] hover:bg-[#005236] px-8 py-3.5 text-sm font-bold text-white shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer border-none"
+                      >
+                        <span className="material-symbols-outlined text-base">edit_note</span>
+                        Chỉnh sửa & gửi lại hồ sơ
+                      </button>
+                    </div>
+
+                    {/* Summary Card */}
+                    <div className="my-6 border-t border-[#bbcabf]/20 pt-6 text-left text-xs space-y-2.5 text-[#3c4a42]/80">
+                      <p className="font-bold text-[#3c4a42] mb-3 text-sm flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-base text-[#006c49]">storefront</span>
+                        Chi tiết hồ sơ đã gửi trước đó:
+                      </p>
+                      <p className="flex justify-between border-b border-slate-50 pb-1.5">
+                        <span className="text-[#3c4a42]/60 font-semibold">Tên cửa hàng:</span>
+                        <span className="font-bold text-[#3c4a42]">{currentUser.sellerInfo?.shopName}</span>
+                      </p>
+                      {currentUser.sellerInfo?.slogan && (
+                        <p className="flex justify-between border-b border-slate-50 pb-1.5">
+                          <span className="text-[#3c4a42]/60 font-semibold">Slogan:</span>
+                          <span className="font-semibold text-[#3c4a42]">{currentUser.sellerInfo?.slogan}</span>
+                        </p>
+                      )}
+                      <p className="flex justify-between border-b border-slate-50 pb-1.5">
+                        <span className="text-[#3c4a42]/60 font-semibold">Số điện thoại:</span>
+                        <span className="font-bold text-[#3c4a42]">{currentUser.sellerInfo?.shopPhone}</span>
+                      </p>
+                      <p className="flex justify-between border-b border-slate-50 pb-1.5">
+                        <span className="text-[#3c4a42]/60 font-semibold">Địa chỉ trang trại:</span>
+                        <span className="font-semibold text-[#3c4a42]">{currentUser.sellerInfo?.farmAddress}, {currentUser.sellerInfo?.province}</span>
+                      </p>
+                      <p className="flex justify-between border-b border-slate-50 pb-1.5">
+                        <span className="text-[#3c4a42]/60 font-semibold">Nông sản chính:</span>
+                        <span className="font-semibold text-[#3c4a42]">{currentUser.sellerInfo?.mainCategories?.join(", ")}</span>
+                      </p>
+                      <p className="flex justify-between border-b border-slate-50 pb-1.5">
+                        <span className="text-[#3c4a42]/60 font-semibold">CCCD số:</span>
+                        <span className="font-mono font-semibold text-[#3c4a42]">{currentUser.sellerInfo?.idCardNumber?.substring(0, 3)}*********</span>
+                      </p>
+                      <p className="flex justify-between border-b border-slate-50 pb-1.5">
+                        <span className="text-[#3c4a42]/60 font-semibold">Ngân hàng thụ hưởng:</span>
+                        <span className="font-semibold text-[#3c4a42]">{currentUser.sellerInfo?.bankName} - {currentUser.sellerInfo?.bankAccountNumber}</span>
+                      </p>
                     </div>
                   </div>
                 )}

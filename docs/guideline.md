@@ -135,8 +135,15 @@ Khi người dùng đã đăng nhập tài khoản, họ có thể đăng ký n�
    - **Bước 2: Địa chỉ nông trại & Tiêu chuẩn**: Chọn Tỉnh/Thành phố động (*), nhập địa chỉ chi tiết nông trại (*), chọn các tiêu chuẩn canh tác (như VietGAP, Hữu cơ) và viết chi tiết quy trình canh tác.
    - **Bước 3: Xác minh danh tính**: Nhập Số CMND/CCCD (*) và tải ảnh chụp mặt trước/sau (*) của thẻ.
    - **Bước 4: Tài khoản ngân hàng**: Nhập tên ngân hàng (*), số tài khoản (*) và tên chủ tài khoản (*).
-4. Bấm `Đăng ký bán hàng` ở bước cuối cùng. Hệ thống sẽ tự động phê duyệt nhanh và nâng cấp tài khoản sang vai trò `seller`.
-5. Sau khi nâng cấp thành công, giao diện đăng ký 4 bước biến mất hoàn toàn. Thay vào đó, hệ thống hiển thị **Kênh bán hàng (Dashboard)** với các thống kê doanh số, sản phẩm, và quản lý riêng biệt:
+4. Bấm `Đăng ký bán hàng` ở bước cuối cùng. Trạng thái hồ sơ của bạn sẽ chuyển thành `Hồ sơ đang được xét duyệt` (pending).
+5. Bạn cần chờ Admin phê duyệt hồ sơ:
+   - **Nếu được duyệt**: Trạng thái hồ sơ chuyển thành `approved`, tài khoản được cấp quyền người bán (`seller`), và hệ thống hiển thị **Kênh bán hàng (Dashboard)** với các tính năng quản lý sản phẩm, đơn hàng.
+   - **Nếu bị từ chối**:
+     - Bạn sẽ nhận được thông báo chuông (loại `Cập nhật tài khoản`) ghi rõ lý do bị từ chối từ admin.
+     - Khi vào trang cá nhân, sidebar sẽ hiển thị menu **"Hồ sơ bị từ chối"** kèm biểu tượng cảnh báo màu đỏ.
+     - Giao diện tab Đăng ký sẽ hiển thị cảnh báo hồ sơ bị từ chối kèm lý do cụ thể và nút **"Chỉnh sửa & gửi lại hồ sơ"**.
+     - Bấm nút này sẽ mở lại biểu mẫu đăng ký 4 bước, tự động điền sẵn các thông tin cũ để bạn sửa đổi những phần chưa đạt yêu cầu (ví dụ: chụp lại ảnh CCCD rõ nét hơn) và gửi lại để chờ xét duyệt tiếp.
+6. Sau khi hồ sơ được phê duyệt thành công, giao diện đăng ký biến mất hoàn toàn. Thay vào đó, hệ thống hiển thị **Kênh bán hàng (Dashboard)** với các thống kê doanh số, sản phẩm, và quản lý riêng biệt:
    - **Tab Sản phẩm của tôi**: Quản lý danh sách, thêm, sửa, xóa sản phẩm.
    - **Tab Đơn hàng của shop**: Xem danh sách các đơn hàng khách đã đặt mua từ shop mình.
 
@@ -263,8 +270,14 @@ Trang quản trị hệ thống cung cấp giao diện riêng tư, bảo mật d
   - **Tooltip tương tác**: Khi di chuột qua các mốc điểm của biểu đồ, hệ thống sẽ hiện đường nét đứt định vị dọc và một tooltip nổi màu tối hiển thị chính xác ngày tháng cùng số liệu doanh thu & số đơn hàng của ngày đó.
 - **Hồ sơ chờ duyệt (Approvals Queue)**:
   - Hiển thị danh sách các tài khoản nông dân đăng ký bán hàng đang ở trạng thái `pending`.
-  - Click **"Duyệt"** (Approve): Hệ thống tự động nâng cấp quyền tài khoản sang `seller`, phê duyệt trạng thái `approved`, đồng thời tạo gian hàng tương ứng trên bộ sưu tập `shops` của Firestore và gửi thông báo chúc mừng về tài khoản đó.
-  - Click **"Từ chối"** (Reject): Chuyển trạng thái người bán sang `rejected` và đóng hồ sơ.
+  - Click **"Xem chi tiết"**: Mở hộp thoại chi tiết (`SellerDetailsModal`) để xem đầy đủ thông tin về:
+    * Thông tin cửa hàng (Tên shop, slogan, mô tả, logo, banner).
+    * Thông tin liên hệ (Người đại diện, Email, Số điện thoại, Số Zalo).
+    * Nông trại & Tiêu chuẩn (Địa chỉ, tỉnh thành, tiêu chuẩn canh tác và album ảnh thực tế).
+    * Thẻ căn cước công dân (Hiển thị Số CCCD và ảnh mặt trước/sau. Có thể click vào từng ảnh CCCD để phóng to xem chi tiết sắc nét qua lớp overlay).
+    * Thông tin tài khoản nhận tiền ngân hàng.
+  - Click **"Phê duyệt"** (Approve): Nâng cấp quyền tài khoản sang `seller`, phê duyệt trạng thái `approved`, đồng thời tạo gian hàng tương ứng trên Firestore, xóa lý do từ chối cũ và gửi thông báo chúc mừng về tài khoản đó.
+  - Click **"Từ chối"** (Reject): Hệ thống hiển thị hộp thoại yêu cầu nhập lý do từ chối cụ thể (ví dụ: "Ảnh thẻ CCCD bị mờ, vui lòng chụp lại và gửi lại hồ sơ"). Sau khi xác nhận, trạng thái hồ sơ của người bán sẽ được chuyển thành `"rejected"`, lý do từ chối được lưu lại trên Firestore, đồng thời gửi thông báo `account_update` chứa lý do đó về tài khoản người bán.
 - **Danh sách người dùng & Phân quyền**:
   - Liệt kê toàn bộ người dùng đã đăng ký tài khoản trên hệ thống.
   - Cho phép Admin trực tiếp đổi vai trò của bất kỳ tài khoản nào: click **"Lên Admin"** để phong quyền quản trị, click **"Lên Shop (Seller)"** để cấp quyền bán hàng nhanh, hoặc click **"Bỏ Shop (Buyer)"** để thu hồi quyền bán hàng về tài khoản mua thông thường.

@@ -266,7 +266,7 @@ Quy trình dưới đây là định hướng phát triển sau MVP, khi hệ th
   2. *Bước 2 (Địa chỉ & Tiêu chuẩn)*: Chọn Tỉnh/Thành phố động từ API (*), địa chỉ chi tiết nông trại (*), tiêu chuẩn canh tác (VietGAP, GlobalGAP, Hữu cơ, Khác) và mô tả chi tiết quy trình.
   3. *Bước 3 (Xác minh danh tính)*: Nhập Số CMND/CCCD (*), tải lên ảnh mặt trước (*) và mặt sau (*) của CMND/CCCD.
   4. *Bước 4 (Thông tin tài khoản)*: Chọn Tên ngân hàng (*), Số tài khoản (*), Tên chủ tài khoản (*).
-* **Mô phỏng phê duyệt hồ sơ**: Sau khi người dùng nhấn "Đăng ký bán hàng", hệ thống tự động đổi trạng thái hồ sơ người bán thành `approved` và cập nhật quyền hạn tài khoản lên `seller` (không bắt buộc admin duyệt thủ công trong MVP).
+* **Quy trình phê duyệt & từ chối hồ sơ**: Sau khi người dùng nhấn "Đăng ký bán hàng", hệ thống sẽ chuyển trạng thái của hồ sơ người bán thành `pending` (chờ duyệt). Admin có quyền phê duyệt hoặc từ chối kèm lý do cụ thể. Nếu hồ sơ bị từ chối, người bán có thể xem lý do trực tiếp từ trang cá nhân, bấm "Chỉnh sửa & gửi lại hồ sơ" (form sẽ tự động điền sẵn các thông tin cũ của họ để sửa đổi) và gửi lại duyệt.
 * **Ẩn giao diện đăng ký**: Khi tài khoản đã được nâng cấp thành công lên người bán, giao diện đăng ký (State 1-2-3) sẽ được ẩn hoàn toàn, thay thế bằng giao diện Kênh bán hàng (Dashboard).
 
 ### US-11: Quản lý Kênh bán hàng (Seller Dashboard)
@@ -335,8 +335,9 @@ Quy trình dưới đây là định hướng phát triển sau MVP, khi hệ th
   - Tích hợp **hiệu ứng tương tác**: Khi di chuột lên biểu đồ, hiển thị đường dẫn dọc nét đứt và vòng tròn chỉ điểm tại ngày gần nhất. Hiển thị tooltip dạng HTML nổi lơ lửng ngay phía trên điểm dữ liệu với đầy đủ thông tin: Ngày (dạng `DD/MM/YYYY`), Doanh thu (VND), và Số đơn hàng của ngày cụ thể đó.
 * **Duyệt hồ sơ người bán (Approvals Queue)**:
   - Hiển thị danh sách các tài khoản có trạng thái người bán đang chờ xử lý (`sellerStatus === "pending"`).
-  - Cung cấp nút **"Duyệt"** (gọi `approveSeller` để chuyển role sang `seller`, trạng thái `approved` và tự động tạo shop tương ứng trên Firestore).
-  - Cung cấp nút **"Từ chối"** (chuyển trạng thái người bán sang `rejected`).
+  - Thay vì các nút thao tác trực tiếp, cung cấp nút **"Xem chi tiết"** để hiển thị thông tin đầy đủ về: thông tin shop, thông tin liên hệ, nông trại và tiêu chuẩn canh tác (kèm danh sách ảnh thực địa), ảnh thẻ CCCD mặt trước/sau (hỗ trợ zoom/preview ảnh đầy đủ), thông tin tài khoản ngân hàng.
+  - Cung cấp nút **"Duyệt"** (gọi `approveSeller` để nâng cấp role sang `seller`, trạng thái `approved`, tự động tạo shop trên Firestore, xóa lý do từ chối cũ và gửi thông báo hệ thống về tài khoản người bán).
+  - Cung cấp nút **"Từ chối"** để mở modal phụ yêu cầu nhập lý do từ chối. Sau khi xác nhận, chuyển trạng thái người bán sang `rejected`, lưu lý do vào trường `sellerRejectionReason` trên Firestore, và gửi thông báo `account_update` chứa lý do từ chối cụ thể đến người bán.
 * **Quản lý phân quyền người dùng**:
   - Bảng hiển thị danh sách tất cả các tài khoản trên hệ thống kèm Email, Vai trò (role) và Ngày gia nhập.
   - Cung cấp nút **"Lên Admin"** để nâng cấp một tài khoản thành quản trị viên.
@@ -414,9 +415,10 @@ interface User {
   gender?: "Nam" | "Nữ" | "Khác" | "";
   memberSince?: string;
   addresses?: UserAddress[];
-  role?: "buyer" | "seller";
-  sellerStatus?: "pending" | "approved";
+  role?: "buyer" | "seller" | "admin";
+  sellerStatus?: "pending" | "approved" | "rejected";
   sellerInfo?: SellerInfo;
+  sellerRejectionReason?: string;
 }
 
 interface SellerInfo {

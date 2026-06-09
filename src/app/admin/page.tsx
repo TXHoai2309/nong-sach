@@ -7,6 +7,7 @@ import { User } from "@/types/user";
 import { useAuthStore } from "@/store/auth-store";
 import { Order } from "@/types/order";
 import { formatCurrency } from "@/lib/format";
+import { useNotificationStore } from "@/store/notification-store";
 
 export default function AdminDashboardPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -18,6 +19,11 @@ export default function AdminDashboardPage() {
   const [dateRange, setDateRange] = useState<"7" | "30">("30");
   const [activeMetric, setActiveMetric] = useState<"revenue" | "orders">("revenue");
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
+  const [selectedSeller, setSelectedSeller] = useState<User | null>(null);
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+  const [zoomImage, setZoomImage] = useState<string | null>(null);
 
   const approveSeller = useAuthStore((s) => s.approveSeller);
 
@@ -69,14 +75,27 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleRejectSeller = async (userId: string) => {
-    if (!confirm("Bạn có chắc chắn muốn từ chối hồ sơ này không?")) return;
+  const handleRejectSeller = async (userId: string, reason: string) => {
+    if (!reason.trim()) {
+      alert("Vui lòng nhập lý do từ chối!");
+      return;
+    }
     setActionLoading(userId);
     try {
       const userRef = doc(db, "users", userId);
       await updateDoc(userRef, {
         sellerStatus: "rejected",
+        sellerRejectionReason: reason.trim(),
       });
+
+      // Send account update notification to the seller
+      await useNotificationStore.getState().addNotification({
+        userId,
+        title: "Hồ sơ đăng ký bán hàng bị từ chối",
+        message: `Yêu cầu đăng ký bán hàng của bạn không được phê duyệt. Lý do: "${reason.trim()}". Bạn có thể cập nhật thông tin và gửi lại yêu cầu.`,
+        type: "account_update",
+      });
+
       await fetchData();
     } catch (error) {
       console.error("Error rejecting seller:", error);
@@ -204,7 +223,8 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="space-y-8 page-enter">
+    <>
+      <div className="space-y-8">
       {/* Page Title */}
       <div>
         <h2 className="text-2xl font-bold text-slate-800">Tổng quan Dashboard</h2>
@@ -562,26 +582,11 @@ export default function AdminDashboardPage() {
                   {/* Actions */}
                   <div className="flex gap-2 pt-1">
                     <button
-                      onClick={() => handleApprove(user.id)}
-                      disabled={!!actionLoading}
-                      className="flex-grow py-1.5 bg-[#006c49] hover:bg-[#005236] disabled:opacity-50 text-white rounded-lg text-xs font-bold transition-all border-none cursor-pointer flex justify-center items-center gap-1"
+                      onClick={() => setSelectedSeller(user)}
+                      className="flex-grow py-1.5 bg-[#006c49]/10 hover:bg-[#006c49]/20 text-[#006c49] rounded-lg text-xs font-bold transition-all border border-[#006c49]/20 cursor-pointer flex justify-center items-center gap-1.5"
                     >
-                      {actionLoading === user.id ? (
-                        <span className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                      ) : (
-                        "Duyệt"
-                      )}
-                    </button>
-                    <button
-                      onClick={() => handleRejectSeller(user.id)}
-                      disabled={!!actionLoading}
-                      className="flex-grow py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 disabled:opacity-50 rounded-lg text-xs font-bold transition-all border border-rose-100 cursor-pointer flex justify-center items-center gap-1"
-                    >
-                      {actionLoading === user.id ? (
-                        <span className="w-3 h-3 border-2 border-rose-600/40 border-t-rose-600 rounded-full animate-spin" />
-                      ) : (
-                        "Từ chối"
-                      )}
+                      <span className="material-symbols-outlined text-sm">visibility</span>
+                      Xem chi tiết
                     </button>
                   </div>
                 </div>
@@ -669,5 +674,324 @@ export default function AdminDashboardPage() {
         </div>
       </div>
     </div>
+
+    {/* Seller Registration Detail Modal */}
+      {selectedSeller && (
+        <div style={{position:'fixed',inset:0,zIndex:50,display:'flex',alignItems:'center',justifyContent:'center',backgroundColor:'rgba(0,0,0,0.6)',padding:'1rem'}}>
+          <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden border border-slate-200">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div>
+                <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-emerald-600">badge</span>
+                  Chi tiết hồ sơ đăng ký người bán
+                </h3>
+                <p className="text-slate-500 text-xs mt-0.5">Xác minh thông tin đăng ký của đối tác nông nghiệp.</p>
+              </div>
+              <button
+                onClick={() => setSelectedSeller(null)}
+                className="h-8 w-8 rounded-full hover:bg-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-all border-none cursor-pointer"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 overflow-y-auto space-y-8 flex-1">
+              {/* Banner and Logo */}
+              <div className="relative">
+                <div className="w-full h-32 rounded-2xl bg-slate-100 overflow-hidden relative border border-slate-200">
+                  {selectedSeller.sellerInfo?.coverImage ? (
+                    <img
+                      src={selectedSeller.sellerInfo.coverImage}
+                      alt="Banner shop"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-slate-300 bg-slate-50">
+                      <span className="material-symbols-outlined text-4xl">storefront</span>
+                    </div>
+                  )}
+                </div>
+                <div className="absolute left-6 -bottom-6 h-16 w-16 rounded-2xl bg-white border border-slate-200 overflow-hidden shadow-md flex items-center justify-center">
+                  {selectedSeller.sellerInfo?.shopLogo ? (
+                    <img
+                      src={selectedSeller.sellerInfo.shopLogo}
+                      alt="Logo shop"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="material-symbols-outlined text-slate-300 text-3xl">image</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Section 1: Shop & Contact */}
+              <div className="pt-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Thông tin cửa hàng</h4>
+                  <div className="space-y-2.5 text-sm">
+                    <p className="flex justify-between border-b border-slate-100 pb-1.5">
+                      <span className="text-slate-500">Tên shop:</span>
+                      <span className="font-bold text-slate-800">{selectedSeller.sellerInfo?.shopName || selectedSeller.name}</span>
+                    </p>
+                    <p className="flex justify-between border-b border-slate-100 pb-1.5">
+                      <span className="text-slate-500">Slogan:</span>
+                      <span className="font-semibold text-slate-700">{selectedSeller.sellerInfo?.slogan || "N/A"}</span>
+                    </p>
+                    <p className="flex justify-between border-b border-slate-100 pb-1.5 flex-col">
+                      <span className="text-slate-500 mb-0.5">Giới thiệu shop:</span>
+                      <span className="text-slate-700 bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-xs leading-normal">
+                        {selectedSeller.sellerInfo?.description || "N/A"}
+                      </span>
+                    </p>
+                    <p className="flex justify-between border-b border-slate-100 pb-1.5">
+                      <span className="text-slate-500">Danh mục chính:</span>
+                      <span className="font-semibold text-slate-700">{selectedSeller.sellerInfo?.mainCategories?.join(", ") || "N/A"}</span>
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Thông tin liên hệ</h4>
+                  <div className="space-y-2.5 text-sm">
+                    <p className="flex justify-between border-b border-slate-100 pb-1.5">
+                      <span className="text-slate-500">Họ tên đại diện:</span>
+                      <span className="font-bold text-slate-800">{selectedSeller.name}</span>
+                    </p>
+                    <p className="flex justify-between border-b border-slate-100 pb-1.5">
+                      <span className="text-slate-500">Email đăng ký:</span>
+                      <span className="font-semibold text-slate-700">{selectedSeller.email}</span>
+                    </p>
+                    <p className="flex justify-between border-b border-slate-100 pb-1.5">
+                      <span className="text-slate-500">Số điện thoại:</span>
+                      <span className="font-bold text-slate-800">{selectedSeller.sellerInfo?.shopPhone || selectedSeller.phone || "N/A"}</span>
+                    </p>
+                    <p className="flex justify-between border-b border-slate-100 pb-1.5">
+                      <span className="text-slate-500">Số Zalo:</span>
+                      <span className="font-bold text-slate-800">{selectedSeller.sellerInfo?.shopZalo || "N/A"}</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 2: Farm Details */}
+              <div className="border-t border-slate-100 pt-6 space-y-4">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Thông tin trang trại & canh tác</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <p className="flex justify-between border-b border-slate-100 pb-1.5">
+                      <span className="text-slate-500">Tỉnh/Thành phố:</span>
+                      <span className="font-semibold text-slate-700">{selectedSeller.sellerInfo?.province || "N/A"}</span>
+                    </p>
+                    <p className="flex justify-between border-b border-slate-100 pb-1.5">
+                      <span className="text-slate-500">Địa chỉ cụ thể:</span>
+                      <span className="font-semibold text-slate-700 text-right max-w-[200px] truncate" title={selectedSeller.sellerInfo?.farmAddress}>
+                        {selectedSeller.sellerInfo?.farmAddress || "N/A"}
+                      </span>
+                    </p>
+                    <p className="flex justify-between border-b border-slate-100 pb-1.5">
+                      <span className="text-slate-500">Tiêu chuẩn canh tác:</span>
+                      <span className="font-bold text-emerald-700">{selectedSeller.sellerInfo?.farmingStandards?.join(", ") || "N/A"}</span>
+                    </p>
+                    {selectedSeller.sellerInfo?.farmingStandardsDetail && (
+                      <p className="flex justify-between border-b border-slate-100 pb-1.5">
+                        <span className="text-slate-500">Chi tiết tiêu chuẩn:</span>
+                        <span className="text-slate-600 text-right">{selectedSeller.sellerInfo.farmingStandardsDetail}</span>
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Farm Images Gallery */}
+                <div className="space-y-2">
+                  <span className="text-xs font-bold text-slate-500">Hình ảnh thực tế nông trại (click để phóng to):</span>
+                  {selectedSeller.sellerInfo?.farmImages && selectedSeller.sellerInfo.farmImages.length > 0 ? (
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                      {selectedSeller.sellerInfo.farmImages.map((img, idx) => (
+                        <div
+                          key={idx}
+                          onClick={() => setZoomImage(img)}
+                          className="relative h-20 rounded-xl overflow-hidden border border-slate-200 cursor-zoom-in hover:brightness-90 transition-all bg-slate-50"
+                        >
+                          <img src={img} alt={`Farm image ${idx + 1}`} className="w-full h-full object-cover" />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-400 italic">Không có ảnh thực tế nông trại nào được đăng.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Section 3: Identity & Bank */}
+              <div className="border-t border-slate-100 pt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Xác minh danh tính (CCCD)</h4>
+                  <div className="text-sm border-b border-slate-100 pb-2">
+                    <span className="text-slate-500 mr-2">Số CCCD/CMND:</span>
+                    <span className="font-mono font-bold text-slate-800">{selectedSeller.sellerInfo?.idCardNumber || "N/A"}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 block mb-1">Mặt trước CCCD (click để xem)</span>
+                      <div
+                        onClick={() => selectedSeller.sellerInfo?.idCardFront && setZoomImage(selectedSeller.sellerInfo.idCardFront)}
+                        className="relative h-24 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 cursor-zoom-in hover:brightness-95 transition-all flex items-center justify-center"
+                      >
+                        {selectedSeller.sellerInfo?.idCardFront ? (
+                          <img src={selectedSeller.sellerInfo.idCardFront} alt="CCCD Front" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="material-symbols-outlined text-slate-300">broken_image</span>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 block mb-1">Mặt sau CCCD (click để xem)</span>
+                      <div
+                        onClick={() => selectedSeller.sellerInfo?.idCardBack && setZoomImage(selectedSeller.sellerInfo.idCardBack)}
+                        className="relative h-24 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 cursor-zoom-in hover:brightness-95 transition-all flex items-center justify-center"
+                      >
+                        {selectedSeller.sellerInfo?.idCardBack ? (
+                          <img src={selectedSeller.sellerInfo.idCardBack} alt="CCCD Back" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="material-symbols-outlined text-slate-300">broken_image</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Thông tin nhận thanh toán</h4>
+                  <div className="space-y-2.5 text-sm">
+                    <p className="flex justify-between border-b border-slate-100 pb-1.5">
+                      <span className="text-slate-500">Ngân hàng:</span>
+                      <span className="font-bold text-slate-800">{selectedSeller.sellerInfo?.bankName || "N/A"}</span>
+                    </p>
+                    <p className="flex justify-between border-b border-slate-100 pb-1.5">
+                      <span className="text-slate-500">Số tài khoản:</span>
+                      <span className="font-mono font-bold text-slate-800">{selectedSeller.sellerInfo?.bankAccountNumber || "N/A"}</span>
+                    </p>
+                    <p className="flex justify-between border-b border-slate-100 pb-1.5">
+                      <span className="text-slate-500">Tên thụ hưởng:</span>
+                      <span className="font-bold text-slate-800 uppercase">{selectedSeller.sellerInfo?.bankAccountName || "N/A"}</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex gap-3 justify-end">
+              <button
+                onClick={() => setSelectedSeller(null)}
+                className="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl text-xs font-bold transition-all cursor-pointer"
+              >
+                Đóng
+              </button>
+              <button
+                onClick={() => {
+                  setIsRejectModalOpen(true);
+                }}
+                className="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 border border-rose-100 text-rose-600 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1"
+              >
+                <span className="material-symbols-outlined text-sm">block</span>
+                Từ chối hồ sơ
+              </button>
+              <button
+                onClick={async () => {
+                  if (confirm(`Bạn có chắc chắn muốn phê duyệt cửa hàng "${selectedSeller.sellerInfo?.shopName || selectedSeller.name}" không?`)) {
+                    await handleApprove(selectedSeller.id);
+                    setSelectedSeller(null);
+                  }
+                }}
+                disabled={actionLoading === selectedSeller.id}
+                className="px-5 py-2.5 bg-[#006c49] hover:bg-[#005236] text-white rounded-xl text-xs font-bold transition-all border-none cursor-pointer flex items-center gap-1.5"
+              >
+                {actionLoading === selectedSeller.id ? (
+                  <span className="w-4.5 h-4.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-sm">verified</span>
+                    Phê duyệt đối tác
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rejection Sub-Modal */}
+      {isRejectModalOpen && selectedSeller && (
+        <div style={{position:'fixed',inset:0,zIndex:60,display:'flex',alignItems:'center',justifyContent:'center',backgroundColor:'rgba(0,0,0,0.6)',padding:'1rem'}}>
+          <div style={{backgroundColor:'white',width:'100%',maxWidth:'28rem',borderRadius:'1.5rem',boxShadow:'0 25px 50px -12px rgba(0,0,0,0.25)',padding:'1.5rem',border:'1px solid #f1f5f9',display:'flex',flexDirection:'column',gap:'1rem'}}>
+            <div>
+              <h4 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                <span className="material-symbols-outlined text-rose-600">report_problem</span>
+                Lý do từ chối hồ sơ
+              </h4>
+              <p className="text-slate-500 text-xs mt-1">
+                Nêu rõ lý do để nông dân biết cần điều chỉnh thông tin gì để đăng ký lại.
+              </p>
+            </div>
+
+            <textarea
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder="Ví dụ: Ảnh chụp CCCD bị mờ góc dưới, không nhìn rõ số thẻ. Hoặc: Chưa đăng tải ảnh thực tế nông trại."
+              rows={4}
+              className="w-full rounded-xl border border-slate-200 p-3 text-xs text-slate-700 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none resize-none"
+            />
+
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => {
+                  setIsRejectModalOpen(false);
+                  setRejectReason("");
+                }}
+                className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-lg text-xs font-bold transition-all cursor-pointer bg-white"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={async () => {
+                  if (!rejectReason.trim()) {
+                    alert("Vui lòng nhập lý do từ chối!");
+                    return;
+                  }
+                  await handleRejectSeller(selectedSeller.id, rejectReason.trim());
+                  setIsRejectModalOpen(false);
+                  setRejectReason("");
+                  setSelectedSeller(null);
+                }}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition-all border-none cursor-pointer flex items-center gap-1"
+              >
+                Xác nhận từ chối
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Zoom Image Overlay */}
+      {zoomImage && (
+        <div
+          onClick={() => setZoomImage(null)}
+          style={{position:'fixed',inset:0,zIndex:70,backgroundColor:'rgba(0,0,0,0.9)',display:'flex',alignItems:'center',justifyContent:'center',padding:'1rem',cursor:'zoom-out'}}
+        >
+          <div className="relative max-w-full max-h-full">
+            <img src={zoomImage} alt="Zoomed view" className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl" />
+            <button
+              onClick={() => setZoomImage(null)}
+              className="absolute top-2 right-2 h-9 w-9 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/80 transition border-none cursor-pointer"
+            >
+              <span className="material-symbols-outlined">close</span>
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

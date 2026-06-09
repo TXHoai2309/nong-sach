@@ -4,6 +4,28 @@ All notable changes to the **NôngSạch** project will be documented in this fi
 
 The format is based on **Keep a Changelog** and this project adheres to **Semantic Versioning**.
 
+## [0.6.6] - 2026-06-09
+
+### Kiểm duyệt chất lượng & Quy trình từ chối/gửi lại hồ sơ người bán (Seller Profile Audit & Rejection/Resubmission Flow)
+
+### Added
+* **Hộp thoại xem chi tiết hồ sơ chờ duyệt (`SellerDetailsModal`)**: Thiết kế modal chi tiết cho phép Admin kiểm tra thông tin cửa hàng, thông tin nông trại (kèm danh sách ảnh thực tế), xem tài khoản ngân hàng và xem ảnh thẻ CCCD mặt trước/sau (hỗ trợ zoom/preview ảnh đầy đủ qua overlay).
+* **Hộp thoại nhập lý do từ chối**: Admin có thể chọn "Từ chối" để mở modal phụ nhập lý do từ chối.
+* **Giao diện cảnh báo từ chối cho người bán**: Bổ sung tab cảnh báo màu đỏ có biểu tượng cảnh báo khi hồ sơ bị từ chối, hiển thị rõ lý do từ chối từ admin.
+* **Nút "Chỉnh sửa & gửi lại hồ sơ"**: Cho phép người bán bấm nút để mở biểu mẫu và tự động tải lại các thông tin, hình ảnh cũ đã điền để chỉnh sửa nhanh.
+* **Thông báo về tài khoản người bán**: Tự động gửi thông báo thuộc loại `account_update` kèm lý do từ chối cho người bán khi hồ sơ bị từ chối.
+
+### Changed
+* **Mở rộng mô hình dữ liệu User (`src/types/user.ts`)**: Bổ sung giá trị `"rejected"` vào trạng thái người bán (`sellerStatus`) và thêm trường `sellerRejectionReason?: string` để lưu lý do từ chối.
+* **Cập nhật State Store (`src/store/auth-store.ts`)**: Cập nhật hàm `approveSeller` và `registerSeller` để làm sạch lý do từ chối (`sellerRejectionReason: ""`), tránh giữ lại dữ liệu cũ khi phê duyệt hoặc gửi lại hồ sơ.
+* **Sửa lỗi co hẹp modal trang Admin (`src/app/admin/page.tsx`)**: Đưa các modal (`SellerDetailsModal` và modal nhập lý do từ chối) ra ngoài thẻ container hoạt ảnh `.page-enter` để khắc phục lỗi modal bị bóp nghẹt kích thước theo chiều dọc.
+
+### Verification
+* `npx tsc --noEmit` chạy thành công không có lỗi kiểu dữ liệu.
+* `npm run lint` hoàn thành không lỗi.
+
+---
+
 ## [0.6.5] - 2026-06-09
 
 ### Nâng cấp Admin Dashboard: KPI thực tế từ Firestore & Biểu đồ Line tương tác lọc 7/30 ngày

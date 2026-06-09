@@ -522,6 +522,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
       const updatedProfile = {
         sellerStatus: "pending" as const,
+        sellerRejectionReason: "",
         sellerInfo: uploadedInfo,
       };
 
@@ -533,6 +534,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
       await updateDoc(userRef, {
         sellerStatus: "pending",
+        sellerRejectionReason: "",
         sellerInfo: sanitizedInfo,
       });
 
@@ -555,6 +557,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     const updatedProfile = {
       role: "seller" as const,
       sellerStatus: "approved" as const,
+      sellerRejectionReason: "",
     };
 
     if (isSelf) {

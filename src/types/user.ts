@@ -20,7 +20,8 @@ export interface User {
   memberSince?: string;
   addresses?: UserAddress[];
   role?: "buyer" | "seller" | "admin";
-  sellerStatus?: "pending" | "approved";
+  sellerStatus?: "pending" | "approved" | "rejected";
+  sellerRejectionReason?: string;
   sellerInfo?: SellerInfo;
 }
 

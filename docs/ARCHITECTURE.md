@@ -337,6 +337,7 @@ approveSeller()
 * Email phải duy nhất
 * Đăng ký thành công → Auto Login
 * Logout → Clear Session
+* **Kiểm duyệt & Từ chối hồ sơ (Quality Control)**: Trạng thái `sellerStatus` chuyển thành `"pending"` khi gửi hồ sơ đăng ký. Admin có thể duyệt (trạng thái `"approved"`, chuyển `role` thành `"seller"`, tạo gian hàng `Shop` tương ứng và xóa `sellerRejectionReason`) hoặc từ chối (trạng thái `"rejected"`, nhập lý do lưu vào `sellerRejectionReason` và gửi thông báo `account_update` cho người bán). Khi người bán chỉnh sửa và gửi lại, trạng thái quay lại `"pending"` và lý do từ chối được xóa bỏ.
 * **Tránh lỗi QuotaExceededError (Zustand Partialize)**: Sử dụng middleware `partialize` của Zustand để lọc bỏ các trường ảnh base64 dung lượng cao (như logo shop, ảnh nông trại, ảnh CMND mặt trước và sau) ra khỏi đối tượng `sellerInfo` trước khi lưu xuống bộ nhớ đệm `localStorage`. Chỉ lưu giữ thông tin văn bản thuần túy của tài khoản.
 
 ---
@@ -490,6 +491,37 @@ Logout
 Clear Session
 ```
 
+## Seller Verification & Audit Flow
+
+```text
+Seller Form Submission
+       │ (sellerStatus ➔ "pending")
+       ▼
+Admin Dashboard Queue
+       │
+       ├─► Click "Xem chi tiết" ➔ Opens Modal (Inspect CCCD Front/Back with Zoom, Farm pics)
+       │
+       ├─► [Approve] ➔ calls approveSeller()
+       │                 ├── role ➔ "seller"
+       │                 ├── sellerStatus ➔ "approved"
+       │                 ├── sellerRejectionReason ➔ ""
+       │                 └── Auto-creates shop & Sends system notification
+       │
+       └─► [Reject] ➔ prompts for reason input
+                         ├── sellerStatus ➔ "rejected"
+                         ├── sellerRejectionReason ➔ reason
+                         └── Sends account_update notification
+                               │
+                               ▼
+                   Seller Dashboard / Profile
+                         ├── Displays "Hồ sơ bị từ chối" Warning banner
+                         ├── Shows rejection reason text
+                         └── "Chỉnh sửa & gửi lại hồ sơ" button
+                               │
+                               ▼ (Prefills form with past info)
+                   Resubmits Form (sellerStatus ➔ "pending", resets reason)
+```
+
 ---
 
 # 9. Server vs Client Components
@@ -508,10 +540,10 @@ Clear Session
 | checkout/page.tsx          | Client | Form Handling     |
 | login/page.tsx             | Client | Auth State        |
 | register/page.tsx          | Client | Auth State        |
-| profile/page.tsx           | Client | Tab navigation, Profile & Address updates |
+| profile/page.tsx           | Client | Tab navigation, Profile & Address updates, Seller Registration Warning Banner & Resubmission form handling |
 | app/shop/[id]/page.tsx     | Client | Shop Details, Follow and Products Filter & Sort |
 | app/admin/layout.tsx       | Client | Admin Session & Sidebar Layout |
-| app/admin/page.tsx         | Client | Dashboard stats & Firestore fetch (Users/Orders) with Custom SVG line chart & hover tooltips |
+| app/admin/page.tsx         | Client | Dashboard stats, Approvals Queue with Detail Modal (CCCD Zoom), Rejection modal, and custom SVG line chart |
 
 ---
 
