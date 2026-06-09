@@ -1,7 +1,7 @@
 # 🌿 NôngSạch Architecture
 
 > Architecture Document
-> Version: v1.1.2
+> Version: v1.2.7
 > Project: NôngSạch — Nền tảng giao dịch nông sản sạch
 
 ---
@@ -104,9 +104,12 @@ nong-sach/
 │   └── CHANGELOG.md
 │
 ├── src/
-│
+│   ├── middleware.ts     # Next.js Edge Middleware bảo vệ các route /admin
 │   ├── app/
 │   │   ├── page.tsx
+│   │   ├── admin/
+│   │   │   ├── layout.tsx  # Layout riêng cho Admin Panel
+│   │   │   └── page.tsx    # Dashboard quản trị Admin
 │   │   ├── products/
 │   │   │   ├── page.tsx
 │   │   │   └── [id]/page.tsx
@@ -159,7 +162,8 @@ nong-sach/
 | /about         | About           |
 | /contact       | Contact         |
 | /profile       | Trang cá nhân   |
-| /shop/[id]      | Trang chi tiết Shop/Cửa hàng |
+| /shop/[id]     | Trang chi tiết Shop/Cửa hàng |
+| /admin         | Admin Panel (Dashboard quản trị hệ thống, duyệt người bán, quản lý role) |
 
 ## Navigation Rules
 
@@ -333,7 +337,66 @@ approveSeller()
 * Email phải duy nhất
 * Đăng ký thành công → Auto Login
 * Logout → Clear Session
+* **Kiểm duyệt & Từ chối hồ sơ (Quality Control)**: Trạng thái `sellerStatus` chuyển thành `"pending"` khi gửi hồ sơ đăng ký. Admin có thể duyệt (trạng thái `"approved"`, chuyển `role` thành `"seller"`, tạo gian hàng `Shop` tương ứng và xóa `sellerRejectionReason`) hoặc từ chối (trạng thái `"rejected"`, nhập lý do lưu vào `sellerRejectionReason` và gửi thông báo `account_update` cho người bán). Khi người bán chỉnh sửa và gửi lại, trạng thái quay lại `"pending"` và lý do từ chối được xóa bỏ.
 * **Tránh lỗi QuotaExceededError (Zustand Partialize)**: Sử dụng middleware `partialize` của Zustand để lọc bỏ các trường ảnh base64 dung lượng cao (như logo shop, ảnh nông trại, ảnh CMND mặt trước và sau) ra khỏi đối tượng `sellerInfo` trước khi lưu xuống bộ nhớ đệm `localStorage`. Chỉ lưu giữ thông tin văn bản thuần túy của tài khoản.
+* **Khóa tạm & Thu hồi quyền (Violation Control)**: Shop vi phạm có thể bị khóa tạm thời (`sellerStatus: "blocked"`, tự động chặn và ẩn toàn bộ sản phẩm của shop) hoặc thu hồi quyền bán hàng vĩnh viễn (đổi role về `"buyer"`, xóa mọi sản phẩm). Khi Shop bị khóa tạm, Admin có thể dùng hành động "Mở khóa Shop" để phục hồi trạng thái `"approved"`, mở khóa lại các sản phẩm của shop và gửi thông báo hệ thống.
+
+---
+
+## Report Store
+
+File:
+
+```text
+src/store/report-store.ts
+```
+
+### State
+
+```ts
+reports: ViolationReport[]
+loading: boolean
+error: string | null
+```
+
+### Actions
+
+```ts
+addReport(data: Partial<ViolationReport>)
+fetchReports()
+resolveReport(reportId: string, status: 'resolved' | 'dismissed', action: string, note?: string)
+```
+
+### Business Rules
+
+* Tích hợp lưu trữ trực tiếp trên Firestore trong collection `"reports"`.
+* **Tránh lỗi undefined trên Firestore**: Trước khi ghi dữ liệu lên Firestore, tự động lọc sạch các trường có giá trị `undefined` bằng `Object.fromEntries(Object.entries(data).filter(([_, v]) => v !== undefined))` để đảm bảo an toàn truy vấn và ngăn chặn runtime exceptions của Firestore.
+* Khi Admin xử lý báo cáo, ghi nhận kết quả hành động và tự động cập nhật trạng thái thực tế của đối tượng bị báo cáo (Cửa hàng/Sản phẩm).
+
+---
+
+## Admin Auditing (Lịch sử Hoạt động Admin)
+
+Nhật ký kiểm toán của Admin được quản lý trực tiếp qua collection `"adminLogs"` trên Firestore.
+
+### Model
+
+```ts
+interface AdminLog {
+  id: string;
+  adminId: string;
+  adminEmail: string;
+  action: 'approve_seller' | 'reject_seller' | 'approve_product' | 'reject_product' | 'dismiss_report' | 'warn_seller' | 'block_product' | 'block_seller' | 'delete_product' | 'delete_seller_products' | 'unblock_seller';
+  targetType: 'seller' | 'product' | 'report';
+  targetId: string;
+  targetName: string; // Tên shop hoặc tên sản phẩm bị tác động
+  details: string;
+  createdAt: any; // Timestamp Firestore
+}
+```
+
+### Luồng xử lý
+Mỗi khi Admin thực hiện bất kỳ hành động phê duyệt, từ chối, khóa, xóa hay mở khóa, hệ thống tự động ghi lại một bản ghi `AdminLog` mới vào Firestore để lưu vết kiểm toán, hiển thị ở bảng Lịch sử hoạt động ở cuối giao diện Admin Panel.
 
 ---
 
@@ -486,6 +549,62 @@ Logout
 Clear Session
 ```
 
+## Seller Verification & Audit Flow
+
+```text
+Seller Form Submission
+       │ (sellerStatus ➔ "pending")
+       ▼
+Admin Dashboard Queue
+       │
+       ├─► Click "Xem chi tiết" ➔ Opens Modal (Inspect CCCD Front/Back with Zoom, Farm pics)
+       │
+       ├─► [Approve] ➔ calls approveSeller()
+       │                 ├── role ➔ "seller"
+       │                 ├── sellerStatus ➔ "approved"
+       │                 ├── sellerRejectionReason ➔ ""
+       │                 └── Auto-creates shop & Sends system notification
+       │
+       └─► [Reject] ➔ prompts for reason input
+                         ├── sellerStatus ➔ "rejected"
+                         ├── sellerRejectionReason ➔ reason
+                         └── Sends account_update notification
+                               │
+                               ▼
+                   Seller Dashboard / Profile
+                         ├── Displays "Hồ sơ bị từ chối" Warning banner
+                         ├── Shows rejection reason text
+                         └── "Chỉnh sửa & gửi lại hồ sơ" button
+                               │
+                               ▼ (Prefills form with past info)
+                   Resubmits Form (sellerStatus ➔ "pending", resets reason)
+```
+
+## Product Verification & Audit Flow
+
+```text
+Seller Submits Product
+       │ (product.status ➔ "pending")
+       ▼
+Admin Dashboard Queue (Duyệt Sản Phẩm Tab)
+       │
+       ├─► Click "Xem chi tiết" ➔ Opens Modal (Inspect name, category, price, stock, description, images)
+       │
+       ├─► [Approve] ➔ Sets status ➔ "active", clears rejectionReason
+       │                 └── Sends notification to seller (product approved)
+       │
+       └─► [Reject] ➔ prompts for reason input
+                         ├── Sets status ➔ "rejected"
+                         ├── Saves rejectionReason ➔ reason
+                         └── Sends notification to seller (product rejected with reason)
+                               │
+                               ▼
+                   Seller Dashboard (Products Table)
+                         ├── Displays "Bị từ chối" status badge
+                         ├── Shows rejection reason text
+                         └── Seller edits product -> Resets status ➔ "pending", resets reason
+```
+
 ---
 
 # 9. Server vs Client Components
@@ -504,8 +623,10 @@ Clear Session
 | checkout/page.tsx          | Client | Form Handling     |
 | login/page.tsx             | Client | Auth State        |
 | register/page.tsx          | Client | Auth State        |
-| profile/page.tsx           | Client | Tab navigation, Profile & Address updates |
+| profile/page.tsx           | Client | Tab navigation, Profile & Address updates, Seller Registration Warning Banner & Resubmission form handling |
 | app/shop/[id]/page.tsx     | Client | Shop Details, Follow and Products Filter & Sort |
+| app/admin/layout.tsx       | Client | Admin Session & Sidebar Layout |
+| app/admin/page.tsx         | Client | Dashboard stats, Approvals Queue with Detail Modal (CCCD Zoom), Rejection modal, and custom SVG line chart |
 
 ---
 
@@ -570,6 +691,7 @@ Deployment Strategy:
 * Type-safe data model
 * Quantity stock protection
 * Local auth persistence
+* Edge Middleware Role Protection: Bảo vệ route `/admin` bằng Next.js Edge Middleware thông qua cookie `user-role` đồng bộ từ Client-side Zustand Auth Store.
 
 ## Phase 2
 
@@ -675,6 +797,8 @@ orders
 users
 reviews
 contactMessages
+reports
+adminLogs
 ```
 
 ## Payment Gateway

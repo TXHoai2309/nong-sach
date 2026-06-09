@@ -135,7 +135,6 @@ function ProfileContent() {
     deleteAddress,
     setDefaultAddress,
     registerSeller,
-    approveSeller,
     updateSellerInfo,
   } = useAuthStore();
   const { addToCart } = useCartStore();
@@ -189,6 +188,7 @@ function ProfileContent() {
 
   // Seller registration form state
   const [isSubmittingSeller, setIsSubmittingSeller] = useState(false);
+  const [isReRegistering, setIsReRegistering] = useState(false);
   const [shopName, setShopName] = useState("");
   const [shopSlogan, setShopSlogan] = useState("");
   const [shopPhone, setShopPhone] = useState("");
@@ -328,7 +328,7 @@ function ProfileContent() {
   }, [orders, currentUser]);
 
   const sellerOrders = useMemo(() => {
-    if (!currentUser || currentUser.role !== "seller") return [];
+    if (!currentUser || (currentUser.role !== "seller" && currentUser.sellerStatus !== "approved")) return [];
     return orders.filter((o) => o.sellerId === currentUser.id);
   }, [orders, currentUser]);
 
@@ -370,7 +370,7 @@ function ProfileContent() {
     async function loadCustomProducts() {
       if (!currentUser) return;
       try {
-        const list = await getAllProducts();
+        const list = await getAllProducts(true);
         const filteredList = list.filter((p) => p.sellerId === currentUser.id) as ShopProduct[];
         setShopProducts(filteredList);
       } catch (e) {
@@ -703,11 +703,43 @@ function ProfileContent() {
         bankAccountName: bankAccountName.trim().toUpperCase(),
       });
       showToast("Gửi hồ sơ đăng ký thành công!");
+      setIsReRegistering(false);
     } catch (error) {
       console.error(error);
       showToast("Đã có lỗi xảy ra khi đăng ký", "error");
     } finally {
       setIsSubmittingSeller(false);
+    }
+  };
+
+  const handleLoadPreviousInfo = () => {
+    if (currentUser && currentUser.sellerInfo) {
+      const info = currentUser.sellerInfo;
+      setShopName(info.shopName || "");
+      setShopSlogan(info.slogan || "");
+      setShopPhone(info.shopPhone || "");
+      setShopZalo(info.shopZalo || "");
+      setIsZaloSame(info.shopZalo === info.shopPhone);
+      setShopDescription(info.description || "");
+      setShopLogo(info.shopLogo || null);
+      setShopCoverImage(info.coverImage || "");
+      setShopCoverUrl(info.coverImage || "");
+      setFarmImages(info.farmImages || []);
+      setSelectedMainCategories(info.mainCategories || []);
+      
+      const prov = provinces.find((p) => p.name === info.province);
+      setFarmProvinceCode(prov ? prov.code : "");
+      
+      setFarmAddress(info.farmAddress || "");
+      setSelectedStandards(info.farmingStandards || []);
+      setStandardsDetail(info.farmingStandardsDetail || "");
+      setIdCardNumber(info.idCardNumber || "");
+      setIdCardFront(info.idCardFront || null);
+      setIdCardBack(info.idCardBack || null);
+      setBankName(info.bankName || "Vietcombank");
+      setBankAccountNumber(info.bankAccountNumber || "");
+      setBankAccountName(info.bankAccountName || "");
+      setIsReRegistering(true);
     }
   };
 
@@ -909,6 +941,8 @@ function ProfileContent() {
       sellerId: currentUser.id,
       shopName: currentUser.sellerInfo?.shopName || "Trang trại của tôi",
       isOrganic: selectedStandards.includes("Hữu cơ (Organic)"),
+      status: editingProduct ? (editingProduct.status === "rejected" ? "pending" : (editingProduct.status || "active")) : "pending",
+      rejectionReason: editingProduct ? (editingProduct.status === "rejected" ? "" : (editingProduct.rejectionReason || "")) : "",
     };
 
     try {
@@ -916,10 +950,14 @@ function ProfileContent() {
 
       if (editingProduct) {
         setShopProducts((prev) => prev.map((p) => p.id === editingProduct.id ? productData : p));
-        showToast("Cập nhật sản phẩm thành công!");
+        if (productData.status === "pending" && editingProduct.status === "rejected") {
+          showToast("Đã gửi lại yêu cầu phê duyệt sản phẩm!");
+        } else {
+          showToast("Cập nhật sản phẩm thành công!");
+        }
       } else {
         setShopProducts((prev) => [...prev, productData]);
-        showToast("Đăng sản phẩm mới thành công!");
+        showToast("Đăng sản phẩm mới thành công! Chờ Admin phê duyệt.");
       }
 
       closeProductModal();
@@ -1313,11 +1351,14 @@ function ProfileContent() {
 
                   let sellerLabel = "Đăng ký bán hàng";
                   let sellerIcon = "storefront";
-                  if (currentUser.role === "seller") {
+                  if (currentUser.role === "seller" || currentUser.sellerStatus === "approved") {
                     sellerLabel = "Kênh người bán";
                     sellerIcon = "store";
                   } else if (currentUser.sellerStatus === "pending") {
                     sellerLabel = "Đăng ký bán hàng";
+                  } else if (currentUser.sellerStatus === "rejected") {
+                    sellerLabel = "Hồ sơ bị từ chối";
+                    sellerIcon = "error";
                   }
 
                   menuItems.push({ id: "seller", label: sellerLabel, icon: sellerIcon });
@@ -2313,7 +2354,7 @@ function ProfileContent() {
             {activeTab === "seller" && (
               <div className="space-y-6">
                 {/* Steps indicator */}
-                {currentUser.role !== "seller" && (
+                {currentUser.role !== "seller" && currentUser.sellerStatus !== "approved" && (
                   <div className="mb-6 flex justify-center gap-2 sm:gap-4 rounded-2xl bg-gray-100 p-1.5 text-xs font-bold w-fit mx-auto">
                     <span className={`rounded-xl px-4 py-2 transition-all ${
                       !currentUser.sellerStatus 
@@ -2336,12 +2377,27 @@ function ProfileContent() {
                 )}
 
                 {/* State 1: Form UI */}
-                {!currentUser.sellerStatus && (
+                {(!currentUser.sellerStatus || isReRegistering) && (
                   <div>
                     {/* Header Banner */}
-                    <div className="mb-6 text-center sm:text-left">
-                      <h3 className="text-xl font-extrabold text-[#006c49]">Đăng ký bán hàng</h3>
-                      <p className="text-xs text-[#3c4a42]/70 mt-1">Bổ sung thông tin để trở thành đối tác của NôngSạch</p>
+                    <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                      <div className="text-center sm:text-left">
+                        <h3 className="text-xl font-extrabold text-[#006c49]">
+                          {isReRegistering ? "Cập nhật hồ sơ đăng ký" : "Đăng ký bán hàng"}
+                        </h3>
+                        <p className="text-xs text-[#3c4a42]/70 mt-1">
+                          {isReRegistering ? "Chỉnh sửa thông tin hồ sơ bán hàng của bạn" : "Bổ sung thông tin để trở thành đối tác của NôngSạch"}
+                        </p>
+                      </div>
+                      {isReRegistering && (
+                        <button
+                          type="button"
+                          onClick={() => setIsReRegistering(false)}
+                          className="px-4 py-2 rounded-full border border-slate-300 hover:bg-slate-50 text-[#3c4a42] text-xs font-bold transition shadow-sm cursor-pointer bg-white"
+                        >
+                          Quay lại
+                        </button>
+                      )}
                     </div>
 
                     {/* Three Feature Cards */}
@@ -2861,8 +2917,8 @@ function ProfileContent() {
 
                 {/* State 2: Pending Approval UI */}
                 {currentUser.sellerStatus === "pending" && (
-                  <div className="rounded-3xl border border-[#bbcabf]/30 bg-white p-6 shadow-sm text-center max-w-[580px] mx-auto py-10">
-                    <div className="w-16 h-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mb-6 mx-auto border border-amber-200">
+                  <div className="rounded-3xl border border-amber-200 bg-white p-6 shadow-sm text-center max-w-[580px] mx-auto py-10 animate-fade-in">
+                    <div className="w-16 h-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mb-6 mx-auto border border-amber-200 shadow-sm">
                       <span className="material-symbols-outlined text-[36px] animate-pulse">hourglass_empty</span>
                     </div>
 
@@ -2872,44 +2928,138 @@ function ProfileContent() {
                     </p>
 
                     {/* Summary Card */}
-                    <div className="my-6 border-t border-b border-[#bbcabf]/20 py-4.5 text-left text-xs space-y-2 text-[#3c4a42]/80">
+                    <div className="my-6 border-t border-[#bbcabf]/20 pt-6 text-left text-xs space-y-2.5 text-[#3c4a42]/80">
                       <p className="font-bold text-[#006c49] mb-3 text-sm flex items-center gap-1.5">
                         <span className="material-symbols-outlined text-base">storefront</span>
-                        Hồ sơ đã gửi:
+                        Chi tiết hồ sơ đã gửi chờ duyệt:
                       </p>
-                      <p><strong>Tên cửa hàng:</strong> {currentUser.sellerInfo?.shopName}</p>
-                      {currentUser.sellerInfo?.slogan && <p><strong>Slogan:</strong> {currentUser.sellerInfo?.slogan}</p>}
-                      <p><strong>Số điện thoại:</strong> {currentUser.sellerInfo?.shopPhone}</p>
-                      <p><strong>Địa chỉ trang trại:</strong> {currentUser.sellerInfo?.farmAddress}, {currentUser.sellerInfo?.province}</p>
-                      <p><strong>Nông sản chính:</strong> {currentUser.sellerInfo?.mainCategories.join(", ")}</p>
-                      <p><strong>CCCD số:</strong> {currentUser.sellerInfo?.idCardNumber.substring(0, 3)}*********</p>
-                      <p><strong>Ngân hàng thụ hưởng:</strong> {currentUser.sellerInfo?.bankName} - {currentUser.sellerInfo?.bankAccountNumber}</p>
+                      <p className="flex justify-between border-b border-slate-50 pb-1.5">
+                        <span className="text-[#3c4a42]/60 font-semibold">Tên cửa hàng:</span>
+                        <span className="font-bold text-[#3c4a42]">{currentUser.sellerInfo?.shopName}</span>
+                      </p>
+                      {currentUser.sellerInfo?.slogan && (
+                        <p className="flex justify-between border-b border-slate-50 pb-1.5">
+                          <span className="text-[#3c4a42]/60 font-semibold">Slogan:</span>
+                          <span className="font-semibold text-[#3c4a42]">{currentUser.sellerInfo?.slogan}</span>
+                        </p>
+                      )}
+                      <p className="flex justify-between border-b border-slate-50 pb-1.5">
+                        <span className="text-[#3c4a42]/60 font-semibold">Số điện thoại:</span>
+                        <span className="font-bold text-[#3c4a42]">{currentUser.sellerInfo?.shopPhone}</span>
+                      </p>
+                      <p className="flex justify-between border-b border-slate-50 pb-1.5">
+                        <span className="text-[#3c4a42]/60 font-semibold">Địa chỉ trang trại:</span>
+                        <span className="font-semibold text-[#3c4a42]">{currentUser.sellerInfo?.farmAddress}, {currentUser.sellerInfo?.province}</span>
+                      </p>
+                      <p className="flex justify-between border-b border-slate-50 pb-1.5">
+                        <span className="text-[#3c4a42]/60 font-semibold">Nông sản chính:</span>
+                        <span className="font-semibold text-[#3c4a42]">{currentUser.sellerInfo?.mainCategories?.join(", ")}</span>
+                      </p>
+                      <p className="flex justify-between border-b border-slate-50 pb-1.5">
+                        <span className="text-[#3c4a42]/60 font-semibold">CCCD số:</span>
+                        <span className="font-mono font-semibold text-[#3c4a42]">{currentUser.sellerInfo?.idCardNumber?.substring(0, 3)}*********</span>
+                      </p>
+                      <p className="flex justify-between border-b border-slate-50 pb-1.5">
+                        <span className="text-[#3c4a42]/60 font-semibold">Ngân hàng thụ hưởng:</span>
+                        <span className="font-semibold text-[#3c4a42]">{currentUser.sellerInfo?.bankName} - {currentUser.sellerInfo?.bankAccountNumber}</span>
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* State 2b: Rejected Approval UI */}
+                {currentUser.sellerStatus === "rejected" && !isReRegistering && (
+                  <div className="rounded-3xl border border-rose-200 bg-white p-6 shadow-sm text-center max-w-[580px] mx-auto py-10 animate-fade-in">
+                    <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mb-6 mx-auto border border-rose-200 shadow-sm">
+                      <span className="material-symbols-outlined text-[36px]">report</span>
                     </div>
 
-                    {/* Simulation helper */}
-                    <div className="mt-8 rounded-2xl bg-[#e6f4ea] border border-[#006c49]/20 p-5">
-                      <p className="text-xs text-[#006c49] font-bold mb-3 flex items-center justify-center gap-1.5">
-                        <span className="material-symbols-outlined text-base">build</span>
-                        Khu vực thử nghiệm (Demo Helper)
+                    <h3 className="text-lg font-bold text-rose-700">Hồ sơ đăng ký bị từ chối</h3>
+                    
+                    {/* Rejection Reason Box */}
+                    <div className="mt-4 p-4.5 bg-rose-50/50 border border-rose-100 rounded-2xl text-left shadow-sm">
+                      <p className="text-xs font-bold text-rose-800 flex items-center gap-1.5 mb-1.5">
+                        <span className="material-symbols-outlined text-sm">info</span>
+                        Lý do từ chối từ Ban quản trị:
                       </p>
+                      <p className="text-xs text-rose-700 leading-relaxed font-semibold">
+                        {currentUser.sellerRejectionReason || "Không có lý do chi tiết được cung cấp."}
+                      </p>
+                    </div>
+
+                    <p className="text-xs text-[#3c4a42]/70 mt-4 leading-relaxed max-w-[400px] mx-auto">
+                      Vui lòng kiểm tra lại thông tin hồ sơ bên dưới, bấm chỉnh sửa để cập nhật thông tin chính xác và gửi lại cho chúng tôi xét duyệt.
+                    </p>
+
+                    {/* Action button */}
+                    <div className="mt-6 flex justify-center">
                       <button
                         type="button"
-                        onClick={() => {
-                          approveSeller(currentUser.id);
-                          showToast("Chúc mừng! Cửa hàng đã được phê duyệt thành công.");
-                        }}
-                        className="rounded-full bg-[#006c49] px-6 py-2.5 text-xs font-bold text-white shadow hover:opacity-90 transition-all flex items-center gap-1.5 mx-auto"
+                        onClick={handleLoadPreviousInfo}
+                        className="rounded-full bg-[#006c49] hover:bg-[#005236] px-8 py-3.5 text-sm font-bold text-white shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer border-none"
                       >
-                        <span className="material-symbols-outlined text-sm">done</span>
-                        Phê duyệt hồ sơ ngay (Demo/Test)
+                        <span className="material-symbols-outlined text-base">edit_note</span>
+                        Chỉnh sửa & gửi lại hồ sơ
                       </button>
+                    </div>
+
+                    {/* Summary Card */}
+                    <div className="my-6 border-t border-[#bbcabf]/20 pt-6 text-left text-xs space-y-2.5 text-[#3c4a42]/80">
+                      <p className="font-bold text-[#3c4a42] mb-3 text-sm flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-base text-[#006c49]">storefront</span>
+                        Chi tiết hồ sơ đã gửi trước đó:
+                      </p>
+                      <p className="flex justify-between border-b border-slate-50 pb-1.5">
+                        <span className="text-[#3c4a42]/60 font-semibold">Tên cửa hàng:</span>
+                        <span className="font-bold text-[#3c4a42]">{currentUser.sellerInfo?.shopName}</span>
+                      </p>
+                      {currentUser.sellerInfo?.slogan && (
+                        <p className="flex justify-between border-b border-slate-50 pb-1.5">
+                          <span className="text-[#3c4a42]/60 font-semibold">Slogan:</span>
+                          <span className="font-semibold text-[#3c4a42]">{currentUser.sellerInfo?.slogan}</span>
+                        </p>
+                      )}
+                      <p className="flex justify-between border-b border-slate-50 pb-1.5">
+                        <span className="text-[#3c4a42]/60 font-semibold">Số điện thoại:</span>
+                        <span className="font-bold text-[#3c4a42]">{currentUser.sellerInfo?.shopPhone}</span>
+                      </p>
+                      <p className="flex justify-between border-b border-slate-50 pb-1.5">
+                        <span className="text-[#3c4a42]/60 font-semibold">Địa chỉ trang trại:</span>
+                        <span className="font-semibold text-[#3c4a42]">{currentUser.sellerInfo?.farmAddress}, {currentUser.sellerInfo?.province}</span>
+                      </p>
+                      <p className="flex justify-between border-b border-slate-50 pb-1.5">
+                        <span className="text-[#3c4a42]/60 font-semibold">Nông sản chính:</span>
+                        <span className="font-semibold text-[#3c4a42]">{currentUser.sellerInfo?.mainCategories?.join(", ")}</span>
+                      </p>
+                      <p className="flex justify-between border-b border-slate-50 pb-1.5">
+                        <span className="text-[#3c4a42]/60 font-semibold">CCCD số:</span>
+                        <span className="font-mono font-semibold text-[#3c4a42]">{currentUser.sellerInfo?.idCardNumber?.substring(0, 3)}*********</span>
+                      </p>
+                      <p className="flex justify-between border-b border-slate-50 pb-1.5">
+                        <span className="text-[#3c4a42]/60 font-semibold">Ngân hàng thụ hưởng:</span>
+                        <span className="font-semibold text-[#3c4a42]">{currentUser.sellerInfo?.bankName} - {currentUser.sellerInfo?.bankAccountNumber}</span>
+                      </p>
                     </div>
                   </div>
                 )}
 
                 {/* State 3: Approved Seller Channel / Dashboard */}
-                {currentUser.role === "seller" && (
+                {(currentUser.role === "seller" || currentUser.sellerStatus === "approved") && (
                   <div className="space-y-6">
+                    {currentUser.sellerStatus === "blocked" && (
+                      <div className="bg-rose-50 border border-rose-200 rounded-3xl p-5 flex items-start gap-4 shadow-sm">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-rose-100 text-rose-600">
+                          <span className="material-symbols-outlined text-[28px]">block</span>
+                        </div>
+                        <div>
+                          <h4 className="font-extrabold text-rose-950 text-sm">Cửa hàng đã bị khóa tạm thời</h4>
+                          <p className="text-xs text-rose-800/90 mt-1 leading-relaxed font-semibold">
+                            Cửa hàng của bạn đã bị Ban quản trị tạm thời khóa do nhận được các phản ánh báo cáo vi phạm chính sách hoặc nội dung không hợp lệ. 
+                            Tất cả sản phẩm hiện có đã được tạm ẩn khỏi cửa hàng công khai và bạn không thể đăng bán sản phẩm mới. Vui lòng liên hệ với Ban quản trị qua hotline để được xử lý.
+                          </p>
+                        </div>
+                      </div>
+                    )}
                     {/* Header */}
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white border border-[#bbcabf]/30 rounded-3xl p-5 shadow-sm">
                       <div className="flex items-center gap-4">
@@ -3019,7 +3169,13 @@ function ProfileContent() {
                           </h4>
                           <button
                             type="button"
-                            onClick={() => setIsAddProductOpen(true)}
+                            onClick={() => {
+                              if (currentUser?.sellerStatus === "blocked") {
+                                alert("Cửa hàng của bạn đang bị khóa, không thể đăng bán sản phẩm mới!");
+                              } else {
+                                setIsAddProductOpen(true);
+                              }
+                            }}
                             className="rounded-full bg-[#006c49] px-4 py-2 text-xs font-bold text-white shadow-sm hover:opacity-90 transition-all flex items-center gap-1"
                           >
                             <span className="material-symbols-outlined text-sm">add</span>
@@ -3046,6 +3202,7 @@ function ProfileContent() {
                                   <th className="pb-3 pr-2">Giá bán</th>
                                   <th className="pb-3 pr-2">Tồn kho</th>
                                   <th className="pb-3 pr-2">Nguồn gốc</th>
+                                  <th className="pb-3 pr-2">Trạng thái</th>
                                   <th className="pb-3 pr-2 text-right">Thao tác</th>
                                 </tr>
                               </thead>
@@ -3077,6 +3234,36 @@ function ProfileContent() {
                                     </td>
                                     <td className="py-3 pr-2 font-semibold">{p.stock} {p.unit}</td>
                                     <td className="py-3 pr-2 font-semibold">{p.origin}</td>
+                                    <td className="py-3 pr-2 font-semibold">
+                                      {p.status === "pending" && (
+                                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-xs font-bold text-amber-700">
+                                          <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                                          Chờ duyệt
+                                        </span>
+                                      )}
+                                      {p.status === "rejected" && (
+                                        <div className="flex flex-col gap-0.5">
+                                          <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-1 text-xs font-bold text-red-700 w-fit">
+                                            Bị từ chối
+                                          </span>
+                                          {p.rejectionReason && (
+                                            <span className="text-[10px] text-red-500 max-w-[120px] break-words line-clamp-2" title={p.rejectionReason}>
+                                              {p.rejectionReason}
+                                            </span>
+                                          )}
+                                        </div>
+                                      )}
+                                      {p.status === "blocked" && (
+                                        <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-1 text-xs font-bold text-red-700">
+                                          Bị khóa
+                                        </span>
+                                      )}
+                                      {(p.status === "active" || !p.status) && (
+                                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-700">
+                                          Đang bán
+                                        </span>
+                                      )}
+                                    </td>
                                     <td className="py-3 pr-2 text-right space-x-1.5 whitespace-nowrap">
                                       <Link
                                         href={`/products/${p.id}`}
@@ -3088,7 +3275,13 @@ function ProfileContent() {
                                       </Link>
                                       <button
                                         type="button"
-                                        onClick={() => handleEditProduct(p)}
+                                        onClick={() => {
+                                          if (currentUser?.sellerStatus === "blocked") {
+                                            alert("Cửa hàng của bạn đang bị khóa, không thể chỉnh sửa sản phẩm!");
+                                          } else {
+                                            handleEditProduct(p);
+                                          }
+                                        }}
                                         className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors"
                                         title="Chỉnh sửa"
                                       >

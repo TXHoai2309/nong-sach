@@ -100,6 +100,13 @@ Lưu ý: Danh sách tỉnh/thành phố và quận/huyện được lấy từ A
 
 Tài khoản demo:
 
+1. Tài khoản Người mua (Buyer) Demo:
+```text
+Email: nguyenvana@gmail.com
+Mật khẩu: 12345678
+```
+
+2. Tài khoản Quản trị (Admin) Demo:
 ```text
 Email: admin@nongsach.vn
 Mật khẩu: 12345678
@@ -128,8 +135,15 @@ Khi người dùng đã đăng nhập tài khoản, họ có thể đăng ký n�
    - **Bước 2: Địa chỉ nông trại & Tiêu chuẩn**: Chọn Tỉnh/Thành phố động (*), nhập địa chỉ chi tiết nông trại (*), chọn các tiêu chuẩn canh tác (như VietGAP, Hữu cơ) và viết chi tiết quy trình canh tác.
    - **Bước 3: Xác minh danh tính**: Nhập Số CMND/CCCD (*) và tải ảnh chụp mặt trước/sau (*) của thẻ.
    - **Bước 4: Tài khoản ngân hàng**: Nhập tên ngân hàng (*), số tài khoản (*) và tên chủ tài khoản (*).
-4. Bấm `Đăng ký bán hàng` ở bước cuối cùng. Hệ thống sẽ tự động phê duyệt nhanh và nâng cấp tài khoản sang vai trò `seller`.
-5. Sau khi nâng cấp thành công, giao diện đăng ký 4 bước biến mất hoàn toàn. Thay vào đó, hệ thống hiển thị **Kênh bán hàng (Dashboard)** với các thống kê doanh số, sản phẩm, và quản lý riêng biệt:
+4. Bấm `Đăng ký bán hàng` ở bước cuối cùng. Trạng thái hồ sơ của bạn sẽ chuyển thành `Hồ sơ đang được xét duyệt` (pending).
+5. Bạn cần chờ Admin phê duyệt hồ sơ:
+   - **Nếu được duyệt**: Trạng thái hồ sơ chuyển thành `approved`, tài khoản được cấp quyền người bán (`seller`), và hệ thống hiển thị **Kênh bán hàng (Dashboard)** với các tính năng quản lý sản phẩm, đơn hàng.
+   - **Nếu bị từ chối**:
+     - Bạn sẽ nhận được thông báo chuông (loại `Cập nhật tài khoản`) ghi rõ lý do bị từ chối từ admin.
+     - Khi vào trang cá nhân, sidebar sẽ hiển thị menu **"Hồ sơ bị từ chối"** kèm biểu tượng cảnh báo màu đỏ.
+     - Giao diện tab Đăng ký sẽ hiển thị cảnh báo hồ sơ bị từ chối kèm lý do cụ thể và nút **"Chỉnh sửa & gửi lại hồ sơ"**.
+     - Bấm nút này sẽ mở lại biểu mẫu đăng ký 4 bước, tự động điền sẵn các thông tin cũ để bạn sửa đổi những phần chưa đạt yêu cầu (ví dụ: chụp lại ảnh CCCD rõ nét hơn) và gửi lại để chờ xét duyệt tiếp.
+6. Sau khi hồ sơ được phê duyệt thành công, giao diện đăng ký biến mất hoàn toàn. Thay vào đó, hệ thống hiển thị **Kênh bán hàng (Dashboard)** với các thống kê doanh số, sản phẩm, và quản lý riêng biệt:
    - **Tab Sản phẩm của tôi**: Quản lý danh sách, thêm, sửa, xóa sản phẩm.
    - **Tab Đơn hàng của shop**: Xem danh sách các đơn hàng khách đã đặt mua từ shop mình.
 
@@ -229,7 +243,56 @@ Quy trình tổng thể dự kiến:
 Ghi chú triển khai sau MVP:
 
 - Cần migrate dữ liệu tài khoản và sản phẩm sang Cloud Firestore và Firebase Auth.
-- Cần có trang quản trị dành riêng cho Admin để phê duyệt/từ chối hồ sơ người bán (`pending`, `approved`, `rejected`).
 - Cần tích hợp cổng thanh toán trực tuyến (VNPay, MoMo, ZaloPay).
 - Cần có hệ thống trạng thái đơn hàng đầy đủ: chờ xác nhận, đang xử lý, đang giao, đã giao, hoàn tất, đã hủy.
 - Cần có chức năng đánh giá và nhận xét sản phẩm sau khi đơn hàng hoàn tất.
+
+## 18. Trang quản trị hệ thống (Admin Panel)
+
+Trang quản trị hệ thống cung cấp giao diện riêng tư, bảo mật dành riêng cho tài khoản Admin để giám sát và vận hành sàn thương mại điện tử.
+
+### 1. Truy cập
+- **Điều kiện**: Phải đăng nhập bằng tài khoản có vai trò `admin` (ví dụ: `admin@nongsach.vn`).
+- **Cách vào**:
+  - Click vào nút **"Trang quản trị"** hiển thị trên thanh Header ở storefront (cạnh tên tài khoản).
+  - Hoặc nhập trực tiếp URL: `http://localhost:3000/admin`.
+  - Nếu cố tình truy cập bằng tài khoản buyer hoặc chưa đăng nhập, Next.js Edge Middleware sẽ tự động chặn và chuyển hướng về trang chủ `/` hoặc trang đăng nhập.
+
+### 2. Các chức năng chính
+- **Bảng chỉ số tổng quan (KPI)**: Hiển thị 4 thẻ thông tin được truy vấn thời gian thực từ Firestore:
+  1. **Tổng người dùng**: Tổng số lượng tài khoản đăng ký trên hệ thống.
+  2. **Seller chờ**: Số hồ sơ nông dân xin đăng ký người bán đang ở trạng thái chờ duyệt.
+  3. **Đơn hôm nay**: Số lượng đơn hàng phát sinh trong ngày hôm nay.
+  4. **Doanh thu**: Tổng số tiền thu được từ tất cả đơn hàng đã giao hoặc đang xử lý (không tính các đơn hàng bị hủy `"cancelled"`).
+- **Biểu đồ hiệu suất nền tảng**:
+  - **Lọc thời gian**: Admin có thể chọn xem báo cáo theo chu kỳ **7 ngày** hoặc **30 ngày** qua các nút bấm tương ứng.
+  - **Chuyển đổi chỉ số**: Cho phép lựa chọn xem theo **Doanh thu** (thể hiện bằng đường màu xanh lá cây, thang đo VND viết tắt dạng M/K) hoặc **Số đơn hàng** (thể hiện bằng đường màu xanh dương, thang đo số nguyên đơn hàng).
+  - **Tooltip tương tác**: Khi di chuột qua các mốc điểm của biểu đồ, hệ thống sẽ hiện đường nét đứt định vị dọc và một tooltip nổi màu tối hiển thị chính xác ngày tháng cùng số liệu doanh thu & số đơn hàng của ngày đó.
+- **Hàng đợi kiểm duyệt (Approvals Queue)**:
+  - Tích hợp hệ thống tab chuyển đổi linh hoạt: **Người Bán**, **Sản Phẩm** và **Báo Cáo**.
+  - **Người Bán**:
+    * Hiển thị danh sách hồ sơ nông dân xin đăng ký người bán đang ở trạng thái `pending`.
+    * Click **"Xem chi tiết"**: Mở hộp thoại chi tiết (`SellerDetailsModal`) để xem đầy đủ thông tin về thông tin cửa hàng, thông tin liên hệ, nông trại & tiêu chuẩn, ảnh CCCD phóng to và tài khoản ngân hàng.
+    * Click **"Phê duyệt"** (Approve): Nâng cấp quyền tài khoản sang `seller`, phê duyệt trạng thái `approved`, đồng thời tạo gian hàng trên Firestore, xóa lý do từ chối cũ và gửi thông báo chúc mừng về tài khoản đó.
+    * Click **"Từ chối"** (Reject): Yêu cầu nhập lý do từ chối cụ thể, chuyển trạng thái hồ sơ sang `"rejected"`, lưu lý do và gửi thông báo `account_update` chứa lý do đó về tài khoản người bán.
+  - **Sản Phẩm**:
+    * Hiển thị danh sách các sản phẩm mới do seller tự đăng đang ở trạng thái `pending`.
+    * Click **"Xem chi tiết"**: Mở hộp thoại chi tiết (`ProductDetailsModal`) để xem đầy đủ thông tin sản phẩm (tên, giá, đơn vị, tồn kho, nguồn gốc, nhãn hữu cơ, mô tả chi tiết và bộ sưu tập ảnh đầy đủ).
+    * Click **"Phê duyệt"**: Chuyển trạng thái sản phẩm sang `"active"`, xóa lý do từ chối cũ và gửi thông báo chúc mừng đến người bán (sản phẩm hiện đã hiển thị công khai).
+    * Click **"Từ chối"**: Yêu cầu nhập lý do từ chối cụ thể, chuyển trạng thái sản phẩm sang `"rejected"`, lưu lý do và gửi thông báo hệ thống kèm lý do đó về tài khoản người bán.
+  - **Báo Cáo (Báo cáo vi phạm)**:
+    * Hiển thị danh sách các báo cáo vi phạm shop/sản phẩm của người dùng đang ở trạng thái `pending`.
+    * Click **"Xem & Xử lý"**: Mở hộp thoại xem chi tiết thông tin báo cáo (loại đối tượng, lý do vi phạm, người báo cáo, thời gian và nội dung mô tả chi tiết của báo cáo vi phạm).
+    * Cung cấp **4 hành động xử lý**:
+      1. **Bỏ qua**: Đổi trạng thái báo cáo thành `"dismissed"`. Ghi nhận log.
+      2. **Cảnh báo**: Yêu cầu nhập nội dung và gửi thông báo cảnh báo trực tiếp về tài khoản người bán vi phạm.
+      3. **Khóa tạm**: Khóa tạm sản phẩm (đổi sang `"blocked"`) hoặc khóa shop (đổi `sellerStatus` sang `"blocked"` và khóa toàn bộ sản phẩm của shop).
+      4. **Xóa vi phạm**: Xóa sản phẩm khỏi Firestore; hoặc thu hồi quyền bán hàng của shop (về `role = "buyer"`, `sellerStatus = "rejected"`) và xóa toàn bộ sản phẩm của shop khỏi Firestore.
+- **Danh sách người dùng & Phân quyền**:
+  - Liệt kê toàn bộ người dùng đã đăng ký tài khoản trên hệ thống.
+  - Cho phép Admin trực tiếp đổi vai trò của bất kỳ tài khoản nào: click **"Lên Admin"** để phong quyền quản trị, click **"Lên Shop (Seller)"** để cấp quyền bán hàng nhanh, hoặc click **"Bỏ Shop (Buyer)"** để thu hồi quyền bán hàng về tài khoản mua thông thường.
+  - **Mở khóa Shop**: Nếu shop đang bị khóa tạm thời (`sellerStatus === "blocked"`), hiển thị badge cảnh báo màu đỏ và nút hành động chuyển thành **"Mở khóa Shop"**. Khi nhấn, tài khoản sẽ được chuyển lại trạng thái hoạt động bình thường, mở khóa toàn bộ sản phẩm và gửi thông báo vui cho seller.
+- **Lịch sử hoạt động Admin (Admin Activity Logs)**:
+  - Bảng danh sách đặt ở cuối trang Admin Panel, hiển thị toàn bộ lịch sử các thao tác kiểm duyệt của Admin (Xóa, Khóa, Cảnh báo, Bỏ qua, Mở khóa) được đồng bộ từ Firestore theo thời gian thực.
+- **Đăng xuất**: Cung cấp nút đăng xuất riêng biệt ở cuối Sidebar để kết thúc phiên làm việc an toàn của Admin.
+

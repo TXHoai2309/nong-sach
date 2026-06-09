@@ -4,6 +4,147 @@ All notable changes to the **NôngSạch** project will be documented in this fi
 
 The format is based on **Keep a Changelog** and this project adheres to **Semantic Versioning**.
 
+## [0.6.8] - 2026-06-09
+
+### Admin xử lý báo cáo vi phạm, Lịch sử Hoạt động & Mở khóa Shop (Admin Violation Reports Handling, Audit Logs & Shop Unblocking)
+
+### Added
+* **Hộp thoại xử lý báo cáo vi phạm (`ReportDetailsModal` in `src/app/admin/page.tsx`)**: Admin có thể xem chi tiết đối tượng bị báo cáo (cửa hàng/sản phẩm), lý do, người báo cáo và nội dung chi tiết.
+* **4 hành động xử lý vi phạm trong Modal**:
+  - *Bỏ qua (Dismiss)*: Đổi trạng thái báo cáo thành `"dismissed"`.
+  - *Cảnh báo (Warn)*: Gửi thông báo cảnh báo trực tiếp về tài khoản người bán.
+  - *Khóa tạm (Block)*: Chuyển trạng thái sản phẩm sang `"blocked"`, hoặc chuyển trạng thái shop sang `"blocked"` (đồng thời tự động khóa toàn bộ sản phẩm của shop đó).
+  - *Xóa vi phạm (Delete)*: Xóa sản phẩm khỏi Firestore; hoặc hạ quyền shop về buyer (trạng thái `"rejected"`) và xóa toàn bộ sản phẩm của shop đó.
+* **Bảng Lịch sử hoạt động Admin (Admin Activity Logs)**: Hiển thị danh sách nhật ký hành động của Admin được lưu trong collection `"adminLogs"` trên Firestore.
+* **Nút "Mở khóa Shop" trong danh sách người dùng**: Cho phép Admin khôi phục hoạt động cho shop bị khóa tạm thời (`sellerStatus` chuyển lại thành `"approved"`), mở khóa tất cả sản phẩm của shop đó và gửi thông báo hệ thống thông báo cho người bán.
+
+### Changed
+* **Lọc và bảo vệ storefront cho shop/sản phẩm bị khóa**:
+  - Ẩn toàn bộ sản phẩm của các shop bị khóa hoặc sản phẩm có trạng thái `"blocked"` khỏi trang danh sách sản phẩm.
+  - Chặn người mua truy cập trực tiếp vào trang chi tiết của sản phẩm bị khóa hoặc sản phẩm thuộc shop bị khóa (hiển thị thông báo không tìm thấy sản phẩm).
+* **Cảnh báo và hạn chế Kênh người bán**: Hiển thị banner cảnh báo tài khoản bị khóa trong trang `/profile` của người bán và chặn các hành động quản lý sản phẩm.
+* **Tối ưu hóa ghi đè Firestore (`src/store/report-store.ts`)**: Sửa lỗi Firestore write failure bằng cách loại bỏ các thuộc tính có giá trị `undefined` thông qua `Object.fromEntries(Object.entries(data).filter(([_, v]) => v !== undefined))` trước khi đẩy lên Firebase.
+
+### Verification
+* **Type Safety & Build**: Chạy lệnh `npx tsc --noEmit` và `npm run build` thành công, đảm bảo code hoàn toàn sạch lỗi.
+
+---
+
+## [0.6.7] - 2026-06-09
+
+### Quy trình phê duyệt sản phẩm tự đăng của Người bán (Admin Product Approvals Workflow)
+
+### Added
+* **Hộp thoại duyệt sản phẩm của Admin (`ProductDetailsModal` in `src/app/admin/page.tsx`)**: Modal chi tiết hiển thị toàn bộ thông tin sản phẩm (mô tả, giá, tồn kho, nguồn gốc, nhãn hữu cơ) và thư viện ảnh sản phẩm đầy đủ để admin xem xét trước khi phê duyệt.
+* **Hộp thoại nhập lý do từ chối sản phẩm**: Admin có thể chọn từ chối sản phẩm và nhập lý do không phê duyệt sản phẩm.
+* **Phân tách danh sách duyệt tại Dashboard Admin**: Tích hợp thanh tab chuyển đổi mượt mà giữa "Duyệt Người Bán" và "Duyệt Sản Phẩm" ngay trong cột hàng đợi kiểm duyệt để tối ưu hóa không gian hiển thị.
+* **Cột trạng thái sản phẩm trong Kênh người bán (`src/app/profile/page.tsx`)**: Bổ sung cột "Trạng thái" hiển thị trạng thái sản phẩm hiện tại:
+  - *Chờ duyệt (Pending)*: Badge màu Amber chuyển động.
+  - *Bị từ chối (Rejected)*: Badge màu Rose kèm lý do từ chối cụ thể ngay dưới trạng thái.
+  - *Đang bán (Active)*: Badge màu Emerald.
+* **Cơ chế tự động gửi thông báo duyệt**: Gửi thông báo hệ thống về tài khoản người bán khi sản phẩm được duyệt hoặc bị từ chối kèm lý do cụ thể.
+
+### Changed
+* **Lọc sản phẩm trên cửa hàng công khai (`src/lib/products.ts`)**: Cập nhật hàm `getAllProducts()` mặc định ẩn các sản phẩm chưa duyệt (`pending` hoặc `rejected`). Tích hợp tham số `includeInactive = true` cho phép Admin và Seller xem toàn bộ sản phẩm của mình.
+* **Bảo vệ trang chi tiết sản phẩm (`src/app/products/[id]/page.tsx`)**: Chặn truy cập trực tiếp của khách mua hàng thông thường đến trang chi tiết của sản phẩm đang chờ duyệt hoặc bị từ chối (hiển thị thông báo Không tìm thấy), ngoại trừ chủ sản phẩm và Admin.
+* **Tự động chuyển đổi trạng thái khi sửa sản phẩm**: Khi người bán cập nhật sản phẩm đang ở trạng thái `rejected`, trạng thái sản phẩm sẽ tự động chuyển về `pending` và làm sạch lý do từ chối cũ để đợi kiểm duyệt lại.
+
+### Verification
+* **Type Safety & Build**: Chạy lệnh `npx tsc --noEmit` thành công (exit code 0).
+
+---
+
+## [0.6.6] - 2026-06-09
+
+### Quy trình kiểm duyệt, Giao diện 3 trạng thái của Người bán & Quy trình gửi lại hồ sơ (Seller Registration Audit, UI States & Resubmission Flow)
+
+### Added
+* **Giao diện 3 trạng thái trực quan cho người bán (`src/app/profile/page.tsx`)**: Thiết kế lại giao diện phân tách rõ ràng theo 3 trạng thái với phong cách UI cao cấp:
+  * *Chờ duyệt (Pending)*: Sử dụng tông màu Hổ phách (Amber), biểu tượng đồng hồ cát chuyển động chậm kèm lưới thông tin chi tiết hồ sơ.
+  * *Bị từ chối (Rejected)*: Sử dụng tông màu Hồng/Đỏ (Rose/Red), hiển thị banner cảnh báo, lý do từ chối cụ thể và nút bấm để xử lý lại hồ sơ.
+  * *Đã duyệt (Approved)*: Mở khóa toàn bộ Kênh người bán (Seller Dashboard) với đầy đủ thống kê, quản lý sản phẩm và đơn hàng.
+* **Cơ chế tải lại dữ liệu (Resubmit Flow)**: Bổ sung nút "Chỉnh sửa & gửi lại hồ sơ" trong giao diện Bị từ chối, hỗ trợ người bán đưa dữ liệu đã điền trước đó ngược trở lại biểu mẫu để chỉnh sửa nhanh.
+* **Hộp thoại xem chi tiết hồ sơ chờ duyệt (`SellerDetailsModal` in `src/app/admin/page.tsx`)**: Thiết kế modal chi tiết cho phép Admin kiểm tra thông tin cửa hàng, thông tin nông trại (kèm danh sách ảnh thực tế), xem tài khoản ngân hàng và xem ảnh thẻ CCCD mặt trước/sau (hỗ trợ zoom/preview ảnh đầy đủ qua overlay).
+* **Hộp thoại nhập lý do từ chối**: Admin có thể chọn "Từ chối" để mở modal phụ nhập lý do từ chối.
+* **Thông báo về tài khoản người bán**: Tự động gửi thông báo thuộc loại `account_update` kèm lý do từ chối cho người bán khi hồ sơ bị từ chối.
+
+### Changed
+* **Đồng bộ hóa logic kiểm tra quyền người bán**: Điều chỉnh điều kiện kiểm tra để hiển thị menu Kênh người bán, các bước chỉ báo (step indicators) và nội dung Dashboard dựa trên cả hai điều kiện: `currentUser.role === "seller"` HOẶC `currentUser.sellerStatus === "approved"`.
+* **Dọn dẹp mã nguồn client-side**: Loại bỏ hook `approveSeller` khỏi phần destructuring ở đầu file `page.tsx` do quy trình duyệt đã được chuyển giao hoàn toàn cho phía Admin.
+* **Mở rộng mô hình dữ liệu User (`src/types/user.ts`)**: Bổ sung giá trị `"rejected"` vào trạng thái người bán (`sellerStatus`) và thêm trường `sellerRejectionReason?: string` để lưu lý do từ chối.
+* **Cập nhật State Store (`src/store/auth-store.ts`)**: Cập nhật hàm `approveSeller` và `registerSeller` để làm sạch lý do từ chối (`sellerRejectionReason: ""`), tránh giữ lại dữ liệu cũ khi phê duyệt hoặc gửi lại hồ sơ.
+* **Sửa lỗi co hẹp modal trang Admin (`src/app/admin/page.tsx`)**: Đưa các modal (`SellerDetailsModal` và modal nhập lý do từ chối) ra ngoài thẻ container hoạt ảnh `.page-enter` để khắc phục lỗi modal bị bóp nghẹt kích thước theo chiều dọc.
+
+### Removed
+* **Gỡ bỏ tính năng giả lập tự động phê duyệt**: Xóa bỏ hoàn toàn khối chức năng "Khu vực thử nghiệm / Demo Helper" (Simulation helper card) và nút bấm phê duyệt nhanh ở client-side trong giao diện Chờ duyệt. Quy trình phê duyệt/từ chối hiện tại bắt buộc phải xử lý thủ công bởi Admin tại `/admin`.
+
+### Verification
+* **Type Safety & Build**: Chạy lệnh `npx tsc --noEmit` và `npm run build` thành công, hệ thống đảm bảo an toàn kiểu dữ liệu và đóng gói thành công (exit code 0).
+* **Linter**: `npm run lint` hoàn thành không lỗi.
+
+---
+
+## [0.6.5] - 2026-06-09
+
+### Nâng cấp Admin Dashboard: KPI thực tế từ Firestore & Biểu đồ Line tương tác lọc 7/30 ngày
+
+### Added
+* **Lọc khoảng thời gian cho biểu đồ**: Bổ sung bộ lọc thời gian cho phép chuyển đổi linh hoạt giữa 7 ngày qua và 30 ngày qua trên biểu đồ hiệu suất nền tảng.
+* **Chuyển đổi chỉ số hiển thị (Metric Toggle)**: Cho phép chuyển đổi xem biểu đồ theo **Doanh thu** (VND, màu xanh lá) hoặc **Số đơn hàng** (màu xanh dương).
+* **Tooltip nổi tương tác động**: Khi hover chuột lên từng điểm dữ liệu trên biểu đồ SVG, hiển thị tooltip dạng HTML bay chứa thông tin chi tiết về Ngày cụ thể (dạng `DD/MM/YYYY`), Doanh thu (VND định dạng chuẩn) và Số đơn hàng tương ứng.
+* **Đường chỉ hướng dọc & Vòng tròn chỉ điểm**: Vẽ đường nét đứt chạy dọc theo toạ độ X của điểm đang hover và phóng to vòng tròn dữ liệu khi hover để mang lại trải nghiệm chuyên nghiệp.
+
+### Changed
+* **Thẻ thống kê KPI dựa trên Firestore thật**: Thay thế các thẻ cũ bằng 4 thẻ KPI đáp ứng đúng Acceptance Criteria:
+  - **Tổng người dùng**: Tổng số tài khoản đăng ký trên Firestore.
+  - **Seller chờ**: Số lượng người bán đang chờ duyệt (`sellerStatus === "pending"`).
+  - **Đơn hôm nay**: Đếm số đơn hàng được tạo trong ngày hôm nay ở múi giờ local của trình duyệt.
+  - **Doanh thu**: Tính tổng tiền từ tất cả đơn hàng trên Firestore (ngoại trừ các đơn hàng bị hủy `"cancelled"`).
+* **Vẽ biểu đồ SVG Line tuỳ biến**: Vẽ biểu đồ dạng SVG không cần thư viện ngoài, tối ưu hiệu năng và tránh lỗi hydration. Hỗ trợ hiển thị responsive theo tỷ lệ khung hình `800/350` và tô màu gradient mượt mà dưới đường vẽ.
+* **Tự động giãn cách nhãn ngày trục X**: Khi xem chế độ 30 ngày, chỉ hiển thị nhãn trục X sau mỗi 5 ngày và ngày cuối cùng để giữ giao diện sạch đẹp, không bị chồng chéo văn bản.
+* **Tối ưu hoá truy vấn Firestore**: Loại bỏ hoàn toàn việc truy vấn số lượng sản phẩm (`productsCount`) và số lượng shop (`shopsCount`) không sử dụng trên trang quản trị, giúp giảm số lượng Firestore reads và tăng tốc độ phản hồi của trang.
+
+### Verification
+* Lệnh kiểm tra kiểu dữ liệu `npx tsc --noEmit` hoàn thành không lỗi.
+* Lệnh linter `npm run lint` chạy thành công, 0 lỗi và 0 cảnh báo trong file `src/app/admin/page.tsx`.
+
+---
+
+## [0.6.4] - 2026-06-09
+
+### Xác thực Admin và Trang Quản trị (/admin)
+
+### Added
+* **Kiểu dữ liệu Admin (`src/types/user.ts`)**:
+  - Bổ sung vai trò `"admin"` vào danh sách các role hợp lệ trong interface `User`.
+* **Đồng bộ Cookie tự động (`src/store/auth-store.ts`)**:
+  - Triển khai helper functions `setCookie` và `deleteCookie` ở phía Client.
+  - Cập nhật hàm `initAuth`, `login`, và `logout` để tự động ghi nhận cookie `user-role` và `user-id`. Điều này giúp Next.js Middleware ở Edge runtime có thể đọc trạng thái phiên đăng nhập.
+* **Tài khoản Demo Admin (`src/store/auth-store.ts`)**:
+  - Thêm cơ chế tự động kiểm tra và đăng ký tài khoản Demo Admin `admin@nongsach.vn` / `12345678`. Tài khoản này sẽ tự động được gán role `"admin"` trên Firestore khi đăng nhập lần đầu.
+* **Next.js Edge Middleware bảo vệ Route (`src/middleware.ts`)**:
+  - Tạo mới Middleware chạy ở cấp độ Edge để chặn truy cập trái phép vào tất cả các route bắt đầu bằng `/admin`.
+  - Chuyển hướng người dùng chưa đăng nhập về trang `/login?redirect=/admin`.
+  - Chuyển hướng người dùng đã đăng nhập nhưng không phải admin về trang chủ `/`.
+* **Trang Quản trị Admin Panel (`src/app/admin/layout.tsx`, `src/app/admin/page.tsx`)**:
+  - Xây dựng Layout riêng cho trang Admin với Sidebar điều hướng, Header hiển thị thông tin tài khoản Admin và nút đăng xuất.
+  - Trang Dashboard thống kê số lượng người dùng, cửa hàng, sản phẩm và duyệt các hồ sơ người bán đang chờ xử lý (`pending` thành `approved` hoặc `rejected`).
+* **Lối tắt truy cập nhanh trên Header (`src/components/layout/Header.tsx`)**:
+  - Hiển thị nút "Trang quản trị" trên Header (cả phiên bản Desktop và Mobile menu) cho tài khoản có vai trò `"admin"`.
+
+### Changed
+* **Ẩn Header và Footer cửa hàng trên route Admin (`src/components/layout/Header.tsx`, `src/components/layout/Footer.tsx`)**:
+  - Cập nhật Header và Footer để tự động ẩn (`return null`) khi người dùng truy cập các đường dẫn thuộc `/admin`.
+* **Khắc phục lỗi Linter trong Admin Dashboard (`src/app/admin/layout.tsx`, `src/app/admin/page.tsx`)**:
+  - Thay đổi việc gọi `setState` đồng bộ trong `useEffect` (gây lỗi `set-state-in-effect`) bằng cách bao bọc qua `window.setTimeout`.
+  - Loại bỏ các biến không sử dụng (`activeSellers`, `activeBuyers`) trong Dashboard Page.
+
+### Verification
+* `npx tsc --noEmit` hoàn thành không lỗi.
+* `npm run lint` chạy thành công với 0 lỗi (0 errors).
+
+---
+
 ## [0.6.3] - 2026-06-07
 
 ### Tối ưu thông báo người bán và hiển thị chi tiết đánh giá/đơn hàng

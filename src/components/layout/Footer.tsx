@@ -32,6 +32,10 @@ const NAV_COLUMNS = [
 export default function Footer() {
   const pathname = usePathname();
 
+  if (pathname?.startsWith("/admin")) {
+    return null;
+  }
+
   return (
     <footer className="bg-surface-container">
       <div className="mx-auto flex w-full max-w-[1280px] flex-col items-start justify-between gap-16 border-t border-outline-variant/30 px-6 py-16 md:flex-row">

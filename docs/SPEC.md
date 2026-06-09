@@ -5,12 +5,12 @@
 | Thông tin         | Chi tiết                                    |
 | ----------------- | ------------------------------------------- |
 | Tên dự án         | NôngSạch — Nền tảng giao dịch nông sản sạch |
-| Phiên bản         | MVP v0.4.3                                  |
+| Phiên bản         | MVP v0.6.8 (Sprint 5.4)                     |
 | Ngày tạo          | 03/06/2026                                  |
-| Cập nhật lần cuối | 05/06/2026                                  |
+| Cập nhật lần cuối | 09/06/2026                                  |
 | Nhóm              | NôngSạch Team                               |
 | Môn học           | Vibe Coding Thực Chiến — Buổi 3             |
-| Trạng thái        | ✅ Hoàn thành Sprint 1, Sprint 2, Sprint 3, Sprint 4, Sprint 4.2 & Sprint 4.3 |
+| Trạng thái        | ✅ Hoàn thành Sprint 1 đến Sprint 5.4 |
 
 ---
 
@@ -74,6 +74,11 @@ Người tiêu dùng ngày càng lo ngại về an toàn thực phẩm, đặc b
 | F-18 | Quản lý đơn bán hàng  | Dashboard cho người bán quản lý danh sách đơn hàng, cập nhật trạng thái đơn (Xác nhận, Giao hàng...) | P1      | ✅ Done     |
 | F-19 | Hệ thống thông báo    | Thông báo thời gian thực cho người mua và người bán về các sự kiện đơn hàng và hệ thống | P1      | ✅ Done     |
 | F-20 | Ổn định Profile & Báo cáo shop | Sửa lỗi runtime Profile, đảm bảo modal Báo cáo shop hiển thị đúng và lint/type toàn project không còn error | P0      | ✅ Done     |
+| F-21 | Trang quản trị & Phân quyền Admin | Trang quản trị `/admin` bảo mật bằng Middleware, xem stats và duyệt người bán | P1      | ✅ Done     |
+| F-22 | Dashboard KPI & Biểu đồ SVG Line | Báo cáo thực tế từ Firestore và biểu đồ SVG tương tác lọc 7/30 ngày | P1      | ✅ Done     |
+| F-23 | Quy trình duyệt/từ chối hồ sơ | Modal xem chi tiết hồ sơ (zoom CCCD), từ chối kèm lý do và quy trình nộp lại | P1      | ✅ Done     |
+| F-24 | Quy trình duyệt/từ chối sản phẩm | Admin duyệt sản phẩm pending -> active hoặc từ chối kèm lý do và gửi thông báo | P1      | ✅ Done     |
+| F-25 | Xử lý báo cáo vi phạm | Quyết định xử lý của Admin (Bỏ qua/Cảnh báo/Khóa tạm/Xóa đối tượng) và ghi log kiểm toán Firestore | P1      | ✅ Done     |
 
 
 > **Ghi chú cho team:** F-09 hiện đã có giao diện hoàn chỉnh theo Stitch HTML tại route `/contact`. Form liên hệ đang ở mức UI/UX MVP; nếu cần gửi dữ liệu thật, cần bổ sung API/Firebase handler ở Phase 2. Kênh bán hàng (F-11), Quản lý sản phẩm (F-12) và Trang chi tiết shop (F-14) hiện được lưu động tại `localStorage` phía client của từng người dùng để mô phỏng tính năng thực tế.
@@ -81,7 +86,6 @@ Người tiêu dùng ngày càng lo ngại về an toàn thực phẩm, đặc b
 ## 2.2. Ngoài phạm vi MVP
 
 * Thanh toán online (VNPay, MoMo, ZaloPay, Stripe)
-* Dashboard quản trị Admin
 * Hệ thống đánh giá và nhận xét sản phẩm
 * Chat trực tiếp với nông dân
 * Multi-vendor marketplace
@@ -266,7 +270,7 @@ Quy trình dưới đây là định hướng phát triển sau MVP, khi hệ th
   2. *Bước 2 (Địa chỉ & Tiêu chuẩn)*: Chọn Tỉnh/Thành phố động từ API (*), địa chỉ chi tiết nông trại (*), tiêu chuẩn canh tác (VietGAP, GlobalGAP, Hữu cơ, Khác) và mô tả chi tiết quy trình.
   3. *Bước 3 (Xác minh danh tính)*: Nhập Số CMND/CCCD (*), tải lên ảnh mặt trước (*) và mặt sau (*) của CMND/CCCD.
   4. *Bước 4 (Thông tin tài khoản)*: Chọn Tên ngân hàng (*), Số tài khoản (*), Tên chủ tài khoản (*).
-* **Mô phỏng phê duyệt hồ sơ**: Sau khi người dùng nhấn "Đăng ký bán hàng", hệ thống tự động đổi trạng thái hồ sơ người bán thành `approved` và cập nhật quyền hạn tài khoản lên `seller` (không bắt buộc admin duyệt thủ công trong MVP).
+* **Quy trình phê duyệt & từ chối hồ sơ**: Sau khi người dùng nhấn "Đăng ký bán hàng", hệ thống sẽ chuyển trạng thái của hồ sơ người bán thành `pending` (chờ duyệt). Admin có quyền phê duyệt hoặc từ chối kèm lý do cụ thể. Nếu hồ sơ bị từ chối, người bán có thể xem lý do trực tiếp từ trang cá nhân, bấm "Chỉnh sửa & gửi lại hồ sơ" (form sẽ tự động điền sẵn các thông tin cũ của họ để sửa đổi) và gửi lại duyệt.
 * **Ẩn giao diện đăng ký**: Khi tài khoản đã được nâng cấp thành công lên người bán, giao diện đăng ký (State 1-2-3) sẽ được ẩn hoàn toàn, thay thế bằng giao diện Kênh bán hàng (Dashboard).
 
 ### US-11: Quản lý Kênh bán hàng (Seller Dashboard)
@@ -304,7 +308,46 @@ Quy trình dưới đây là định hướng phát triển sau MVP, khi hệ th
 * **Khung ảnh tối ưu**:
   * Ô thumbnail hiển thị dưới dạng flex-wrap với kích thước cố định `w-16 h-16` bo góc để giao diện không bị méo lệch khi số lượng ảnh ít hoặc nhiều.
   * Khung chứa ảnh đại diện lớn lấy kích thước tự nhiên của ảnh đang chọn, hiển thị bằng `object-contain`, bỏ tối ưu lại không cần thiết đối với ảnh base64 và phóng ảnh nhỏ có kiểm soát để tránh bị mờ.
-  * Khi ảnh có độ phân giải thấp, gallery dùng nền radial và lớp ảnh mờ phía sau để lấp khoảng trống thị giác, giúp bố cục vẫn đầy đặn nhưng ảnh chính không bị kéo căng quá mức.
+  - Khi ảnh có độ phân giải thấp, gallery dùng nền radial và lớp ảnh mờ phía sau để lấp khoảng trống thị giác, giúp bố cục vẫn đầy đặn nhưng ảnh chính không bị kéo căng quá mức.
+
+## 3.2.3. Trang Quản trị Admin Panel (Admin Dashboard)
+
+### US-21: Truy cập và Quản trị hệ thống (Admin Panel)
+
+**Là** người quản trị hệ thống (Admin), **tôi muốn** có một trang Dashboard riêng tư bảo mật bằng Middleware, **để** kiểm duyệt các yêu cầu đăng ký bán hàng của nhà vườn và quản lý phân quyền người dùng trên hệ thống.
+
+#### Acceptance Criteria
+* **Bảo vệ Route (Middleware)**:
+  - Chỉ cho phép tài khoản có `role === "admin"` truy cập trang `/admin` và các trang con.
+  - Các tài khoản không đăng nhập sẽ bị redirect về trang `/login?redirect=/admin`.
+  - Các tài khoản đăng nhập nhưng không có vai trò admin sẽ bị chuyển hướng về trang chủ `/`.
+* **Ẩn giao diện storefront**:
+  - Không hiển thị thanh điều hướng `Header` và chân trang `Footer` của trang bán hàng thông thường khi đang ở route `/admin`.
+* **Bố cục giao diện Quản trị**:
+  - Sidebar bên trái hiển thị tên NôngSạch Admin, mục "Tổng quan", thông tin Admin đăng nhập (tên, email) và nút Đăng xuất.
+  - Main panel bên phải hiển thị Header có tiêu đề, nút "Xem cửa hàng" trỏ về trang chủ.
+* **Bảng thống kê nhanh (KPI)**:
+  - Hiển thị đúng dữ liệu thực tế truy vấn từ Firestore gồm 4 thẻ:
+    1. **Tổng người dùng**: Tổng số tài khoản trên hệ thống.
+    2. **Seller chờ**: Số hồ sơ đăng ký người bán đang chờ duyệt (`sellerStatus === "pending"`).
+    3. **Đơn hôm nay**: Đếm số đơn hàng được tạo trong ngày hôm nay ở múi giờ local của trình duyệt.
+    4. **Doanh thu**: Tổng doanh thu thực tế (tổng tiền các đơn hàng ngoại trừ các đơn bị huỷ `"cancelled"`), được định dạng tiền tệ VND chuẩn.
+* **Biểu đồ hiệu suất nền tảng (SVG Line Chart)**:
+  - Biểu đồ line vẽ bằng SVG tuỳ biến, tự động co giãn (responsive ratio `800/350`) và có gradient màu bên dưới đường vẽ.
+  - Cho phép người dùng **lọc khoảng thời gian**: chuyển đổi giữa 7 ngày qua và 30 ngày qua. Ở chế độ 30 ngày, các nhãn ngày trên trục X tự động giãn cách cách nhau 5 ngày để không đè chữ.
+  - Cho phép **chuyển đổi chỉ số hiển thị** (Metric Toggle): chọn xem theo "Doanh thu" (VND, màu xanh lá) hoặc "Số đơn hàng" (màu xanh dương).
+  - Tích hợp **hiệu ứng tương tác**: Khi di chuột lên biểu đồ, hiển thị đường dẫn dọc nét đứt và vòng tròn chỉ điểm tại ngày gần nhất. Hiển thị tooltip dạng HTML nổi lơ lửng ngay phía trên điểm dữ liệu với đầy đủ thông tin: Ngày (dạng `DD/MM/YYYY`), Doanh thu (VND), và Số đơn hàng của ngày cụ thể đó.
+* **Duyệt hồ sơ người bán (Approvals Queue)**:
+  - Hiển thị danh sách các tài khoản có trạng thái người bán đang chờ xử lý (`sellerStatus === "pending"`).
+  - Thay vì các nút thao tác trực tiếp, cung cấp nút **"Xem chi tiết"** để hiển thị thông tin đầy đủ về: thông tin shop, thông tin liên hệ, nông trại và tiêu chuẩn canh tác (kèm danh sách ảnh thực địa), ảnh thẻ CCCD mặt trước/sau (hỗ trợ zoom/preview ảnh đầy đủ), thông tin tài khoản ngân hàng.
+  - Cung cấp nút **"Duyệt"** (gọi `approveSeller` để nâng cấp role sang `seller`, trạng thái `approved`, tự động tạo shop trên Firestore, xóa lý do từ chối cũ và gửi thông báo hệ thống về tài khoản người bán).
+  - Cung cấp nút **"Từ chối"** để mở modal phụ yêu cầu nhập lý do từ chối. Sau khi xác nhận, chuyển trạng thái người bán sang `rejected`, lưu lý do vào trường `sellerRejectionReason` trên Firestore, và gửi thông báo `account_update` chứa lý do từ chối cụ thể đến người bán.
+* **Quản lý phân quyền người dùng**:
+  - Bảng hiển thị danh sách tất cả các tài khoản trên hệ thống kèm Email, Vai trò (role) và Ngày gia nhập.
+  - Cung cấp nút **"Lên Admin"** để nâng cấp một tài khoản thành quản trị viên.
+  - Cung cấp nút **"Bỏ Shop (Buyer)"** hoặc **"Lên Shop (Seller)"** để thay đổi nhanh vai trò của tài khoản đó.
+* **Nút lối tắt trên Header**:
+  - Hiển thị nút "Trang quản trị" ngay cạnh tên tài khoản trên Header storefront cho các tài khoản là admin để truy cập nhanh.
 
 ## 3.3. Thông tin thương hiệu & hỗ trợ khách hàng
 
@@ -376,9 +419,10 @@ interface User {
   gender?: "Nam" | "Nữ" | "Khác" | "";
   memberSince?: string;
   addresses?: UserAddress[];
-  role?: "buyer" | "seller";
-  sellerStatus?: "pending" | "approved";
+  role?: "buyer" | "seller" | "admin";
+  sellerStatus?: "pending" | "approved" | "rejected";
   sellerInfo?: SellerInfo;
+  sellerRejectionReason?: string;
 }
 
 interface SellerInfo {
@@ -549,7 +593,7 @@ interface ContactMessage {
 | ID   | Task                                           | SP | Status |
 | ---- | ---------------------------------------------- | -- | ------ |
 | T-26 | Biểu mẫu đăng ký người bán 4 bước chi tiết     | 3  | ✅      |
-| T-27 | Phê duyệt & Nâng cấp phân quyền tự động (`seller`) | 2  | ✅      |
+| T-27 | Phê duyệt & Nâng cấp phân quyền thủ công (`seller`) | 2  | ✅      |
 | T-28 | Kênh bán hàng (Dashboard) và Thống kê tổng quan| 3  | ✅      |
 | T-29 | CRUD Sản phẩm tự đăng (Thêm, Sửa, Xóa)          | 4  | ✅      |
 | T-30 | Upload nhiều ảnh sản phẩm (tối đa 6 ảnh)        | 3  | ✅      |
@@ -582,6 +626,55 @@ interface ContactMessage {
 | T-47 | Loại bỏ `any` ở product/shop/auth store localStorage helpers | 2  | ✅      |
 | T-48 | Xác minh `npm run lint` và `npx tsc --noEmit` không còn error | 1  | ✅      |
 
+## Sprint 5 — Admin Panel & Protected Routes (✅ Hoàn thành)
+
+| ID   | Task                                           | SP | Status |
+| ---- | ---------------------------------------------- | -- | ------ |
+| T-49 | Khai báo vai trò `"admin"` trên User interface | 1  | ✅      |
+| T-50 | Thiết lập helper sync cookie ở Zustand Auth Store | 2  | ✅      |
+| T-51 | Xây dựng Next.js Edge Middleware chặn `/admin` | 3  | ✅      |
+| T-52 | Điều khiển ẩn Header/Footer trên trang quản trị | 2  | ✅      |
+| T-53 | Layout trang Admin với sidebar và logout | 3  | ✅      |
+| T-54 | Dashboard Admin: thống kê, duyệt người bán, quản lý role | 4  | ✅      |
+| T-55 | Dọn lỗi compile & lint cho admin pages | 1  | ✅      |
+
+## Sprint 5.1 — Admin KPI & Biểu đồ SVG Line (✅ Hoàn thành)
+
+| ID   | Task                                           | SP | Status |
+| ---- | ---------------------------------------------- | -- | ------ |
+| T-56 | Thẻ KPI dựa trên dữ liệu thực tế Firestore     | 2  | ✅      |
+| T-57 | Vẽ biểu đồ SVG Line tuỳ biến (Doanh thu/Đơn)   | 3  | ✅      |
+| T-58 | Bộ lọc thời gian 7/30 ngày & Tooltip tương tác | 2  | ✅      |
+
+## Sprint 5.2 — Quy trình duyệt & Từ chối hồ sơ (✅ Hoàn thành)
+
+| ID   | Task                                           | SP | Status |
+| ---- | ---------------------------------------------- | -- | ------ |
+| T-59 | Modal chi tiết hồ sơ `SellerDetailsModal` (Zoom CCCD) | 3  | ✅      |
+| T-60 | Chức năng từ chối kèm lý do & gửi thông báo    | 2  | ✅      |
+| T-61 | UI cảnh báo từ chối & quy trình nộp lại hồ sơ  | 3  | ✅      |
+
+## Sprint 5.3 — Quy trình duyệt sản phẩm tự đăng của Người bán (✅ Hoàn thành)
+
+| ID   | Task                                           | SP | Status |
+| ---- | ---------------------------------------------- | -- | ------ |
+| T-62 | Thêm status và rejectionReason vào type Product | 1  | ✅      |
+| T-63 | Lọc sản phẩm pending/rejected trên storefront  | 2  | ✅      |
+| T-64 | Hiển thị trạng thái & lý do từ chối sản phẩm ở Seller dashboard | 2  | ✅      |
+| T-65 | Hàng đợi duyệt sản phẩm & Modal xem chi tiết duyệt tại Admin | 3  | ✅      |
+| T-66 | Chức năng duyệt/từ chối sản phẩm kèm lý do & gửi thông báo | 2  | ✅      |
+
+## Sprint 5.4 — Admin Handling Violation Reports, Unblocking & Activity Logs (✅ Hoàn thành)
+
+| ID   | Task                                           | SP | Status |
+| ---- | ---------------------------------------------- | -- | ------ |
+| T-67 | Thêm trạng thái `"blocked"` vào User và Product | 1  | ✅      |
+| T-68 | Chặn truy cập trang chi tiết & ẩn các shop/sản phẩm bị khóa | 2  | ✅      |
+| T-69 | Hàng đợi Báo cáo vi phạm & Modal xử lý (4 hành động) | 3  | ✅      |
+| T-70 | Ghi log hoạt động Admin (`adminLogs` Firestore) & Bảng Lịch sử | 3  | ✅      |
+| T-71 | Tính năng "Mở khóa Shop" trong danh sách người dùng Admin | 2  | ✅      |
+| T-72 | Khắc phục lỗi Firestore write do properties undefined | 2  | ✅      |
+
 ## Backlog Phase 2 (Tương lai)
 
 | ID    | Tính năng          | Mô tả                                   | Priority |
@@ -590,6 +683,5 @@ interface ContactMessage {
 | P2-02 | Firebase Auth thật | Google OAuth + email thực tế            | High     |
 | P2-03 | Thanh toán VNPay   | Tích hợp cổng thanh toán VNPay sandbox  | Medium   |
 | P2-04 | Đánh giá sản phẩm  | Rating 5 sao + review text              | Medium   |
-| P2-05 | Dashboard Admin    | Quản lý sản phẩm, đơn hàng, users       | Medium   |
 | P2-06 | Order Tracking     | Theo dõi trạng thái giao hàng real-time | Low      |
 | P2-07 | Contact Backend    | Lưu/gửi form liên hệ qua API/Firebase   | Medium   |

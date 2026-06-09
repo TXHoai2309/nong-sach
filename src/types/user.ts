@@ -19,8 +19,9 @@ export interface User {
   gender?: "Nam" | "Nữ" | "Khác" | "";
   memberSince?: string;
   addresses?: UserAddress[];
-  role?: "buyer" | "seller";
-  sellerStatus?: "pending" | "approved";
+  role?: "buyer" | "seller" | "admin";
+  sellerStatus?: "pending" | "approved" | "rejected" | "blocked";
+  sellerRejectionReason?: string;
   sellerInfo?: SellerInfo;
 }
 

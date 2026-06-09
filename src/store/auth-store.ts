@@ -15,6 +15,17 @@ import { ref, uploadString, getDownloadURL } from "firebase/storage";
 import { addShop, updateShop } from "@/lib/shops";
 import { useNotificationStore } from "@/store/notification-store";
 
+const setCookie = (name: string, value: string, days = 7) => {
+  if (typeof window === "undefined") return;
+  const expires = new Date(Date.now() + days * 864e5).toUTCString();
+  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
+};
+
+const deleteCookie = (name: string) => {
+  if (typeof window === "undefined") return;
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax`;
+};
+
 const getFirebaseErrorCode = (error: unknown) =>
   typeof error === "object" && error !== null && "code" in error
     ? String((error as { code?: unknown }).code ?? "")
@@ -112,7 +123,10 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
           const userRef = doc(db, "users", firebaseUser.uid);
           const userSnap = await getDoc(userRef);
           if (userSnap.exists()) {
-            set({ currentUser: userSnap.data() as User, isAuthLoading: false });
+            const userData = userSnap.data() as User;
+            set({ currentUser: userData, isAuthLoading: false });
+            setCookie("user-role", userData.role || "buyer");
+            setCookie("user-id", userData.id);
           } else {
             // Profile doc doesn't exist, create a new profile doc
             const newUser: User = {
@@ -128,6 +142,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
             };
             await setDoc(userRef, newUser);
             set({ currentUser: newUser, isAuthLoading: false });
+            setCookie("user-role", newUser.role || "buyer");
+            setCookie("user-id", newUser.id);
           }
         } catch (err) {
           console.error("Firestore user fetch error:", err);
@@ -135,12 +151,76 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         }
       } else {
         set({ currentUser: null, isAuthLoading: false });
+        deleteCookie("user-role");
+        deleteCookie("user-id");
       }
     });
   },
 
   login: async (email, password) => {
-    // 1. Fallback auto-registration check for default demo account
+    // 1. Fallback auto-registration check for default admin account
+    if (email.toLowerCase().trim() === "admin@nongsach.vn" && password === "12345678") {
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
+        const uid = userCredential.user.uid;
+        const userRef = doc(db, "users", uid);
+        const userSnap = await getDoc(userRef);
+        let userProfile: User;
+        if (userSnap.exists()) {
+          userProfile = userSnap.data() as User;
+          if (userProfile.role !== "admin") {
+            userProfile.role = "admin";
+            await updateDoc(userRef, { role: "admin" });
+          }
+        } else {
+          userProfile = {
+            id: uid,
+            name: "Demo Admin",
+            email: "admin@nongsach.vn",
+            phone: "0999999999",
+            dob: "1990-01-01",
+            gender: "Nam",
+            memberSince: new Date().toLocaleDateString("vi-VN", { month: "2-digit", year: "numeric" }),
+            addresses: [],
+            role: "admin",
+          };
+          await setDoc(userRef, userProfile);
+        }
+        set({ currentUser: userProfile });
+        setCookie("user-role", "admin");
+        setCookie("user-id", uid);
+        return { success: true, message: "Đăng nhập thành công với tài khoản Demo Admin!" };
+      } catch (err: unknown) {
+        const errCode = getFirebaseErrorCode(err);
+        if (errCode === "auth/user-not-found" || errCode === "auth/invalid-credential" || errCode === "auth/wrong-password") {
+          try {
+            // Auto register the demo admin
+            const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
+            const uid = userCredential.user.uid;
+            const defaultAdmin: User = {
+              id: uid,
+              name: "Demo Admin",
+              email: "admin@nongsach.vn",
+              phone: "0999999999",
+              dob: "1990-01-01",
+              gender: "Nam",
+              memberSince: new Date().toLocaleDateString("vi-VN", { month: "2-digit", year: "numeric" }),
+              addresses: [],
+              role: "admin",
+            };
+            await setDoc(doc(db, "users", uid), defaultAdmin);
+            set({ currentUser: defaultAdmin });
+            setCookie("user-role", "admin");
+            setCookie("user-id", uid);
+            return { success: true, message: "Đăng nhập thành công với tài khoản Demo Admin!" };
+          } catch (regErr: unknown) {
+            console.warn("Auto-registration of Demo Admin failed:", regErr);
+          }
+        }
+      }
+    }
+
+    // 2. Fallback auto-registration check for default demo buyer account
     if (email.toLowerCase().trim() === "nguyenvana@gmail.com" && password === "12345678") {
       try {
         const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
@@ -155,7 +235,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
             id: uid,
             name: "Nguyễn Văn A",
             email: "nguyenvana@gmail.com",
-            phone: "0123456789",
+            phone: "0123 456 789",
             dob: "1995-06-15",
             gender: "Nam",
             memberSince: "06/2024",
@@ -177,6 +257,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
           await setDoc(userRef, userProfile);
         }
         set({ currentUser: userProfile });
+        setCookie("user-role", userProfile.role || "buyer");
+        setCookie("user-id", uid);
         return { success: true, message: "Đăng nhập thành công với tài khoản Demo!" };
       } catch (err: unknown) {
         const errCode = getFirebaseErrorCode(err);
@@ -189,7 +271,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
               id: uid,
               name: "Nguyễn Văn A",
               email: "nguyenvana@gmail.com",
-              phone: "0123456789",
+              phone: "0123 456 789",
               dob: "1995-06-15",
               gender: "Nam",
               memberSince: "06/2024",
@@ -210,6 +292,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
             };
             await setDoc(doc(db, "users", uid), defaultUser);
             set({ currentUser: defaultUser });
+            setCookie("user-role", defaultUser.role || "buyer");
+            setCookie("user-id", uid);
             return { success: true, message: "Đăng nhập thành công với tài khoản Demo!" };
           } catch (regErr: unknown) {
             console.warn("Auto-registration of Demo user failed:", regErr);
@@ -218,7 +302,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       }
     }
 
-    // 2. Standard login flow
+    // 3. Standard login flow
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
       const uid = userCredential.user.uid;
@@ -227,6 +311,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       if (userSnap.exists()) {
         const userData = userSnap.data() as User;
         set({ currentUser: userData });
+        setCookie("user-role", userData.role || "buyer");
+        setCookie("user-id", uid);
         return { success: true, message: "Đăng nhập thành công!" };
       } else {
         const newUser: User = {
@@ -242,6 +328,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         };
         await setDoc(userRef, newUser);
         set({ currentUser: newUser });
+        setCookie("user-role", newUser.role || "buyer");
+        setCookie("user-id", uid);
         return { success: true, message: "Đăng nhập thành công!" };
       }
     } catch (error: unknown) {
@@ -302,6 +390,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   logout: async () => {
     await signOut(auth);
     set({ currentUser: null });
+    deleteCookie("user-role");
+    deleteCookie("user-id");
   },
 
   updateProfile: async (profile) => {
@@ -432,6 +522,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
       const updatedProfile = {
         sellerStatus: "pending" as const,
+        sellerRejectionReason: "",
         sellerInfo: uploadedInfo,
       };
 
@@ -443,6 +534,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
       await updateDoc(userRef, {
         sellerStatus: "pending",
+        sellerRejectionReason: "",
         sellerInfo: sanitizedInfo,
       });
 
@@ -465,6 +557,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     const updatedProfile = {
       role: "seller" as const,
       sellerStatus: "approved" as const,
+      sellerRejectionReason: "",
     };
 
     if (isSelf) {

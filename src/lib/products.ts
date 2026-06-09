@@ -5,12 +5,16 @@ import { collection, doc, getDoc, getDocs, setDoc, deleteDoc } from "firebase/fi
 /**
  * Trả về toàn bộ danh sách sản phẩm từ Firestore.
  */
-export async function getAllProducts(): Promise<Product[]> {
+export async function getAllProducts(includeInactive = false): Promise<Product[]> {
   try {
     const querySnapshot = await getDocs(collection(db, "products"));
     const list: Product[] = [];
     querySnapshot.forEach((docSnap) => {
       const data = docSnap.data();
+      const status = data.status || "active";
+      if (!includeInactive && (status === "pending" || status === "rejected" || status === "blocked")) {
+        return;
+      }
       list.push({
         id: docSnap.id,
         name: data.name,
@@ -25,6 +29,8 @@ export async function getAllProducts(): Promise<Product[]> {
         isOrganic: data.isOrganic || false,
         sellerId: data.sellerId,
         shopName: data.shopName,
+        status: status,
+        rejectionReason: data.rejectionReason || "",
       });
     });
     return list;
@@ -57,6 +63,8 @@ export async function getProductById(id: string): Promise<Product | undefined> {
         isOrganic: data.isOrganic || false,
         sellerId: data.sellerId,
         shopName: data.shopName,
+        status: data.status || "active",
+        rejectionReason: data.rejectionReason || "",
       } as Product;
     }
     return undefined;
