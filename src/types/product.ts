@@ -33,7 +33,7 @@ export interface Product {
   shopName?: string;
   isOrganic?: boolean;
   unit?: string;
-  status?: "pending" | "active" | "rejected";
+  status?: "pending" | "active" | "rejected" | "blocked";
   rejectionReason?: string;
 }
 

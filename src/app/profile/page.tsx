@@ -3046,6 +3046,20 @@ function ProfileContent() {
                 {/* State 3: Approved Seller Channel / Dashboard */}
                 {(currentUser.role === "seller" || currentUser.sellerStatus === "approved") && (
                   <div className="space-y-6">
+                    {currentUser.sellerStatus === "blocked" && (
+                      <div className="bg-rose-50 border border-rose-200 rounded-3xl p-5 flex items-start gap-4 shadow-sm">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-rose-100 text-rose-600">
+                          <span className="material-symbols-outlined text-[28px]">block</span>
+                        </div>
+                        <div>
+                          <h4 className="font-extrabold text-rose-950 text-sm">Cửa hàng đã bị khóa tạm thời</h4>
+                          <p className="text-xs text-rose-800/90 mt-1 leading-relaxed font-semibold">
+                            Cửa hàng của bạn đã bị Ban quản trị tạm thời khóa do nhận được các phản ánh báo cáo vi phạm chính sách hoặc nội dung không hợp lệ. 
+                            Tất cả sản phẩm hiện có đã được tạm ẩn khỏi cửa hàng công khai và bạn không thể đăng bán sản phẩm mới. Vui lòng liên hệ với Ban quản trị qua hotline để được xử lý.
+                          </p>
+                        </div>
+                      </div>
+                    )}
                     {/* Header */}
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white border border-[#bbcabf]/30 rounded-3xl p-5 shadow-sm">
                       <div className="flex items-center gap-4">
@@ -3155,7 +3169,13 @@ function ProfileContent() {
                           </h4>
                           <button
                             type="button"
-                            onClick={() => setIsAddProductOpen(true)}
+                            onClick={() => {
+                              if (currentUser?.sellerStatus === "blocked") {
+                                alert("Cửa hàng của bạn đang bị khóa, không thể đăng bán sản phẩm mới!");
+                              } else {
+                                setIsAddProductOpen(true);
+                              }
+                            }}
                             className="rounded-full bg-[#006c49] px-4 py-2 text-xs font-bold text-white shadow-sm hover:opacity-90 transition-all flex items-center gap-1"
                           >
                             <span className="material-symbols-outlined text-sm">add</span>
@@ -3233,6 +3253,11 @@ function ProfileContent() {
                                           )}
                                         </div>
                                       )}
+                                      {p.status === "blocked" && (
+                                        <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-1 text-xs font-bold text-red-700">
+                                          Bị khóa
+                                        </span>
+                                      )}
                                       {(p.status === "active" || !p.status) && (
                                         <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-700">
                                           Đang bán
@@ -3250,7 +3275,13 @@ function ProfileContent() {
                                       </Link>
                                       <button
                                         type="button"
-                                        onClick={() => handleEditProduct(p)}
+                                        onClick={() => {
+                                          if (currentUser?.sellerStatus === "blocked") {
+                                            alert("Cửa hàng của bạn đang bị khóa, không thể chỉnh sửa sản phẩm!");
+                                          } else {
+                                            handleEditProduct(p);
+                                          }
+                                        }}
                                         className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors"
                                         title="Chỉnh sửa"
                                       >

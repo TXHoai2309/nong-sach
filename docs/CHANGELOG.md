@@ -4,6 +4,32 @@ All notable changes to the **NôngSạch** project will be documented in this fi
 
 The format is based on **Keep a Changelog** and this project adheres to **Semantic Versioning**.
 
+## [0.6.8] - 2026-06-09
+
+### Admin xử lý báo cáo vi phạm, Lịch sử Hoạt động & Mở khóa Shop (Admin Violation Reports Handling, Audit Logs & Shop Unblocking)
+
+### Added
+* **Hộp thoại xử lý báo cáo vi phạm (`ReportDetailsModal` in `src/app/admin/page.tsx`)**: Admin có thể xem chi tiết đối tượng bị báo cáo (cửa hàng/sản phẩm), lý do, người báo cáo và nội dung chi tiết.
+* **4 hành động xử lý vi phạm trong Modal**:
+  - *Bỏ qua (Dismiss)*: Đổi trạng thái báo cáo thành `"dismissed"`.
+  - *Cảnh báo (Warn)*: Gửi thông báo cảnh báo trực tiếp về tài khoản người bán.
+  - *Khóa tạm (Block)*: Chuyển trạng thái sản phẩm sang `"blocked"`, hoặc chuyển trạng thái shop sang `"blocked"` (đồng thời tự động khóa toàn bộ sản phẩm của shop đó).
+  - *Xóa vi phạm (Delete)*: Xóa sản phẩm khỏi Firestore; hoặc hạ quyền shop về buyer (trạng thái `"rejected"`) và xóa toàn bộ sản phẩm của shop đó.
+* **Bảng Lịch sử hoạt động Admin (Admin Activity Logs)**: Hiển thị danh sách nhật ký hành động của Admin được lưu trong collection `"adminLogs"` trên Firestore.
+* **Nút "Mở khóa Shop" trong danh sách người dùng**: Cho phép Admin khôi phục hoạt động cho shop bị khóa tạm thời (`sellerStatus` chuyển lại thành `"approved"`), mở khóa tất cả sản phẩm của shop đó và gửi thông báo hệ thống thông báo cho người bán.
+
+### Changed
+* **Lọc và bảo vệ storefront cho shop/sản phẩm bị khóa**:
+  - Ẩn toàn bộ sản phẩm của các shop bị khóa hoặc sản phẩm có trạng thái `"blocked"` khỏi trang danh sách sản phẩm.
+  - Chặn người mua truy cập trực tiếp vào trang chi tiết của sản phẩm bị khóa hoặc sản phẩm thuộc shop bị khóa (hiển thị thông báo không tìm thấy sản phẩm).
+* **Cảnh báo và hạn chế Kênh người bán**: Hiển thị banner cảnh báo tài khoản bị khóa trong trang `/profile` của người bán và chặn các hành động quản lý sản phẩm.
+* **Tối ưu hóa ghi đè Firestore (`src/store/report-store.ts`)**: Sửa lỗi Firestore write failure bằng cách loại bỏ các thuộc tính có giá trị `undefined` thông qua `Object.fromEntries(Object.entries(data).filter(([_, v]) => v !== undefined))` trước khi đẩy lên Firebase.
+
+### Verification
+* **Type Safety & Build**: Chạy lệnh `npx tsc --noEmit` và `npm run build` thành công, đảm bảo code hoàn toàn sạch lỗi.
+
+---
+
 ## [0.6.7] - 2026-06-09
 
 ### Quy trình phê duyệt sản phẩm tự đăng của Người bán (Admin Product Approvals Workflow)

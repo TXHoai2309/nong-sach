@@ -339,6 +339,64 @@ approveSeller()
 * Logout → Clear Session
 * **Kiểm duyệt & Từ chối hồ sơ (Quality Control)**: Trạng thái `sellerStatus` chuyển thành `"pending"` khi gửi hồ sơ đăng ký. Admin có thể duyệt (trạng thái `"approved"`, chuyển `role` thành `"seller"`, tạo gian hàng `Shop` tương ứng và xóa `sellerRejectionReason`) hoặc từ chối (trạng thái `"rejected"`, nhập lý do lưu vào `sellerRejectionReason` và gửi thông báo `account_update` cho người bán). Khi người bán chỉnh sửa và gửi lại, trạng thái quay lại `"pending"` và lý do từ chối được xóa bỏ.
 * **Tránh lỗi QuotaExceededError (Zustand Partialize)**: Sử dụng middleware `partialize` của Zustand để lọc bỏ các trường ảnh base64 dung lượng cao (như logo shop, ảnh nông trại, ảnh CMND mặt trước và sau) ra khỏi đối tượng `sellerInfo` trước khi lưu xuống bộ nhớ đệm `localStorage`. Chỉ lưu giữ thông tin văn bản thuần túy của tài khoản.
+* **Khóa tạm & Thu hồi quyền (Violation Control)**: Shop vi phạm có thể bị khóa tạm thời (`sellerStatus: "blocked"`, tự động chặn và ẩn toàn bộ sản phẩm của shop) hoặc thu hồi quyền bán hàng vĩnh viễn (đổi role về `"buyer"`, xóa mọi sản phẩm). Khi Shop bị khóa tạm, Admin có thể dùng hành động "Mở khóa Shop" để phục hồi trạng thái `"approved"`, mở khóa lại các sản phẩm của shop và gửi thông báo hệ thống.
+
+---
+
+## Report Store
+
+File:
+
+```text
+src/store/report-store.ts
+```
+
+### State
+
+```ts
+reports: ViolationReport[]
+loading: boolean
+error: string | null
+```
+
+### Actions
+
+```ts
+addReport(data: Partial<ViolationReport>)
+fetchReports()
+resolveReport(reportId: string, status: 'resolved' | 'dismissed', action: string, note?: string)
+```
+
+### Business Rules
+
+* Tích hợp lưu trữ trực tiếp trên Firestore trong collection `"reports"`.
+* **Tránh lỗi undefined trên Firestore**: Trước khi ghi dữ liệu lên Firestore, tự động lọc sạch các trường có giá trị `undefined` bằng `Object.fromEntries(Object.entries(data).filter(([_, v]) => v !== undefined))` để đảm bảo an toàn truy vấn và ngăn chặn runtime exceptions của Firestore.
+* Khi Admin xử lý báo cáo, ghi nhận kết quả hành động và tự động cập nhật trạng thái thực tế của đối tượng bị báo cáo (Cửa hàng/Sản phẩm).
+
+---
+
+## Admin Auditing (Lịch sử Hoạt động Admin)
+
+Nhật ký kiểm toán của Admin được quản lý trực tiếp qua collection `"adminLogs"` trên Firestore.
+
+### Model
+
+```ts
+interface AdminLog {
+  id: string;
+  adminId: string;
+  adminEmail: string;
+  action: 'approve_seller' | 'reject_seller' | 'approve_product' | 'reject_product' | 'dismiss_report' | 'warn_seller' | 'block_product' | 'block_seller' | 'delete_product' | 'delete_seller_products' | 'unblock_seller';
+  targetType: 'seller' | 'product' | 'report';
+  targetId: string;
+  targetName: string; // Tên shop hoặc tên sản phẩm bị tác động
+  details: string;
+  createdAt: any; // Timestamp Firestore
+}
+```
+
+### Luồng xử lý
+Mỗi khi Admin thực hiện bất kỳ hành động phê duyệt, từ chối, khóa, xóa hay mở khóa, hệ thống tự động ghi lại một bản ghi `AdminLog` mới vào Firestore để lưu vết kiểm toán, hiển thị ở bảng Lịch sử hoạt động ở cuối giao diện Admin Panel.
 
 ---
 
@@ -739,6 +797,8 @@ orders
 users
 reviews
 contactMessages
+reports
+adminLogs
 ```
 
 ## Payment Gateway

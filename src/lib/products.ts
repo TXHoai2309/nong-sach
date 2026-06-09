@@ -12,7 +12,7 @@ export async function getAllProducts(includeInactive = false): Promise<Product[]
     querySnapshot.forEach((docSnap) => {
       const data = docSnap.data();
       const status = data.status || "active";
-      if (!includeInactive && (status === "pending" || status === "rejected")) {
+      if (!includeInactive && (status === "pending" || status === "rejected" || status === "blocked")) {
         return;
       }
       list.push({

@@ -5,12 +5,12 @@
 | Thông tin         | Chi tiết                                    |
 | ----------------- | ------------------------------------------- |
 | Tên dự án         | NôngSạch — Nền tảng giao dịch nông sản sạch |
-| Phiên bản         | MVP v0.6.7                                  |
+| Phiên bản         | MVP v0.6.8 (Sprint 5.4)                     |
 | Ngày tạo          | 03/06/2026                                  |
 | Cập nhật lần cuối | 09/06/2026                                  |
 | Nhóm              | NôngSạch Team                               |
 | Môn học           | Vibe Coding Thực Chiến — Buổi 3             |
-| Trạng thái        | ✅ Hoàn thành Sprint 1 đến Sprint 5.3 |
+| Trạng thái        | ✅ Hoàn thành Sprint 1 đến Sprint 5.4 |
 
 ---
 
@@ -78,6 +78,7 @@ Người tiêu dùng ngày càng lo ngại về an toàn thực phẩm, đặc b
 | F-22 | Dashboard KPI & Biểu đồ SVG Line | Báo cáo thực tế từ Firestore và biểu đồ SVG tương tác lọc 7/30 ngày | P1      | ✅ Done     |
 | F-23 | Quy trình duyệt/từ chối hồ sơ | Modal xem chi tiết hồ sơ (zoom CCCD), từ chối kèm lý do và quy trình nộp lại | P1      | ✅ Done     |
 | F-24 | Quy trình duyệt/từ chối sản phẩm | Admin duyệt sản phẩm pending -> active hoặc từ chối kèm lý do và gửi thông báo | P1      | ✅ Done     |
+| F-25 | Xử lý báo cáo vi phạm | Quyết định xử lý của Admin (Bỏ qua/Cảnh báo/Khóa tạm/Xóa đối tượng) và ghi log kiểm toán Firestore | P1      | ✅ Done     |
 
 
 > **Ghi chú cho team:** F-09 hiện đã có giao diện hoàn chỉnh theo Stitch HTML tại route `/contact`. Form liên hệ đang ở mức UI/UX MVP; nếu cần gửi dữ liệu thật, cần bổ sung API/Firebase handler ở Phase 2. Kênh bán hàng (F-11), Quản lý sản phẩm (F-12) và Trang chi tiết shop (F-14) hiện được lưu động tại `localStorage` phía client của từng người dùng để mô phỏng tính năng thực tế.
@@ -663,6 +664,16 @@ interface ContactMessage {
 | T-65 | Hàng đợi duyệt sản phẩm & Modal xem chi tiết duyệt tại Admin | 3  | ✅      |
 | T-66 | Chức năng duyệt/từ chối sản phẩm kèm lý do & gửi thông báo | 2  | ✅      |
 
+## Sprint 5.4 — Admin Handling Violation Reports, Unblocking & Activity Logs (✅ Hoàn thành)
+
+| ID   | Task                                           | SP | Status |
+| ---- | ---------------------------------------------- | -- | ------ |
+| T-67 | Thêm trạng thái `"blocked"` vào User và Product | 1  | ✅      |
+| T-68 | Chặn truy cập trang chi tiết & ẩn các shop/sản phẩm bị khóa | 2  | ✅      |
+| T-69 | Hàng đợi Báo cáo vi phạm & Modal xử lý (4 hành động) | 3  | ✅      |
+| T-70 | Ghi log hoạt động Admin (`adminLogs` Firestore) & Bảng Lịch sử | 3  | ✅      |
+| T-71 | Tính năng "Mở khóa Shop" trong danh sách người dùng Admin | 2  | ✅      |
+| T-72 | Khắc phục lỗi Firestore write do properties undefined | 2  | ✅      |
 
 ## Backlog Phase 2 (Tương lai)
 

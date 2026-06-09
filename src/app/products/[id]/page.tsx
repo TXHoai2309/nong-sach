@@ -32,7 +32,7 @@ export default function ProductDetailPage({ params }: PageProps) {
         const p = await getProductById(id);
         if (!active) return;
 
-        if (p && (p.status === "pending" || p.status === "rejected")) {
+        if (p && (p.status === "pending" || p.status === "rejected" || p.status === "blocked")) {
           const isSeller = currentUser && currentUser.id === p.sellerId;
           const isAdmin = currentUser && currentUser.role === "admin";
           if (!isSeller && !isAdmin) {

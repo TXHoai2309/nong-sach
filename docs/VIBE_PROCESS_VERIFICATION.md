@@ -1,9 +1,9 @@
 # 🛡️ VIBE PROCESS VERIFICATION
 
-> **Tài liệu chứng minh quy trình phát triển và kiểm định chất lượng sản phẩm (Plan — Doc — Build — Test) trước khi xuất xưởng (Ship) phiên bản NôngSạch MVP v0.6.7.**
+> **Tài liệu chứng minh quy trình phát triển và kiểm định chất lượng sản phẩm (Plan — Doc — Build — Test) trước khi xuất xưởng (Ship) phiên bản NôngSạch MVP v0.6.8.**
 > 
 > * **Dự án**: NôngSạch — Nền tảng giao dịch nông sản sạch
-> * **Phiên bản**: v0.6.7
+> * **Phiên bản**: v0.6.8
 > * **Ngày xác nhận**: 09/06/2026
 > * **Quy trình áp dụng**: Vibe Coding Standard (Plan ➔ Doc ➔ Build ➔ Test)
 > * **Trạng thái**: ✅ **ĐÃ THÔNG QUA (PASSED) & SẴN SÀNG SHIP**
@@ -40,6 +40,7 @@ Trước khi thực hiện bất kỳ thay đổi nào trong mã nguồn, hệ t
   - **Nâng cấp Dashboard Admin & Biểu đồ SVG Line (Sprint 5.1)**: Triển khai 4 thẻ KPI dựa trên Firestore thật (Tổng người dùng, Seller chờ, Đơn hôm nay, Doanh thu). Thiết kế biểu đồ SVG Line tuỳ biến hiển thị doanh số và số đơn hàng với bộ lọc 7/30 ngày và chuyển đổi metric hiển thị. Tích hợp hiệu ứng tương tác hover dọc và tooltip lơ lửng cho từng điểm dữ liệu.
   - **Kiểm duyệt chất lượng & Quy trình từ chối/gửi lại hồ sơ (Sprint 5.2)**: Xây dựng modal xem chi tiết hồ sơ `SellerDetailsModal` (bao gồm xem đầy đủ ảnh CCCD phóng to, thông tin nông trại và ngân hàng). Tích hợp chức năng từ chối kèm lý do, tự động gửi thông báo đến seller. Thiết kế cảnh báo đỏ hiển thị lý do từ chối trên hồ sơ seller và nút "Chỉnh sửa & gửi lại hồ sơ" điền sẵn thông tin cũ để người bán nộp lại.
   - **Quy trình phê duyệt sản phẩm tự đăng của Người bán (Sprint 5.3)**: Tích hợp thuộc tính `status` và `rejectionReason` vào kiểu dữ liệu sản phẩm. Mặc định ẩn các sản phẩm chưa duyệt (`pending` hoặc `rejected`) khỏi cửa hàng công khai và trang chi tiết sản phẩm. Bổ sung cột Trạng thái chi tiết (Đang bán / Chờ duyệt / Bị từ chối kèm lý do) tại Kênh người bán, và reset trạng thái về `pending` khi người bán cập nhật sản phẩm bị từ chối. Thiết kế danh sách sản phẩm chờ duyệt dạng tab tại Dashboard Admin kèm modal xem chi tiết đầy đủ ảnh/mô tả và các nút Duyệt/Từ chối nhập lý do, tự động gửi thông báo kết quả cho người bán.
+  - **Admin xử lý báo cáo vi phạm & Lịch sử Hoạt động Admin (Sprint 5.4)**: Xây dựng tab Báo cáo trong hàng đợi kiểm duyệt để xử lý các khiếu nại shop/sản phẩm từ người dùng. Admin có thể thực hiện 4 hành động: Bỏ qua (Dismiss), Cảnh báo (Warn), Khóa tạm (Block), và Xóa vi phạm (Delete). Triển khai cơ chế lưu vết hoạt động `adminLogs` trên Firestore và hiển thị bảng Lịch sử Hoạt động ở cuối giao diện Admin Panel. Tích hợp nút "Mở khóa Shop" trong danh sách người dùng để phục hồi các tài khoản shop bị khóa tạm thời.
 
 ---
 
@@ -178,12 +179,17 @@ Các ảnh chụp màn hình và video kiểm thử được lưu trữ trực t
 | **TC-42: Giao diện cảnh báo từ chối** | Đăng nhập tài khoản bị từ chối, truy cập trang Cá nhân. | Sidebar hiển thị menu "Hồ sơ bị từ chối" kèm biểu tượng cảnh báo màu đỏ; trang hiển thị box đỏ nêu rõ lý do bị từ chối cùng nút "Chỉnh sửa & gửi lại hồ sơ". | ✅ Pass |
 | **TC-43: Chỉnh sửa & gửi lại hồ sơ** | Ở trang cảnh báo từ chối, click "Chỉnh sửa & gửi lại hồ sơ", chỉnh sửa form và submit. | Biểu mẫu 4 bước hiển thị với thông tin cũ được tự động điền sẵn (prefilled). Sau khi nộp lại, trạng thái chuyển về `"pending"`, lý do từ chối cũ bị làm sạch và hồ sơ xuất hiện lại trên hàng đợi Admin. | ✅ Pass |
 | **TC-44: Sửa lỗi co hẹp modal trang Admin** | Mở modal chi tiết hồ sơ hoặc modal từ chối trên màn hình Admin. | Modal hiển thị đúng vị trí cố định, không bị méo mó hay co hẹp theo chiều dọc do đã di chuyển ra ngoài container hoạt ảnh. | ✅ Pass |
+| **TC-45: Tab Báo cáo & Xem chi tiết vi phạm** | Ở trang Admin, click Tab Báo cáo, xem danh sách và nhấn "Xem & Xử lý" một báo cáo vi phạm. | Modal chi tiết báo cáo hiển thị chính xác: loại đối tượng, đối tượng bị báo cáo, lý do, người báo cáo, và mô tả nội dung. | ✅ Pass |
+| **TC-46: 4 Hành động xử lý Báo cáo** | Chọn lần lượt các hành động: Bỏ qua, Cảnh báo (nhập nội dung), Khóa tạm, Xóa vi phạm trong modal xử lý. | Các hành động hoạt động chính xác trên Firestore, thay đổi trạng thái đối tượng (Blocked/Deleted) và gửi thông báo tương ứng cho người bán vi phạm. | ✅ Pass |
+| **TC-47: Ẩn shop/sản phẩm bị khóa & Chặn truy cập** | Truy cập cửa hàng công khai và thử vào trực tiếp URL chi tiết của sản phẩm bị khóa hoặc thuộc shop bị khóa. | Storefront không liệt kê sản phẩm bị khóa; khi vào link trực tiếp hiển thị thông báo "Không tìm thấy sản phẩm" (hoặc Not Found) đối với người mua thông thường. | ✅ Pass |
+| **TC-48: Mở khóa Shop của Admin** | Nhấn nút "Mở khóa Shop" đối với tài khoản shop đang có trạng thái `blocked` trong bảng người dùng Admin. | Trạng thái shop phục hồi về `approved`, toàn bộ sản phẩm của shop tự động mở khóa (hoạt động bình thường) và gửi thông báo chuông cho seller. | ✅ Pass |
+| **TC-49: Lịch sử hoạt động Admin (Audit Logs)** | Thực hiện các thao tác quản trị (Duyệt, Từ chối, Khóa, Mở khóa) rồi xem bảng Lịch sử ở cuối trang. | Bản ghi thao tác hiển thị đầy đủ thông tin: Người thực hiện (admin), hành động, đối tượng bị ảnh hưởng, ghi chú chi tiết và thời gian thực hiện. | ✅ Pass |
 
 ---
 
 ## 5. Kết luận nghiệm thu
 
-Mọi hoạt động phát triển của phiên bản MVP v0.5.0 đều tuân thủ chặt chẽ quy trình **PLAN - DOC - BUILD - TEST**. Các tệp tin tài liệu được đồng bộ hóa hoàn toàn, mã nguồn được build thành công không lỗi, và các tính năng tương tác được kiểm thử trực quan trên trình duyệt trước khi giao.
+Mọi hoạt động phát triển của phiên bản MVP v0.6.8 đều tuân thủ chặt chẽ quy trình **PLAN - DOC - BUILD - TEST**. Các tệp tin tài liệu được đồng bộ hóa hoàn toàn, mã nguồn được build thành công không lỗi, và các tính năng tương tác được kiểm thử trực quan trên trình duyệt trước khi giao.
 
 Dự án đã sẵn sàng triển khai chính thức!
 

@@ -269,19 +269,30 @@ Trang quản trị hệ thống cung cấp giao diện riêng tư, bảo mật d
   - **Chuyển đổi chỉ số**: Cho phép lựa chọn xem theo **Doanh thu** (thể hiện bằng đường màu xanh lá cây, thang đo VND viết tắt dạng M/K) hoặc **Số đơn hàng** (thể hiện bằng đường màu xanh dương, thang đo số nguyên đơn hàng).
   - **Tooltip tương tác**: Khi di chuột qua các mốc điểm của biểu đồ, hệ thống sẽ hiện đường nét đứt định vị dọc và một tooltip nổi màu tối hiển thị chính xác ngày tháng cùng số liệu doanh thu & số đơn hàng của ngày đó.
 - **Hàng đợi kiểm duyệt (Approvals Queue)**:
-  - Tích hợp hệ thống tab chuyển đổi linh hoạt: **Duyệt Người Bán** và **Duyệt Sản Phẩm**.
-  - **Duyệt Người Bán**:
+  - Tích hợp hệ thống tab chuyển đổi linh hoạt: **Người Bán**, **Sản Phẩm** và **Báo Cáo**.
+  - **Người Bán**:
     * Hiển thị danh sách hồ sơ nông dân xin đăng ký người bán đang ở trạng thái `pending`.
     * Click **"Xem chi tiết"**: Mở hộp thoại chi tiết (`SellerDetailsModal`) để xem đầy đủ thông tin về thông tin cửa hàng, thông tin liên hệ, nông trại & tiêu chuẩn, ảnh CCCD phóng to và tài khoản ngân hàng.
     * Click **"Phê duyệt"** (Approve): Nâng cấp quyền tài khoản sang `seller`, phê duyệt trạng thái `approved`, đồng thời tạo gian hàng trên Firestore, xóa lý do từ chối cũ và gửi thông báo chúc mừng về tài khoản đó.
     * Click **"Từ chối"** (Reject): Yêu cầu nhập lý do từ chối cụ thể, chuyển trạng thái hồ sơ sang `"rejected"`, lưu lý do và gửi thông báo `account_update` chứa lý do đó về tài khoản người bán.
-  - **Duyệt Sản Phẩm**:
+  - **Sản Phẩm**:
     * Hiển thị danh sách các sản phẩm mới do seller tự đăng đang ở trạng thái `pending`.
     * Click **"Xem chi tiết"**: Mở hộp thoại chi tiết (`ProductDetailsModal`) để xem đầy đủ thông tin sản phẩm (tên, giá, đơn vị, tồn kho, nguồn gốc, nhãn hữu cơ, mô tả chi tiết và bộ sưu tập ảnh đầy đủ).
     * Click **"Phê duyệt"**: Chuyển trạng thái sản phẩm sang `"active"`, xóa lý do từ chối cũ và gửi thông báo chúc mừng đến người bán (sản phẩm hiện đã hiển thị công khai).
     * Click **"Từ chối"**: Yêu cầu nhập lý do từ chối cụ thể, chuyển trạng thái sản phẩm sang `"rejected"`, lưu lý do và gửi thông báo hệ thống kèm lý do đó về tài khoản người bán.
+  - **Báo Cáo (Báo cáo vi phạm)**:
+    * Hiển thị danh sách các báo cáo vi phạm shop/sản phẩm của người dùng đang ở trạng thái `pending`.
+    * Click **"Xem & Xử lý"**: Mở hộp thoại xem chi tiết thông tin báo cáo (loại đối tượng, lý do vi phạm, người báo cáo, thời gian và nội dung mô tả chi tiết của báo cáo vi phạm).
+    * Cung cấp **4 hành động xử lý**:
+      1. **Bỏ qua**: Đổi trạng thái báo cáo thành `"dismissed"`. Ghi nhận log.
+      2. **Cảnh báo**: Yêu cầu nhập nội dung và gửi thông báo cảnh báo trực tiếp về tài khoản người bán vi phạm.
+      3. **Khóa tạm**: Khóa tạm sản phẩm (đổi sang `"blocked"`) hoặc khóa shop (đổi `sellerStatus` sang `"blocked"` và khóa toàn bộ sản phẩm của shop).
+      4. **Xóa vi phạm**: Xóa sản phẩm khỏi Firestore; hoặc thu hồi quyền bán hàng của shop (về `role = "buyer"`, `sellerStatus = "rejected"`) và xóa toàn bộ sản phẩm của shop khỏi Firestore.
 - **Danh sách người dùng & Phân quyền**:
   - Liệt kê toàn bộ người dùng đã đăng ký tài khoản trên hệ thống.
   - Cho phép Admin trực tiếp đổi vai trò của bất kỳ tài khoản nào: click **"Lên Admin"** để phong quyền quản trị, click **"Lên Shop (Seller)"** để cấp quyền bán hàng nhanh, hoặc click **"Bỏ Shop (Buyer)"** để thu hồi quyền bán hàng về tài khoản mua thông thường.
+  - **Mở khóa Shop**: Nếu shop đang bị khóa tạm thời (`sellerStatus === "blocked"`), hiển thị badge cảnh báo màu đỏ và nút hành động chuyển thành **"Mở khóa Shop"**. Khi nhấn, tài khoản sẽ được chuyển lại trạng thái hoạt động bình thường, mở khóa toàn bộ sản phẩm và gửi thông báo vui cho seller.
+- **Lịch sử hoạt động Admin (Admin Activity Logs)**:
+  - Bảng danh sách đặt ở cuối trang Admin Panel, hiển thị toàn bộ lịch sử các thao tác kiểm duyệt của Admin (Xóa, Khóa, Cảnh báo, Bỏ qua, Mở khóa) được đồng bộ từ Firestore theo thời gian thực.
 - **Đăng xuất**: Cung cấp nút đăng xuất riêng biệt ở cuối Sidebar để kết thúc phiên làm việc an toàn của Admin.
 
