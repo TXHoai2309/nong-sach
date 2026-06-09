@@ -1,7 +1,7 @@
 # 🌿 NôngSạch Architecture
 
 > Architecture Document
-> Version: v1.1.2
+> Version: v1.2.0
 > Project: NôngSạch — Nền tảng giao dịch nông sản sạch
 
 ---
@@ -104,9 +104,12 @@ nong-sach/
 │   └── CHANGELOG.md
 │
 ├── src/
-│
+│   ├── middleware.ts     # Next.js Edge Middleware bảo vệ các route /admin
 │   ├── app/
 │   │   ├── page.tsx
+│   │   ├── admin/
+│   │   │   ├── layout.tsx  # Layout riêng cho Admin Panel
+│   │   │   └── page.tsx    # Dashboard quản trị Admin
 │   │   ├── products/
 │   │   │   ├── page.tsx
 │   │   │   └── [id]/page.tsx
@@ -159,7 +162,8 @@ nong-sach/
 | /about         | About           |
 | /contact       | Contact         |
 | /profile       | Trang cá nhân   |
-| /shop/[id]      | Trang chi tiết Shop/Cửa hàng |
+| /shop/[id]     | Trang chi tiết Shop/Cửa hàng |
+| /admin         | Admin Panel (Dashboard quản trị hệ thống, duyệt người bán, quản lý role) |
 
 ## Navigation Rules
 
@@ -506,6 +510,8 @@ Clear Session
 | register/page.tsx          | Client | Auth State        |
 | profile/page.tsx           | Client | Tab navigation, Profile & Address updates |
 | app/shop/[id]/page.tsx     | Client | Shop Details, Follow and Products Filter & Sort |
+| app/admin/layout.tsx       | Client | Admin Session & Sidebar Layout |
+| app/admin/page.tsx         | Client | Dashboard stats & Firestore fetch (Users/Shops/Products) |
 
 ---
 
@@ -570,6 +576,7 @@ Deployment Strategy:
 * Type-safe data model
 * Quantity stock protection
 * Local auth persistence
+* Edge Middleware Role Protection: Bảo vệ route `/admin` bằng Next.js Edge Middleware thông qua cookie `user-role` đồng bộ từ Client-side Zustand Auth Store.
 
 ## Phase 2
 

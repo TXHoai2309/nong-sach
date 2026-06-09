@@ -100,6 +100,13 @@ Lưu ý: Danh sách tỉnh/thành phố và quận/huyện được lấy từ A
 
 Tài khoản demo:
 
+1. Tài khoản Người mua (Buyer) Demo:
+```text
+Email: nguyenvana@gmail.com
+Mật khẩu: 12345678
+```
+
+2. Tài khoản Quản trị (Admin) Demo:
 ```text
 Email: admin@nongsach.vn
 Mật khẩu: 12345678
@@ -229,7 +236,29 @@ Quy trình tổng thể dự kiến:
 Ghi chú triển khai sau MVP:
 
 - Cần migrate dữ liệu tài khoản và sản phẩm sang Cloud Firestore và Firebase Auth.
-- Cần có trang quản trị dành riêng cho Admin để phê duyệt/từ chối hồ sơ người bán (`pending`, `approved`, `rejected`).
 - Cần tích hợp cổng thanh toán trực tuyến (VNPay, MoMo, ZaloPay).
 - Cần có hệ thống trạng thái đơn hàng đầy đủ: chờ xác nhận, đang xử lý, đang giao, đã giao, hoàn tất, đã hủy.
 - Cần có chức năng đánh giá và nhận xét sản phẩm sau khi đơn hàng hoàn tất.
+
+## 18. Trang quản trị hệ thống (Admin Panel)
+
+Trang quản trị hệ thống cung cấp giao diện riêng tư, bảo mật dành riêng cho tài khoản Admin để giám sát và vận hành sàn thương mại điện tử.
+
+### 1. Truy cập
+- **Điều kiện**: Phải đăng nhập bằng tài khoản có vai trò `admin` (ví dụ: `admin@nongsach.vn`).
+- **Cách vào**:
+  - Click vào nút **"Trang quản trị"** hiển thị trên thanh Header ở storefront (cạnh tên tài khoản).
+  - Hoặc nhập trực tiếp URL: `http://localhost:3000/admin`.
+  - Nếu cố tình truy cập bằng tài khoản buyer hoặc chưa đăng nhập, Next.js Edge Middleware sẽ tự động chặn và chuyển hướng về trang chủ `/` hoặc trang đăng nhập.
+
+### 2. Các chức năng chính
+- **Bảng chỉ số tổng quan**: Hiển thị tổng số người dùng, số lượng hồ sơ đăng ký người bán đang chờ duyệt, tổng số cửa hàng (shops) và tổng số sản phẩm đã đăng trên hệ thống.
+- **Hồ sơ chờ duyệt (Approvals Queue)**:
+  - Hiển thị danh sách các tài khoản nông dân đăng ký bán hàng đang ở trạng thái `pending`.
+  - Click **"Duyệt"** (Approve): Hệ thống tự động nâng cấp quyền tài khoản sang `seller`, phê duyệt trạng thái `approved`, đồng thời tạo gian hàng tương ứng trên bộ sưu tập `shops` của Firestore và gửi thông báo chúc mừng về tài khoản đó.
+  - Click **"Từ chối"** (Reject): Chuyển trạng thái người bán sang `rejected` và đóng hồ sơ.
+- **Danh sách người dùng & Phân quyền**:
+  - Liệt kê toàn bộ người dùng đã đăng ký tài khoản trên hệ thống.
+  - Cho phép Admin trực tiếp đổi vai trò của bất kỳ tài khoản nào: click **"Lên Admin"** để phong quyền quản trị, click **"Lên Shop (Seller)"** để cấp quyền bán hàng nhanh, hoặc click **"Bỏ Shop (Buyer)"** để thu hồi quyền bán hàng về tài khoản mua thông thường.
+- **Đăng xuất**: Cung cấp nút đăng xuất riêng biệt ở cuối Sidebar để kết thúc phiên làm việc an toàn của Admin.
+

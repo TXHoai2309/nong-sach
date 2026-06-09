@@ -5,12 +5,12 @@
 | Thông tin         | Chi tiết                                    |
 | ----------------- | ------------------------------------------- |
 | Tên dự án         | NôngSạch — Nền tảng giao dịch nông sản sạch |
-| Phiên bản         | MVP v0.4.3                                  |
+| Phiên bản         | MVP v0.5.0                                  |
 | Ngày tạo          | 03/06/2026                                  |
-| Cập nhật lần cuối | 05/06/2026                                  |
+| Cập nhật lần cuối | 09/06/2026                                  |
 | Nhóm              | NôngSạch Team                               |
 | Môn học           | Vibe Coding Thực Chiến — Buổi 3             |
-| Trạng thái        | ✅ Hoàn thành Sprint 1, Sprint 2, Sprint 3, Sprint 4, Sprint 4.2 & Sprint 4.3 |
+| Trạng thái        | ✅ Hoàn thành Sprint 1, Sprint 2, Sprint 3, Sprint 4, Sprint 4.2, Sprint 4.3 & Sprint 5 |
 
 ---
 
@@ -74,6 +74,7 @@ Người tiêu dùng ngày càng lo ngại về an toàn thực phẩm, đặc b
 | F-18 | Quản lý đơn bán hàng  | Dashboard cho người bán quản lý danh sách đơn hàng, cập nhật trạng thái đơn (Xác nhận, Giao hàng...) | P1      | ✅ Done     |
 | F-19 | Hệ thống thông báo    | Thông báo thời gian thực cho người mua và người bán về các sự kiện đơn hàng và hệ thống | P1      | ✅ Done     |
 | F-20 | Ổn định Profile & Báo cáo shop | Sửa lỗi runtime Profile, đảm bảo modal Báo cáo shop hiển thị đúng và lint/type toàn project không còn error | P0      | ✅ Done     |
+| F-21 | Trang quản trị & Phân quyền Admin | Trang quản trị `/admin` bảo mật bằng Middleware, xem stats và duyệt người bán | P1      | ✅ Done     |
 
 
 > **Ghi chú cho team:** F-09 hiện đã có giao diện hoàn chỉnh theo Stitch HTML tại route `/contact`. Form liên hệ đang ở mức UI/UX MVP; nếu cần gửi dữ liệu thật, cần bổ sung API/Firebase handler ở Phase 2. Kênh bán hàng (F-11), Quản lý sản phẩm (F-12) và Trang chi tiết shop (F-14) hiện được lưu động tại `localStorage` phía client của từng người dùng để mô phỏng tính năng thực tế.
@@ -81,7 +82,6 @@ Người tiêu dùng ngày càng lo ngại về an toàn thực phẩm, đặc b
 ## 2.2. Ngoài phạm vi MVP
 
 * Thanh toán online (VNPay, MoMo, ZaloPay, Stripe)
-* Dashboard quản trị Admin
 * Hệ thống đánh giá và nhận xét sản phẩm
 * Chat trực tiếp với nông dân
 * Multi-vendor marketplace
@@ -304,7 +304,36 @@ Quy trình dưới đây là định hướng phát triển sau MVP, khi hệ th
 * **Khung ảnh tối ưu**:
   * Ô thumbnail hiển thị dưới dạng flex-wrap với kích thước cố định `w-16 h-16` bo góc để giao diện không bị méo lệch khi số lượng ảnh ít hoặc nhiều.
   * Khung chứa ảnh đại diện lớn lấy kích thước tự nhiên của ảnh đang chọn, hiển thị bằng `object-contain`, bỏ tối ưu lại không cần thiết đối với ảnh base64 và phóng ảnh nhỏ có kiểm soát để tránh bị mờ.
-  * Khi ảnh có độ phân giải thấp, gallery dùng nền radial và lớp ảnh mờ phía sau để lấp khoảng trống thị giác, giúp bố cục vẫn đầy đặn nhưng ảnh chính không bị kéo căng quá mức.
+  - Khi ảnh có độ phân giải thấp, gallery dùng nền radial và lớp ảnh mờ phía sau để lấp khoảng trống thị giác, giúp bố cục vẫn đầy đặn nhưng ảnh chính không bị kéo căng quá mức.
+
+## 3.2.3. Trang Quản trị Admin Panel (Admin Dashboard)
+
+### US-21: Truy cập và Quản trị hệ thống (Admin Panel)
+
+**Là** người quản trị hệ thống (Admin), **tôi muốn** có một trang Dashboard riêng tư bảo mật bằng Middleware, **để** kiểm duyệt các yêu cầu đăng ký bán hàng của nhà vườn và quản lý phân quyền người dùng trên hệ thống.
+
+#### Acceptance Criteria
+* **Bảo vệ Route (Middleware)**:
+  - Chỉ cho phép tài khoản có `role === "admin"` truy cập trang `/admin` và các trang con.
+  - Các tài khoản không đăng nhập sẽ bị redirect về trang `/login?redirect=/admin`.
+  - Các tài khoản đăng nhập nhưng không có vai trò admin sẽ bị chuyển hướng về trang chủ `/`.
+* **Ẩn giao diện storefront**:
+  - Không hiển thị thanh điều hướng `Header` và chân trang `Footer` của trang bán hàng thông thường khi đang ở route `/admin`.
+* **Bố cục giao diện Quản trị**:
+  - Sidebar bên trái hiển thị tên NôngSạch Admin, mục "Tổng quan", thông tin Admin đăng nhập (tên, email) và nút Đăng xuất.
+  - Main panel bên phải hiển thị Header có tiêu đề, nút "Xem cửa hàng" trỏ về trang chủ.
+* **Bảng thống kê nhanh**:
+  - Hiển thị 4 khối thông tin: Tổng người dùng, Số hồ sơ chờ duyệt, Số nhà vườn (Shop), và Tổng số sản phẩm.
+* **Duyệt hồ sơ người bán (Approvals Queue)**:
+  - Hiển thị danh sách các tài khoản có trạng thái người bán đang chờ xử lý (`sellerStatus === "pending"`).
+  - Cung cấp nút **"Duyệt"** (gọi `approveSeller` để chuyển role sang `seller`, trạng thái `approved` và tự động tạo shop tương ứng trên Firestore).
+  - Cung cấp nút **"Từ chối"** (chuyển trạng thái người bán sang `rejected`).
+* **Quản lý phân quyền người dùng**:
+  - Bảng hiển thị danh sách tất cả các tài khoản trên hệ thống kèm Email, Vai trò (role) và Ngày gia nhập.
+  - Cung cấp nút **"Lên Admin"** để nâng cấp một tài khoản thành quản trị viên.
+  - Cung cấp nút **"Bỏ Shop (Buyer)"** hoặc **"Lên Shop (Seller)"** để thay đổi nhanh vai trò của tài khoản đó.
+* **Nút lối tắt trên Header**:
+  - Hiển thị nút "Trang quản trị" ngay cạnh tên tài khoản trên Header storefront cho các tài khoản là admin để truy cập nhanh.
 
 ## 3.3. Thông tin thương hiệu & hỗ trợ khách hàng
 
@@ -582,6 +611,18 @@ interface ContactMessage {
 | T-47 | Loại bỏ `any` ở product/shop/auth store localStorage helpers | 2  | ✅      |
 | T-48 | Xác minh `npm run lint` và `npx tsc --noEmit` không còn error | 1  | ✅      |
 
+## Sprint 5 — Admin Panel & Protected Routes (✅ Hoàn thành)
+
+| ID   | Task                                           | SP | Status |
+| ---- | ---------------------------------------------- | -- | ------ |
+| T-49 | Khai báo vai trò `"admin"` trên User interface | 1  | ✅      |
+| T-50 | Thiết lập helper sync cookie ở Zustand Auth Store | 2  | ✅      |
+| T-51 | Xây dựng Next.js Edge Middleware chặn `/admin` | 3  | ✅      |
+| T-52 | Điều khiển ẩn Header/Footer trên trang quản trị | 2  | ✅      |
+| T-53 | Layout trang Admin với sidebar và logout | 3  | ✅      |
+| T-54 | Dashboard Admin: thống kê, duyệt người bán, quản lý role | 4  | ✅      |
+| T-55 | Dọn lỗi compile & lint cho admin pages | 1  | ✅      |
+
 ## Backlog Phase 2 (Tương lai)
 
 | ID    | Tính năng          | Mô tả                                   | Priority |
@@ -590,6 +631,5 @@ interface ContactMessage {
 | P2-02 | Firebase Auth thật | Google OAuth + email thực tế            | High     |
 | P2-03 | Thanh toán VNPay   | Tích hợp cổng thanh toán VNPay sandbox  | Medium   |
 | P2-04 | Đánh giá sản phẩm  | Rating 5 sao + review text              | Medium   |
-| P2-05 | Dashboard Admin    | Quản lý sản phẩm, đơn hàng, users       | Medium   |
 | P2-06 | Order Tracking     | Theo dõi trạng thái giao hàng real-time | Low      |
 | P2-07 | Contact Backend    | Lưu/gửi form liên hệ qua API/Firebase   | Medium   |

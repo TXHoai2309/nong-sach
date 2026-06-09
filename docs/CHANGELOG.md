@@ -4,6 +4,41 @@ All notable changes to the **NôngSạch** project will be documented in this fi
 
 The format is based on **Keep a Changelog** and this project adheres to **Semantic Versioning**.
 
+## [0.6.4] - 2026-06-09
+
+### Xác thực Admin và Trang Quản trị (/admin)
+
+### Added
+* **Kiểu dữ liệu Admin (`src/types/user.ts`)**:
+  - Bổ sung vai trò `"admin"` vào danh sách các role hợp lệ trong interface `User`.
+* **Đồng bộ Cookie tự động (`src/store/auth-store.ts`)**:
+  - Triển khai helper functions `setCookie` và `deleteCookie` ở phía Client.
+  - Cập nhật hàm `initAuth`, `login`, và `logout` để tự động ghi nhận cookie `user-role` và `user-id`. Điều này giúp Next.js Middleware ở Edge runtime có thể đọc trạng thái phiên đăng nhập.
+* **Tài khoản Demo Admin (`src/store/auth-store.ts`)**:
+  - Thêm cơ chế tự động kiểm tra và đăng ký tài khoản Demo Admin `admin@nongsach.vn` / `12345678`. Tài khoản này sẽ tự động được gán role `"admin"` trên Firestore khi đăng nhập lần đầu.
+* **Next.js Edge Middleware bảo vệ Route (`src/middleware.ts`)**:
+  - Tạo mới Middleware chạy ở cấp độ Edge để chặn truy cập trái phép vào tất cả các route bắt đầu bằng `/admin`.
+  - Chuyển hướng người dùng chưa đăng nhập về trang `/login?redirect=/admin`.
+  - Chuyển hướng người dùng đã đăng nhập nhưng không phải admin về trang chủ `/`.
+* **Trang Quản trị Admin Panel (`src/app/admin/layout.tsx`, `src/app/admin/page.tsx`)**:
+  - Xây dựng Layout riêng cho trang Admin với Sidebar điều hướng, Header hiển thị thông tin tài khoản Admin và nút đăng xuất.
+  - Trang Dashboard thống kê số lượng người dùng, cửa hàng, sản phẩm và duyệt các hồ sơ người bán đang chờ xử lý (`pending` thành `approved` hoặc `rejected`).
+* **Lối tắt truy cập nhanh trên Header (`src/components/layout/Header.tsx`)**:
+  - Hiển thị nút "Trang quản trị" trên Header (cả phiên bản Desktop và Mobile menu) cho tài khoản có vai trò `"admin"`.
+
+### Changed
+* **Ẩn Header và Footer cửa hàng trên route Admin (`src/components/layout/Header.tsx`, `src/components/layout/Footer.tsx`)**:
+  - Cập nhật Header và Footer để tự động ẩn (`return null`) khi người dùng truy cập các đường dẫn thuộc `/admin`.
+* **Khắc phục lỗi Linter trong Admin Dashboard (`src/app/admin/layout.tsx`, `src/app/admin/page.tsx`)**:
+  - Thay đổi việc gọi `setState` đồng bộ trong `useEffect` (gây lỗi `set-state-in-effect`) bằng cách bao bọc qua `window.setTimeout`.
+  - Loại bỏ các biến không sử dụng (`activeSellers`, `activeBuyers`) trong Dashboard Page.
+
+### Verification
+* `npx tsc --noEmit` hoàn thành không lỗi.
+* `npm run lint` chạy thành công với 0 lỗi (0 errors).
+
+---
+
 ## [0.6.3] - 2026-06-07
 
 ### Tối ưu thông báo người bán và hiển thị chi tiết đánh giá/đơn hàng

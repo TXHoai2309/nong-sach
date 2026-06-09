@@ -1,10 +1,10 @@
 # 🛡️ VIBE PROCESS VERIFICATION
 
-> **Tài liệu chứng minh quy trình phát triển và kiểm định chất lượng sản phẩm (Plan — Doc — Build — Test) trước khi xuất xưởng (Ship) phiên bản NôngSạch MVP v0.4.2.**
+> **Tài liệu chứng minh quy trình phát triển và kiểm định chất lượng sản phẩm (Plan — Doc — Build — Test) trước khi xuất xưởng (Ship) phiên bản NôngSạch MVP v0.5.0.**
 > 
 > * **Dự án**: NôngSạch — Nền tảng giao dịch nông sản sạch
-> * **Phiên bản**: v0.4.2
-> * **Ngày xác nhận**: 05/06/2026
+> * **Phiên bản**: v0.5.0
+> * **Ngày xác nhận**: 09/06/2026
 > * **Quy trình áp dụng**: Vibe Coding Standard (Plan ➔ Doc ➔ Build ➔ Test)
 > * **Trạng thái**: ✅ **ĐÃ THÔNG QUA (PASSED) & SẴN SÀNG SHIP**
 
@@ -36,6 +36,7 @@ Trước khi thực hiện bất kỳ thay đổi nào trong mã nguồn, hệ t
   - **Tránh lỗi bộ nhớ & Hydration Mismatch (Sprint 4.0)**: Tích hợp `partialize` của Zustand để loại bỏ ảnh base64 CMND/nông trại/logo cồng kềnh trước khi lưu vào `nong-sach-auth` tránh lỗi `QuotaExceededError`. Chuyển đổi trang danh sách sản phẩm `/products` và chi tiết `/products/[id]` sang Client Component với `mounted` state guard để giải quyết lỗi bất đồng bộ SSR/Hydration.
   - **Banner thông tin Shop & Trang chi tiết Shop (Sprint 4.2)**: Triển khai Banner thông tin shop trên trang chi tiết sản phẩm hiển thị logo, đánh giá, số sản phẩm, vị trí, và nút xem shop. Thiết kế trang chi tiết cửa hàng `/shop/[id]` với cover, avatar, mô tả nông trại, nút theo dõi động, nút nhắn tin, tabs bộ lọc sản phẩm, đánh giá và giới thiệu chi tiết.
   - **Cải thiện giao diện Ảnh bìa Shop (UX Polish)**: Thu ngắn chiều cao banner, áp dụng thiết kế bo góc dưới (`rounded-b-3xl`) và giới hạn chiều rộng trong `site-container` để tăng tính thẩm mỹ và sự đồng bộ toàn trang.
+  - **Xác thực Admin & Trang quản trị (/admin) (Sprint 5)**: Phân quyền vai trò `"admin"`, thiết lập đồng bộ cookie để hỗ trợ Edge Middleware bảo vệ các route `/admin` ở server-side. Xây dựng layout Admin có sidebar điều hướng, header và nút đăng xuất riêng biệt. Thiết kế dashboard thống kê số lượng thực tế của hệ thống, duyệt hồ sơ người bán (seller) từ `pending` sang `approved`/`rejected`, quản lý phân quyền các vai trò của tài khoản. Ẩn Header/Footer storefront khi truy cập `/admin`, đồng thời bổ sung lối tắt "Trang quản trị" trên Header storefront cho người dùng admin.
 
 ---
 
@@ -158,12 +159,18 @@ Các ảnh chụp màn hình và video kiểm thử được lưu trữ trực t
 | **TC-26: Cải thiện giao diện Ảnh bìa Shop** | Truy cập trang chi tiết shop, kiểm tra chiều cao và bo góc banner. | Ảnh bìa thu ngắn lại, không tràn viền, bo góc dưới và phẳng góc trên đồng bộ với thẻ thông tin shop. | ✅ Pass |
 | **TC-27: Cắt ảnh bìa trực tiếp** | Trong modal chỉnh sửa shop, di chuột vào ảnh bìa hiện có và nhấn "Cắt / Chỉnh sửa ảnh". | Công cụ cắt ảnh (CoverImageCropper) mở ra với ảnh hiện tại, cho phép căn chỉnh lại khung hình. | ✅ Pass |
 | **TC-28: Gửi báo cáo vi phạm shop** | Nhấn "Báo cáo shop" trong menu "...", chọn lý do, viết chi tiết và gửi. | Hiển thị trạng thái "Đang gửi", đóng modal và thông báo thành công. Dữ liệu được lưu vào `nong-sach-reports`. | ✅ Pass |
+| **TC-29: Chặn truy cập /admin khi chưa đăng nhập** | Cố gắng truy cập `http://localhost:3000/admin`. | Edge Middleware chặn lại và chuyển hướng về `/login?redirect=/admin`. | ✅ Pass |
+| **TC-30: Chặn truy cập /admin bằng tài khoản Buyer** | Đăng nhập tài khoản `nguyenvana@gmail.com` rồi truy cập `/admin`. | Bị Edge Middleware chuyển hướng về trang chủ `/`. | ✅ Pass |
+| **TC-31: Cho phép truy cập /admin bằng tài khoản Admin** | Đăng nhập tài khoản `admin@nongsach.vn` và truy cập `/admin`. | Truy cập thành công vào giao diện Admin Dashboard. Ẩn toàn bộ Header và Footer storefront. | ✅ Pass |
+| **TC-32: Duyệt hồ sơ người bán** | Click "Duyệt" (Approve) đối với tài khoản nông dân pending trong hồ sơ chờ duyệt. | Trạng thái chuyển đổi thành công. Tài khoản đổi sang role `seller`, tự động tạo dữ liệu gian hàng ở collection `shops` trên Firestore và gửi thông báo về chuông. | ✅ Pass |
+| **TC-33: Quản lý role thủ công** | Click "Lên Admin" hoặc "Lên Shop" / "Bỏ Shop" ở bảng người dùng. | Thay đổi vai trò người dùng thành công và đồng bộ tức thì trên giao diện/CSDL Firestore. | ✅ Pass |
+| **TC-34: Lối tắt truy cập Admin trên Header** | Đăng nhập bằng tài khoản Admin và quan sát thanh điều hướng Header storefront. | Nút "Trang quản trị" xuất hiện cạnh tên tài khoản trên cả Desktop và Mobile menu. | ✅ Pass |
 
 ---
 
 ## 5. Kết luận nghiệm thu
 
-Mọi hoạt động phát triển của phiên bản MVP v0.4.2 đều tuân thủ chặt chẽ quy trình **PLAN - DOC - BUILD - TEST**. Các tệp tin tài liệu được đồng bộ hóa hoàn toàn, mã nguồn được build thành công không lỗi, và các tính năng tương tác được kiểm thử trực quan trên trình duyệt trước khi giao.
+Mọi hoạt động phát triển của phiên bản MVP v0.5.0 đều tuân thủ chặt chẽ quy trình **PLAN - DOC - BUILD - TEST**. Các tệp tin tài liệu được đồng bộ hóa hoàn toàn, mã nguồn được build thành công không lỗi, và các tính năng tương tác được kiểm thử trực quan trên trình duyệt trước khi giao.
 
 Dự án đã sẵn sàng triển khai chính thức!
 

@@ -19,7 +19,7 @@ export interface User {
   gender?: "Nam" | "Nữ" | "Khác" | "";
   memberSince?: string;
   addresses?: UserAddress[];
-  role?: "buyer" | "seller";
+  role?: "buyer" | "seller" | "admin";
   sellerStatus?: "pending" | "approved";
   sellerInfo?: SellerInfo;
 }

@@ -48,6 +48,10 @@ export default function Header() {
     return pathname === href;
   }
 
+  if (pathname?.startsWith("/admin")) {
+    return null;
+  }
+
   return (
     <header className="sticky top-0 z-50 bg-[#f9f9ff]/85 shadow-sm backdrop-blur-md">
       <nav className="mx-auto flex w-full max-w-[1120px] items-center justify-between gap-6 md:gap-10 px-6 py-3">
