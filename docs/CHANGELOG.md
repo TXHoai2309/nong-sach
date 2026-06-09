@@ -4,6 +4,30 @@ All notable changes to the **NôngSạch** project will be documented in this fi
 
 The format is based on **Keep a Changelog** and this project adheres to **Semantic Versioning**.
 
+## [0.6.7] - 2026-06-09
+
+### Quy trình phê duyệt sản phẩm tự đăng của Người bán (Admin Product Approvals Workflow)
+
+### Added
+* **Hộp thoại duyệt sản phẩm của Admin (`ProductDetailsModal` in `src/app/admin/page.tsx`)**: Modal chi tiết hiển thị toàn bộ thông tin sản phẩm (mô tả, giá, tồn kho, nguồn gốc, nhãn hữu cơ) và thư viện ảnh sản phẩm đầy đủ để admin xem xét trước khi phê duyệt.
+* **Hộp thoại nhập lý do từ chối sản phẩm**: Admin có thể chọn từ chối sản phẩm và nhập lý do không phê duyệt sản phẩm.
+* **Phân tách danh sách duyệt tại Dashboard Admin**: Tích hợp thanh tab chuyển đổi mượt mà giữa "Duyệt Người Bán" và "Duyệt Sản Phẩm" ngay trong cột hàng đợi kiểm duyệt để tối ưu hóa không gian hiển thị.
+* **Cột trạng thái sản phẩm trong Kênh người bán (`src/app/profile/page.tsx`)**: Bổ sung cột "Trạng thái" hiển thị trạng thái sản phẩm hiện tại:
+  - *Chờ duyệt (Pending)*: Badge màu Amber chuyển động.
+  - *Bị từ chối (Rejected)*: Badge màu Rose kèm lý do từ chối cụ thể ngay dưới trạng thái.
+  - *Đang bán (Active)*: Badge màu Emerald.
+* **Cơ chế tự động gửi thông báo duyệt**: Gửi thông báo hệ thống về tài khoản người bán khi sản phẩm được duyệt hoặc bị từ chối kèm lý do cụ thể.
+
+### Changed
+* **Lọc sản phẩm trên cửa hàng công khai (`src/lib/products.ts`)**: Cập nhật hàm `getAllProducts()` mặc định ẩn các sản phẩm chưa duyệt (`pending` hoặc `rejected`). Tích hợp tham số `includeInactive = true` cho phép Admin và Seller xem toàn bộ sản phẩm của mình.
+* **Bảo vệ trang chi tiết sản phẩm (`src/app/products/[id]/page.tsx`)**: Chặn truy cập trực tiếp của khách mua hàng thông thường đến trang chi tiết của sản phẩm đang chờ duyệt hoặc bị từ chối (hiển thị thông báo Không tìm thấy), ngoại trừ chủ sản phẩm và Admin.
+* **Tự động chuyển đổi trạng thái khi sửa sản phẩm**: Khi người bán cập nhật sản phẩm đang ở trạng thái `rejected`, trạng thái sản phẩm sẽ tự động chuyển về `pending` và làm sạch lý do từ chối cũ để đợi kiểm duyệt lại.
+
+### Verification
+* **Type Safety & Build**: Chạy lệnh `npx tsc --noEmit` thành công (exit code 0).
+
+---
+
 ## [0.6.6] - 2026-06-09
 
 ### Quy trình kiểm duyệt, Giao diện 3 trạng thái của Người bán & Quy trình gửi lại hồ sơ (Seller Registration Audit, UI States & Resubmission Flow)

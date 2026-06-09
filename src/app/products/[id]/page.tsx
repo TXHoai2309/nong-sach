@@ -7,6 +7,7 @@ import Breadcrumb from "@/components/layout/Breadcrumb";
 import Container from "@/components/layout/Container";
 import ProductDetail from "@/components/product/ProductDetail";
 import { getAllProducts, getProductById } from "@/lib/products";
+import { useAuthStore } from "@/store/auth-store";
 
 import { Product } from "@/types/product";
 
@@ -21,6 +22,8 @@ export default function ProductDetailPage({ params }: PageProps) {
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const currentUser = useAuthStore((s) => s.currentUser);
+
   useEffect(() => {
     const timer = window.setTimeout(() => setMounted(true), 0);
     let active = true;
@@ -28,7 +31,18 @@ export default function ProductDetailPage({ params }: PageProps) {
       try {
         const p = await getProductById(id);
         if (!active) return;
-        setProduct(p);
+
+        if (p && (p.status === "pending" || p.status === "rejected")) {
+          const isSeller = currentUser && currentUser.id === p.sellerId;
+          const isAdmin = currentUser && currentUser.role === "admin";
+          if (!isSeller && !isAdmin) {
+            setProduct(undefined);
+          } else {
+            setProduct(p);
+          }
+        } else {
+          setProduct(p);
+        }
 
         const all = await getAllProducts();
         const related = all.filter((item) => item.id !== id).slice(0, 4);
@@ -47,7 +61,7 @@ export default function ProductDetailPage({ params }: PageProps) {
       active = false;
       window.clearTimeout(timer);
     };
-  }, [id]);
+  }, [id, currentUser]);
 
   if (!mounted || loading) {
     return (

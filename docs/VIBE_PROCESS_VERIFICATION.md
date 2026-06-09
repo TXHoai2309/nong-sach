@@ -1,9 +1,9 @@
 # 🛡️ VIBE PROCESS VERIFICATION
 
-> **Tài liệu chứng minh quy trình phát triển và kiểm định chất lượng sản phẩm (Plan — Doc — Build — Test) trước khi xuất xưởng (Ship) phiên bản NôngSạch MVP v0.6.6.**
+> **Tài liệu chứng minh quy trình phát triển và kiểm định chất lượng sản phẩm (Plan — Doc — Build — Test) trước khi xuất xưởng (Ship) phiên bản NôngSạch MVP v0.6.7.**
 > 
 > * **Dự án**: NôngSạch — Nền tảng giao dịch nông sản sạch
-> * **Phiên bản**: v0.6.6
+> * **Phiên bản**: v0.6.7
 > * **Ngày xác nhận**: 09/06/2026
 > * **Quy trình áp dụng**: Vibe Coding Standard (Plan ➔ Doc ➔ Build ➔ Test)
 > * **Trạng thái**: ✅ **ĐÃ THÔNG QUA (PASSED) & SẴN SÀNG SHIP**
@@ -39,6 +39,7 @@ Trước khi thực hiện bất kỳ thay đổi nào trong mã nguồn, hệ t
   - **Xác thực Admin & Trang quản trị (/admin) (Sprint 5)**: Phân quyền vai trò `"admin"`, thiết lập đồng bộ cookie để hỗ trợ Edge Middleware bảo vệ các route `/admin` ở server-side. Xây dựng layout Admin có sidebar điều hướng, header và nút đăng xuất riêng biệt. Thiết kế dashboard thống kê số lượng thực tế của hệ thống, duyệt hồ sơ người bán (seller) từ `pending` sang `approved`/`rejected`, quản lý phân quyền các vai trò của tài khoản. Ẩn Header/Footer storefront khi truy cập `/admin`, đồng thời bổ sung lối tắt "Trang quản trị" trên Header storefront cho người dùng admin.
   - **Nâng cấp Dashboard Admin & Biểu đồ SVG Line (Sprint 5.1)**: Triển khai 4 thẻ KPI dựa trên Firestore thật (Tổng người dùng, Seller chờ, Đơn hôm nay, Doanh thu). Thiết kế biểu đồ SVG Line tuỳ biến hiển thị doanh số và số đơn hàng với bộ lọc 7/30 ngày và chuyển đổi metric hiển thị. Tích hợp hiệu ứng tương tác hover dọc và tooltip lơ lửng cho từng điểm dữ liệu.
   - **Kiểm duyệt chất lượng & Quy trình từ chối/gửi lại hồ sơ (Sprint 5.2)**: Xây dựng modal xem chi tiết hồ sơ `SellerDetailsModal` (bao gồm xem đầy đủ ảnh CCCD phóng to, thông tin nông trại và ngân hàng). Tích hợp chức năng từ chối kèm lý do, tự động gửi thông báo đến seller. Thiết kế cảnh báo đỏ hiển thị lý do từ chối trên hồ sơ seller và nút "Chỉnh sửa & gửi lại hồ sơ" điền sẵn thông tin cũ để người bán nộp lại.
+  - **Quy trình phê duyệt sản phẩm tự đăng của Người bán (Sprint 5.3)**: Tích hợp thuộc tính `status` và `rejectionReason` vào kiểu dữ liệu sản phẩm. Mặc định ẩn các sản phẩm chưa duyệt (`pending` hoặc `rejected`) khỏi cửa hàng công khai và trang chi tiết sản phẩm. Bổ sung cột Trạng thái chi tiết (Đang bán / Chờ duyệt / Bị từ chối kèm lý do) tại Kênh người bán, và reset trạng thái về `pending` khi người bán cập nhật sản phẩm bị từ chối. Thiết kế danh sách sản phẩm chờ duyệt dạng tab tại Dashboard Admin kèm modal xem chi tiết đầy đủ ảnh/mô tả và các nút Duyệt/Từ chối nhập lý do, tự động gửi thông báo kết quả cho người bán.
 
 ---
 
@@ -47,7 +48,7 @@ Trước khi thực hiện bất kỳ thay đổi nào trong mã nguồn, hệ t
 Tất cả các thay đổi về logic, cấu trúc dữ liệu và giao diện đều được cập nhật vào hệ thống tài liệu chính thức của dự án:
 
 1. **Cập nhật Đặc tả tính năng ([SPEC.md](file:///d:/Download/BaiHoia/nong-sach/docs/SPEC.md))**:
-   - Ghi nhận đầy đủ mô tả chi tiết, tiêu chí nghiệm thu (Acceptance Criteria) cho các tính năng mới ở **Sprint 3.4 đến 5.2** (bao gồm Trang cá nhân, API Địa chỉ, Đổi mật khẩu, Mua lại đơn hàng, Đăng ký Người bán, Dashboard, CRUD Sản phẩm, Banner thông tin Shop, Trang chi tiết Shop, Admin Dashboard, và Quy trình duyệt/từ chối/gửi lại hồ sơ người bán).
+   - Ghi nhận đầy đủ mô tả chi tiết, tiêu chí nghiệm thu (Acceptance Criteria) cho các tính năng mới ở **Sprint 3.4 đến 5.3** (bao gồm Trang cá nhân, API Địa chỉ, Đổi mật khẩu, Mua lại đơn hàng, Đăng ký Người bán, Dashboard, CRUD Sản phẩm, Banner thông tin Shop, Trang chi tiết Shop, Admin Dashboard, Quy trình duyệt/từ chối/gửi lại hồ sơ người bán, và Quy trình phê duyệt sản phẩm tự đăng).
 2. **Cập nhật Kiến trúc hệ thống ([ARCHITECTURE.md](file:///d:/Download/BaiHoia/nong-sach/docs/ARCHITECTURE.md))**:
    - Làm rõ cấu trúc các store trạng thái Zustand (`cartStore` và `authStore`), cơ chế lọc ảnh `partialize` để tránh tràn bộ nhớ, giải thuật nén ảnh Hybrid, cách thức xử lý luồng dữ liệu khi người bán quản lý sản phẩm CRUD, luồng điều hướng/phân quyền cửa hàng và luồng phê duyệt/từ chối chất lượng từ Admin.
 3. **Cập nhật Lịch sử thay đổi ([CHANGELOG.md](file:///d:/Download/BaiHoia/nong-sach/docs/CHANGELOG.md))**:

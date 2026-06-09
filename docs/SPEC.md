@@ -5,12 +5,12 @@
 | Thông tin         | Chi tiết                                    |
 | ----------------- | ------------------------------------------- |
 | Tên dự án         | NôngSạch — Nền tảng giao dịch nông sản sạch |
-| Phiên bản         | MVP v0.6.6                                  |
+| Phiên bản         | MVP v0.6.7                                  |
 | Ngày tạo          | 03/06/2026                                  |
 | Cập nhật lần cuối | 09/06/2026                                  |
 | Nhóm              | NôngSạch Team                               |
 | Môn học           | Vibe Coding Thực Chiến — Buổi 3             |
-| Trạng thái        | ✅ Hoàn thành Sprint 1 đến Sprint 5.2 |
+| Trạng thái        | ✅ Hoàn thành Sprint 1 đến Sprint 5.3 |
 
 ---
 
@@ -77,6 +77,7 @@ Người tiêu dùng ngày càng lo ngại về an toàn thực phẩm, đặc b
 | F-21 | Trang quản trị & Phân quyền Admin | Trang quản trị `/admin` bảo mật bằng Middleware, xem stats và duyệt người bán | P1      | ✅ Done     |
 | F-22 | Dashboard KPI & Biểu đồ SVG Line | Báo cáo thực tế từ Firestore và biểu đồ SVG tương tác lọc 7/30 ngày | P1      | ✅ Done     |
 | F-23 | Quy trình duyệt/từ chối hồ sơ | Modal xem chi tiết hồ sơ (zoom CCCD), từ chối kèm lý do và quy trình nộp lại | P1      | ✅ Done     |
+| F-24 | Quy trình duyệt/từ chối sản phẩm | Admin duyệt sản phẩm pending -> active hoặc từ chối kèm lý do và gửi thông báo | P1      | ✅ Done     |
 
 
 > **Ghi chú cho team:** F-09 hiện đã có giao diện hoàn chỉnh theo Stitch HTML tại route `/contact`. Form liên hệ đang ở mức UI/UX MVP; nếu cần gửi dữ liệu thật, cần bổ sung API/Firebase handler ở Phase 2. Kênh bán hàng (F-11), Quản lý sản phẩm (F-12) và Trang chi tiết shop (F-14) hiện được lưu động tại `localStorage` phía client của từng người dùng để mô phỏng tính năng thực tế.
@@ -651,6 +652,16 @@ interface ContactMessage {
 | T-59 | Modal chi tiết hồ sơ `SellerDetailsModal` (Zoom CCCD) | 3  | ✅      |
 | T-60 | Chức năng từ chối kèm lý do & gửi thông báo    | 2  | ✅      |
 | T-61 | UI cảnh báo từ chối & quy trình nộp lại hồ sơ  | 3  | ✅      |
+
+## Sprint 5.3 — Quy trình duyệt sản phẩm tự đăng của Người bán (✅ Hoàn thành)
+
+| ID   | Task                                           | SP | Status |
+| ---- | ---------------------------------------------- | -- | ------ |
+| T-62 | Thêm status và rejectionReason vào type Product | 1  | ✅      |
+| T-63 | Lọc sản phẩm pending/rejected trên storefront  | 2  | ✅      |
+| T-64 | Hiển thị trạng thái & lý do từ chối sản phẩm ở Seller dashboard | 2  | ✅      |
+| T-65 | Hàng đợi duyệt sản phẩm & Modal xem chi tiết duyệt tại Admin | 3  | ✅      |
+| T-66 | Chức năng duyệt/từ chối sản phẩm kèm lý do & gửi thông báo | 2  | ✅      |
 
 
 ## Backlog Phase 2 (Tương lai)

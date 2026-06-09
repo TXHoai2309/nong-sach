@@ -268,16 +268,18 @@ Trang quản trị hệ thống cung cấp giao diện riêng tư, bảo mật d
   - **Lọc thời gian**: Admin có thể chọn xem báo cáo theo chu kỳ **7 ngày** hoặc **30 ngày** qua các nút bấm tương ứng.
   - **Chuyển đổi chỉ số**: Cho phép lựa chọn xem theo **Doanh thu** (thể hiện bằng đường màu xanh lá cây, thang đo VND viết tắt dạng M/K) hoặc **Số đơn hàng** (thể hiện bằng đường màu xanh dương, thang đo số nguyên đơn hàng).
   - **Tooltip tương tác**: Khi di chuột qua các mốc điểm của biểu đồ, hệ thống sẽ hiện đường nét đứt định vị dọc và một tooltip nổi màu tối hiển thị chính xác ngày tháng cùng số liệu doanh thu & số đơn hàng của ngày đó.
-- **Hồ sơ chờ duyệt (Approvals Queue)**:
-  - Hiển thị danh sách các tài khoản nông dân đăng ký bán hàng đang ở trạng thái `pending`.
-  - Click **"Xem chi tiết"**: Mở hộp thoại chi tiết (`SellerDetailsModal`) để xem đầy đủ thông tin về:
-    * Thông tin cửa hàng (Tên shop, slogan, mô tả, logo, banner).
-    * Thông tin liên hệ (Người đại diện, Email, Số điện thoại, Số Zalo).
-    * Nông trại & Tiêu chuẩn (Địa chỉ, tỉnh thành, tiêu chuẩn canh tác và album ảnh thực tế).
-    * Thẻ căn cước công dân (Hiển thị Số CCCD và ảnh mặt trước/sau. Có thể click vào từng ảnh CCCD để phóng to xem chi tiết sắc nét qua lớp overlay).
-    * Thông tin tài khoản nhận tiền ngân hàng.
-  - Click **"Phê duyệt"** (Approve): Nâng cấp quyền tài khoản sang `seller`, phê duyệt trạng thái `approved`, đồng thời tạo gian hàng tương ứng trên Firestore, xóa lý do từ chối cũ và gửi thông báo chúc mừng về tài khoản đó.
-  - Click **"Từ chối"** (Reject): Hệ thống hiển thị hộp thoại yêu cầu nhập lý do từ chối cụ thể (ví dụ: "Ảnh thẻ CCCD bị mờ, vui lòng chụp lại và gửi lại hồ sơ"). Sau khi xác nhận, trạng thái hồ sơ của người bán sẽ được chuyển thành `"rejected"`, lý do từ chối được lưu lại trên Firestore, đồng thời gửi thông báo `account_update` chứa lý do đó về tài khoản người bán.
+- **Hàng đợi kiểm duyệt (Approvals Queue)**:
+  - Tích hợp hệ thống tab chuyển đổi linh hoạt: **Duyệt Người Bán** và **Duyệt Sản Phẩm**.
+  - **Duyệt Người Bán**:
+    * Hiển thị danh sách hồ sơ nông dân xin đăng ký người bán đang ở trạng thái `pending`.
+    * Click **"Xem chi tiết"**: Mở hộp thoại chi tiết (`SellerDetailsModal`) để xem đầy đủ thông tin về thông tin cửa hàng, thông tin liên hệ, nông trại & tiêu chuẩn, ảnh CCCD phóng to và tài khoản ngân hàng.
+    * Click **"Phê duyệt"** (Approve): Nâng cấp quyền tài khoản sang `seller`, phê duyệt trạng thái `approved`, đồng thời tạo gian hàng trên Firestore, xóa lý do từ chối cũ và gửi thông báo chúc mừng về tài khoản đó.
+    * Click **"Từ chối"** (Reject): Yêu cầu nhập lý do từ chối cụ thể, chuyển trạng thái hồ sơ sang `"rejected"`, lưu lý do và gửi thông báo `account_update` chứa lý do đó về tài khoản người bán.
+  - **Duyệt Sản Phẩm**:
+    * Hiển thị danh sách các sản phẩm mới do seller tự đăng đang ở trạng thái `pending`.
+    * Click **"Xem chi tiết"**: Mở hộp thoại chi tiết (`ProductDetailsModal`) để xem đầy đủ thông tin sản phẩm (tên, giá, đơn vị, tồn kho, nguồn gốc, nhãn hữu cơ, mô tả chi tiết và bộ sưu tập ảnh đầy đủ).
+    * Click **"Phê duyệt"**: Chuyển trạng thái sản phẩm sang `"active"`, xóa lý do từ chối cũ và gửi thông báo chúc mừng đến người bán (sản phẩm hiện đã hiển thị công khai).
+    * Click **"Từ chối"**: Yêu cầu nhập lý do từ chối cụ thể, chuyển trạng thái sản phẩm sang `"rejected"`, lưu lý do và gửi thông báo hệ thống kèm lý do đó về tài khoản người bán.
 - **Danh sách người dùng & Phân quyền**:
   - Liệt kê toàn bộ người dùng đã đăng ký tài khoản trên hệ thống.
   - Cho phép Admin trực tiếp đổi vai trò của bất kỳ tài khoản nào: click **"Lên Admin"** để phong quyền quản trị, click **"Lên Shop (Seller)"** để cấp quyền bán hàng nhanh, hoặc click **"Bỏ Shop (Buyer)"** để thu hồi quyền bán hàng về tài khoản mua thông thường.

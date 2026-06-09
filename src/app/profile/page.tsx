@@ -370,7 +370,7 @@ function ProfileContent() {
     async function loadCustomProducts() {
       if (!currentUser) return;
       try {
-        const list = await getAllProducts();
+        const list = await getAllProducts(true);
         const filteredList = list.filter((p) => p.sellerId === currentUser.id) as ShopProduct[];
         setShopProducts(filteredList);
       } catch (e) {
@@ -941,6 +941,8 @@ function ProfileContent() {
       sellerId: currentUser.id,
       shopName: currentUser.sellerInfo?.shopName || "Trang trại của tôi",
       isOrganic: selectedStandards.includes("Hữu cơ (Organic)"),
+      status: editingProduct ? (editingProduct.status === "rejected" ? "pending" : (editingProduct.status || "active")) : "pending",
+      rejectionReason: editingProduct ? (editingProduct.status === "rejected" ? "" : (editingProduct.rejectionReason || "")) : "",
     };
 
     try {
@@ -948,10 +950,14 @@ function ProfileContent() {
 
       if (editingProduct) {
         setShopProducts((prev) => prev.map((p) => p.id === editingProduct.id ? productData : p));
-        showToast("Cập nhật sản phẩm thành công!");
+        if (productData.status === "pending" && editingProduct.status === "rejected") {
+          showToast("Đã gửi lại yêu cầu phê duyệt sản phẩm!");
+        } else {
+          showToast("Cập nhật sản phẩm thành công!");
+        }
       } else {
         setShopProducts((prev) => [...prev, productData]);
-        showToast("Đăng sản phẩm mới thành công!");
+        showToast("Đăng sản phẩm mới thành công! Chờ Admin phê duyệt.");
       }
 
       closeProductModal();
@@ -3176,6 +3182,7 @@ function ProfileContent() {
                                   <th className="pb-3 pr-2">Giá bán</th>
                                   <th className="pb-3 pr-2">Tồn kho</th>
                                   <th className="pb-3 pr-2">Nguồn gốc</th>
+                                  <th className="pb-3 pr-2">Trạng thái</th>
                                   <th className="pb-3 pr-2 text-right">Thao tác</th>
                                 </tr>
                               </thead>
@@ -3207,6 +3214,31 @@ function ProfileContent() {
                                     </td>
                                     <td className="py-3 pr-2 font-semibold">{p.stock} {p.unit}</td>
                                     <td className="py-3 pr-2 font-semibold">{p.origin}</td>
+                                    <td className="py-3 pr-2 font-semibold">
+                                      {p.status === "pending" && (
+                                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-xs font-bold text-amber-700">
+                                          <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                                          Chờ duyệt
+                                        </span>
+                                      )}
+                                      {p.status === "rejected" && (
+                                        <div className="flex flex-col gap-0.5">
+                                          <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-1 text-xs font-bold text-red-700 w-fit">
+                                            Bị từ chối
+                                          </span>
+                                          {p.rejectionReason && (
+                                            <span className="text-[10px] text-red-500 max-w-[120px] break-words line-clamp-2" title={p.rejectionReason}>
+                                              {p.rejectionReason}
+                                            </span>
+                                          )}
+                                        </div>
+                                      )}
+                                      {(p.status === "active" || !p.status) && (
+                                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-700">
+                                          Đang bán
+                                        </span>
+                                      )}
+                                    </td>
                                     <td className="py-3 pr-2 text-right space-x-1.5 whitespace-nowrap">
                                       <Link
                                         href={`/products/${p.id}`}

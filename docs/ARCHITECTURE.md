@@ -1,7 +1,7 @@
 # 🌿 NôngSạch Architecture
 
 > Architecture Document
-> Version: v1.2.6
+> Version: v1.2.7
 > Project: NôngSạch — Nền tảng giao dịch nông sản sạch
 
 ---
@@ -520,6 +520,31 @@ Admin Dashboard Queue
                                │
                                ▼ (Prefills form with past info)
                    Resubmits Form (sellerStatus ➔ "pending", resets reason)
+```
+
+## Product Verification & Audit Flow
+
+```text
+Seller Submits Product
+       │ (product.status ➔ "pending")
+       ▼
+Admin Dashboard Queue (Duyệt Sản Phẩm Tab)
+       │
+       ├─► Click "Xem chi tiết" ➔ Opens Modal (Inspect name, category, price, stock, description, images)
+       │
+       ├─► [Approve] ➔ Sets status ➔ "active", clears rejectionReason
+       │                 └── Sends notification to seller (product approved)
+       │
+       └─► [Reject] ➔ prompts for reason input
+                         ├── Sets status ➔ "rejected"
+                         ├── Saves rejectionReason ➔ reason
+                         └── Sends notification to seller (product rejected with reason)
+                               │
+                               ▼
+                   Seller Dashboard (Products Table)
+                         ├── Displays "Bị từ chối" status badge
+                         ├── Shows rejection reason text
+                         └── Seller edits product -> Resets status ➔ "pending", resets reason
 ```
 
 ---
