@@ -4,6 +4,32 @@ All notable changes to the **NôngSạch** project will be documented in this fi
 
 The format is based on **Keep a Changelog** and this project adheres to **Semantic Versioning**.
 
+## [0.6.5] - 2026-06-09
+
+### Nâng cấp Admin Dashboard: KPI thực tế từ Firestore & Biểu đồ Line tương tác lọc 7/30 ngày
+
+### Added
+* **Lọc khoảng thời gian cho biểu đồ**: Bổ sung bộ lọc thời gian cho phép chuyển đổi linh hoạt giữa 7 ngày qua và 30 ngày qua trên biểu đồ hiệu suất nền tảng.
+* **Chuyển đổi chỉ số hiển thị (Metric Toggle)**: Cho phép chuyển đổi xem biểu đồ theo **Doanh thu** (VND, màu xanh lá) hoặc **Số đơn hàng** (màu xanh dương).
+* **Tooltip nổi tương tác động**: Khi hover chuột lên từng điểm dữ liệu trên biểu đồ SVG, hiển thị tooltip dạng HTML bay chứa thông tin chi tiết về Ngày cụ thể (dạng `DD/MM/YYYY`), Doanh thu (VND định dạng chuẩn) và Số đơn hàng tương ứng.
+* **Đường chỉ hướng dọc & Vòng tròn chỉ điểm**: Vẽ đường nét đứt chạy dọc theo toạ độ X của điểm đang hover và phóng to vòng tròn dữ liệu khi hover để mang lại trải nghiệm chuyên nghiệp.
+
+### Changed
+* **Thẻ thống kê KPI dựa trên Firestore thật**: Thay thế các thẻ cũ bằng 4 thẻ KPI đáp ứng đúng Acceptance Criteria:
+  - **Tổng người dùng**: Tổng số tài khoản đăng ký trên Firestore.
+  - **Seller chờ**: Số lượng người bán đang chờ duyệt (`sellerStatus === "pending"`).
+  - **Đơn hôm nay**: Đếm số đơn hàng được tạo trong ngày hôm nay ở múi giờ local của trình duyệt.
+  - **Doanh thu**: Tính tổng tiền từ tất cả đơn hàng trên Firestore (ngoại trừ các đơn hàng bị hủy `"cancelled"`).
+* **Vẽ biểu đồ SVG Line tuỳ biến**: Vẽ biểu đồ dạng SVG không cần thư viện ngoài, tối ưu hiệu năng và tránh lỗi hydration. Hỗ trợ hiển thị responsive theo tỷ lệ khung hình `800/350` và tô màu gradient mượt mà dưới đường vẽ.
+* **Tự động giãn cách nhãn ngày trục X**: Khi xem chế độ 30 ngày, chỉ hiển thị nhãn trục X sau mỗi 5 ngày và ngày cuối cùng để giữ giao diện sạch đẹp, không bị chồng chéo văn bản.
+* **Tối ưu hoá truy vấn Firestore**: Loại bỏ hoàn toàn việc truy vấn số lượng sản phẩm (`productsCount`) và số lượng shop (`shopsCount`) không sử dụng trên trang quản trị, giúp giảm số lượng Firestore reads và tăng tốc độ phản hồi của trang.
+
+### Verification
+* Lệnh kiểm tra kiểu dữ liệu `npx tsc --noEmit` hoàn thành không lỗi.
+* Lệnh linter `npm run lint` chạy thành công, 0 lỗi và 0 cảnh báo trong file `src/app/admin/page.tsx`.
+
+---
+
 ## [0.6.4] - 2026-06-09
 
 ### Xác thực Admin và Trang Quản trị (/admin)

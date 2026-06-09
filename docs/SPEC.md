@@ -322,8 +322,17 @@ Quy trình dưới đây là định hướng phát triển sau MVP, khi hệ th
 * **Bố cục giao diện Quản trị**:
   - Sidebar bên trái hiển thị tên NôngSạch Admin, mục "Tổng quan", thông tin Admin đăng nhập (tên, email) và nút Đăng xuất.
   - Main panel bên phải hiển thị Header có tiêu đề, nút "Xem cửa hàng" trỏ về trang chủ.
-* **Bảng thống kê nhanh**:
-  - Hiển thị 4 khối thông tin: Tổng người dùng, Số hồ sơ chờ duyệt, Số nhà vườn (Shop), và Tổng số sản phẩm.
+* **Bảng thống kê nhanh (KPI)**:
+  - Hiển thị đúng dữ liệu thực tế truy vấn từ Firestore gồm 4 thẻ:
+    1. **Tổng người dùng**: Tổng số tài khoản trên hệ thống.
+    2. **Seller chờ**: Số hồ sơ đăng ký người bán đang chờ duyệt (`sellerStatus === "pending"`).
+    3. **Đơn hôm nay**: Đếm số đơn hàng được tạo trong ngày hôm nay ở múi giờ local của trình duyệt.
+    4. **Doanh thu**: Tổng doanh thu thực tế (tổng tiền các đơn hàng ngoại trừ các đơn bị huỷ `"cancelled"`), được định dạng tiền tệ VND chuẩn.
+* **Biểu đồ hiệu suất nền tảng (SVG Line Chart)**:
+  - Biểu đồ line vẽ bằng SVG tuỳ biến, tự động co giãn (responsive ratio `800/350`) và có gradient màu bên dưới đường vẽ.
+  - Cho phép người dùng **lọc khoảng thời gian**: chuyển đổi giữa 7 ngày qua và 30 ngày qua. Ở chế độ 30 ngày, các nhãn ngày trên trục X tự động giãn cách cách nhau 5 ngày để không đè chữ.
+  - Cho phép **chuyển đổi chỉ số hiển thị** (Metric Toggle): chọn xem theo "Doanh thu" (VND, màu xanh lá) hoặc "Số đơn hàng" (màu xanh dương).
+  - Tích hợp **hiệu ứng tương tác**: Khi di chuột lên biểu đồ, hiển thị đường dẫn dọc nét đứt và vòng tròn chỉ điểm tại ngày gần nhất. Hiển thị tooltip dạng HTML nổi lơ lửng ngay phía trên điểm dữ liệu với đầy đủ thông tin: Ngày (dạng `DD/MM/YYYY`), Doanh thu (VND), và Số đơn hàng của ngày cụ thể đó.
 * **Duyệt hồ sơ người bán (Approvals Queue)**:
   - Hiển thị danh sách các tài khoản có trạng thái người bán đang chờ xử lý (`sellerStatus === "pending"`).
   - Cung cấp nút **"Duyệt"** (gọi `approveSeller` để chuyển role sang `seller`, trạng thái `approved` và tự động tạo shop tương ứng trên Firestore).

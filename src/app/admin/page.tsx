@@ -5,13 +5,19 @@ import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { User } from "@/types/user";
 import { useAuthStore } from "@/store/auth-store";
+import { Order } from "@/types/order";
+import { formatCurrency } from "@/lib/format";
 
 export default function AdminDashboardPage() {
   const [users, setUsers] = useState<User[]>([]);
-  const [productsCount, setProductsCount] = useState(0);
-  const [shopsCount, setShopsCount] = useState(0);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  // Filters for chart
+  const [dateRange, setDateRange] = useState<"7" | "30">("30");
+  const [activeMetric, setActiveMetric] = useState<"revenue" | "orders">("revenue");
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   const approveSeller = useAuthStore((s) => s.approveSeller);
 
@@ -22,20 +28,19 @@ export default function AdminDashboardPage() {
       const usersCol = collection(db, "users");
       const usersSnap = await getDocs(usersCol);
       const fetchedUsers: User[] = [];
-      usersSnap.forEach((doc) => {
-        fetchedUsers.push({ id: doc.id, ...doc.data() } as User);
+      usersSnap.forEach((docSnap) => {
+        fetchedUsers.push({ id: docSnap.id, ...docSnap.data() } as User);
       });
       setUsers(fetchedUsers);
 
-      // Fetch products count
-      const productsCol = collection(db, "products");
-      const productsSnap = await getDocs(productsCol);
-      setProductsCount(productsSnap.size);
-
-      // Fetch shops count
-      const shopsCol = collection(db, "shops");
-      const shopsSnap = await getDocs(shopsCol);
-      setShopsCount(shopsSnap.size);
+      // Fetch orders
+      const ordersCol = collection(db, "orders");
+      const ordersSnap = await getDocs(ordersCol);
+      const fetchedOrders: Order[] = [];
+      ordersSnap.forEach((docSnap) => {
+        fetchedOrders.push({ id: docSnap.id, ...docSnap.data() } as Order);
+      });
+      setOrders(fetchedOrders);
     } catch (error) {
       console.error("Error fetching admin dashboard data:", error);
     } finally {
@@ -112,8 +117,91 @@ export default function AdminDashboardPage() {
   const totalUsers = users.length;
   const pendingSellers = users.filter((u) => u.sellerStatus === "pending").length;
 
+  const todayStr = new Date().toLocaleDateString('en-CA');
+  const ordersToday = orders.filter((o) => {
+    if (!o.createdAt) return false;
+    try {
+      return new Date(o.createdAt).toLocaleDateString('en-CA') === todayStr;
+    } catch {
+      return false;
+    }
+  }).length;
+
+  const totalRevenue = orders
+    .filter((o) => o.status !== "cancelled")
+    .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
 
   const pendingSellersList = users.filter((u) => u.sellerStatus === "pending");
+
+  // Generate chart data for the last N days
+  const numDays = parseInt(dateRange, 10);
+  const chartData = [];
+  for (let i = numDays - 1; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toLocaleDateString('en-CA'); // "YYYY-MM-DD"
+    const label = d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }); // "DD/MM"
+
+    const dayOrders = orders.filter((o) => {
+      if (!o.createdAt) return false;
+      try {
+        return new Date(o.createdAt).toLocaleDateString('en-CA') === dateStr;
+      } catch {
+        return false;
+      }
+    });
+
+    const dayRevenue = dayOrders
+      .filter((o) => o.status !== "cancelled")
+      .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+
+    chartData.push({
+      dateStr,
+      label,
+      revenue: dayRevenue,
+      orders: dayOrders.length,
+    });
+  }
+
+  const values = chartData.map((d) => (activeMetric === "revenue" ? d.revenue : d.orders));
+  const maxVal = Math.max(...values, activeMetric === "revenue" ? 100000 : 5);
+
+  const gridLinesCount = 4;
+  const gridLines = Array.from({ length: gridLinesCount + 1 }, (_, idx) => {
+    const val = (maxVal / gridLinesCount) * idx;
+    const y = 30 + 270 - (idx / gridLinesCount) * 270;
+    return { val, y };
+  });
+
+  const formatYLabel = (val: number) => {
+    if (activeMetric === "orders") {
+      return val.toFixed(0);
+    }
+    if (val >= 1000000) {
+      return `${(val / 1000000).toFixed(1).replace(/\.0$/, "")}M`;
+    }
+    if (val >= 1000) {
+      return `${(val / 1000).toFixed(0)}K`;
+    }
+    return val.toString();
+  };
+
+  const shouldShowXLabel = (idx: number, total: number) => {
+    if (total <= 7) return true;
+    return idx % 5 === 0 || idx === total - 1;
+  };
+
+  let lineD = "";
+  let areaD = "";
+  if (chartData.length > 0) {
+    const points = chartData.map((_, i) => {
+      const x = 70 + (i / (chartData.length - 1)) * 700;
+      const y = 30 + 270 - (values[i] / maxVal) * 270;
+      return { x, y };
+    });
+    lineD = points.map((p, idx) => `${idx === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
+    areaD = `${lineD} L ${points[points.length - 1].x} 300 L ${points[0].x} 300 Z`;
+  }
 
   return (
     <div className="space-y-8 page-enter">
@@ -142,31 +230,299 @@ export default function AdminDashboardPage() {
             <span className="material-symbols-outlined text-2xl">pending_actions</span>
           </div>
           <div>
-            <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Chờ duyệt</p>
+            <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Seller chờ</p>
             <p className="text-2xl font-bold text-slate-800">{pendingSellers}</p>
           </div>
         </div>
 
-        {/* Total Sellers */}
+        {/* Orders Today */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200 flex items-center gap-4 shadow-sm">
           <div className="h-12 w-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-            <span className="material-symbols-outlined text-2xl">store</span>
+            <span className="material-symbols-outlined text-2xl">shopping_cart</span>
           </div>
           <div>
-            <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Số nhà vườn (Shop)</p>
-            <p className="text-2xl font-bold text-slate-800">{shopsCount}</p>
+            <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Đơn hôm nay</p>
+            <p className="text-2xl font-bold text-slate-800">{ordersToday}</p>
           </div>
         </div>
 
-        {/* Total Products */}
+        {/* Revenue */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200 flex items-center gap-4 shadow-sm">
           <div className="h-12 w-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-            <span className="material-symbols-outlined text-2xl">inventory_2</span>
+            <span className="material-symbols-outlined text-2xl">monetization_on</span>
           </div>
           <div>
-            <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Tổng sản phẩm</p>
-            <p className="text-2xl font-bold text-slate-800">{productsCount}</p>
+            <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Doanh thu</p>
+            <p className="text-2xl font-bold text-slate-800 truncate max-w-[150px]" title={formatCurrency(totalRevenue)}>
+              {formatCurrency(totalRevenue)}
+            </p>
           </div>
+        </div>
+      </div>
+
+      {/* Chart Section */}
+      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-bold text-slate-800">Hiệu suất Nền tảng</h3>
+            <p className="text-slate-500 text-xs mt-0.5">Biểu đồ thể hiện doanh thu và số lượng đơn hàng theo thời gian.</p>
+          </div>
+
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Metric Toggle */}
+            <div className="flex rounded-lg bg-slate-100 p-0.5 border border-slate-200 text-xs font-bold">
+              <button
+                onClick={() => {
+                  setActiveMetric("revenue");
+                  setHoveredIndex(null);
+                }}
+                className={[
+                  "px-3 py-1.5 rounded-md transition-all cursor-pointer border-none",
+                  activeMetric === "revenue"
+                    ? "bg-[#006c49] text-white shadow-sm"
+                    : "text-slate-600 hover:text-slate-900",
+                ].join(" ")}
+              >
+                Doanh thu
+              </button>
+              <button
+                onClick={() => {
+                  setActiveMetric("orders");
+                  setHoveredIndex(null);
+                }}
+                className={[
+                  "px-3 py-1.5 rounded-md transition-all cursor-pointer border-none",
+                  activeMetric === "orders"
+                    ? "bg-[#006c49] text-white shadow-sm"
+                    : "text-slate-600 hover:text-slate-900",
+                ].join(" ")}
+              >
+                Số đơn hàng
+              </button>
+            </div>
+
+            {/* Date Range Selector */}
+            <div className="flex rounded-lg bg-slate-100 p-0.5 border border-slate-200 text-xs font-bold">
+              <button
+                onClick={() => {
+                  setDateRange("7");
+                  setHoveredIndex(null);
+                }}
+                className={[
+                  "px-3 py-1.5 rounded-md transition-all cursor-pointer border-none",
+                  dateRange === "7"
+                    ? "bg-slate-800 text-white shadow-sm"
+                    : "text-slate-600 hover:text-slate-900",
+                ].join(" ")}
+              >
+                7 ngày
+              </button>
+              <button
+                onClick={() => {
+                  setDateRange("30");
+                  setHoveredIndex(null);
+                }}
+                className={[
+                  "px-3 py-1.5 rounded-md transition-all cursor-pointer border-none",
+                  dateRange === "30"
+                    ? "bg-slate-800 text-white shadow-sm"
+                    : "text-slate-600 hover:text-slate-900",
+                ].join(" ")}
+              >
+                30 ngày
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* SVG Chart Container */}
+        <div className="relative w-full aspect-[800/350] bg-slate-50/50 rounded-2xl border border-slate-100 p-4 select-none">
+          {chartData.length === 0 ? (
+            <div className="absolute inset-0 flex items-center justify-center text-slate-400 text-sm font-semibold">
+              Không có dữ liệu cho khoảng thời gian này
+            </div>
+          ) : (
+            <>
+              <svg viewBox="0 0 800 350" className="w-full h-full overflow-visible">
+                <defs>
+                  {/* Gradient Area Fill */}
+                  <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#006c49" stopOpacity="0.25" />
+                    <stop offset="100%" stopColor="#006c49" stopOpacity="0.00" />
+                  </linearGradient>
+
+                  {/* Secondary Gradient for Orders */}
+                  <linearGradient id="chartGradientOrders" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.25" />
+                    <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.00" />
+                  </linearGradient>
+                </defs>
+
+                {/* Horizontal Gridlines */}
+                {gridLines.map((line, idx) => (
+                  <g key={idx}>
+                    <line
+                      x1={70}
+                      y1={line.y}
+                      x2={770}
+                      y2={line.y}
+                      stroke="#e2e8f0"
+                      strokeWidth={1}
+                      strokeDasharray={idx === 0 ? "0" : "4 4"}
+                    />
+                    <text
+                      x={60}
+                      y={line.y + 4}
+                      textAnchor="end"
+                      className="text-[10px] font-bold fill-slate-400 font-sans"
+                    >
+                      {formatYLabel(line.val)}
+                    </text>
+                  </g>
+                ))}
+
+                {/* X-Axis line */}
+                <line x1={70} y1={300} x2={770} y2={300} stroke="#cbd5e1" strokeWidth={1.5} />
+
+                {/* X-Axis Labels */}
+                {chartData.map((d, idx) => {
+                  const x = 70 + (idx / (chartData.length - 1)) * 700;
+                  const showLabel = shouldShowXLabel(idx, chartData.length);
+                  return showLabel ? (
+                    <g key={idx}>
+                      <line x1={x} y1={300} x2={x} y2={305} stroke="#cbd5e1" strokeWidth={1.5} />
+                      <text
+                        x={x}
+                        y={322}
+                        textAnchor="middle"
+                        className="text-[10px] font-bold fill-slate-400 font-sans"
+                      >
+                        {d.label}
+                      </text>
+                    </g>
+                  ) : null;
+                })}
+
+                {/* Gradient Area under line */}
+                <path
+                  d={areaD}
+                  fill={activeMetric === "revenue" ? "url(#chartGradient)" : "url(#chartGradientOrders)"}
+                />
+
+                {/* Line Path */}
+                <path
+                  d={lineD}
+                  fill="none"
+                  stroke={activeMetric === "revenue" ? "#006c49" : "#3b82f6"}
+                  strokeWidth={3}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+
+                {/* Hover Indicator Vertical Line */}
+                {hoveredIndex !== null && (() => {
+                  const x = 70 + (hoveredIndex / (chartData.length - 1)) * 700;
+                  return (
+                    <line
+                      x1={x}
+                      y1={30}
+                      x2={x}
+                      y2={300}
+                      stroke={activeMetric === "revenue" ? "#006c49" : "#3b82f6"}
+                      strokeWidth={1.5}
+                      strokeDasharray="4 4"
+                      className="pointer-events-none"
+                    />
+                  );
+                })()}
+
+                {/* Circle markers at each point */}
+                {chartData.map((d, idx) => {
+                  const x = 70 + (idx / (chartData.length - 1)) * 700;
+                  const y = 30 + 270 - (values[idx] / maxVal) * 270;
+                  const isHovered = hoveredIndex === idx;
+
+                  return (
+                    <g key={idx}>
+                      <circle
+                        cx={x}
+                        cy={y}
+                        r={isHovered ? 6 : 4}
+                        fill={activeMetric === "revenue" ? "#006c49" : "#3b82f6"}
+                        stroke="#ffffff"
+                        strokeWidth={isHovered ? 2.5 : 1.5}
+                        className="transition-all duration-150"
+                      />
+                    </g>
+                  );
+                })}
+
+                {/* Invisible vertical rect slices for clean hover capture */}
+                {chartData.map((_, idx) => {
+                  const sliceWidth = 700 / (chartData.length - 1);
+                  const x = 70 + (idx / (chartData.length - 1)) * 700;
+                  const rectX = idx === 0 ? 70 : x - sliceWidth / 2;
+                  const rectWidth = idx === 0 || idx === chartData.length - 1 ? sliceWidth / 2 : sliceWidth;
+
+                  return (
+                    <rect
+                      key={idx}
+                      x={rectX}
+                      y={30}
+                      width={rectWidth}
+                      height={270}
+                      fill="transparent"
+                      className="cursor-pointer"
+                      onMouseEnter={() => setHoveredIndex(idx)}
+                      onMouseMove={() => setHoveredIndex(idx)}
+                      onMouseLeave={() => setHoveredIndex(null)}
+                    />
+                  );
+                })}
+              </svg>
+
+              {/* Floating Tooltip HTML */}
+              {hoveredIndex !== null && (() => {
+                const idx = hoveredIndex;
+                const d = chartData[idx];
+                const x = 70 + (idx / (chartData.length - 1)) * 700;
+                const y = 30 + 270 - (values[idx] / maxVal) * 270;
+
+                // Format tooltip date: "09/06/2026"
+                const parts = d.dateStr.split("-");
+                const formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
+
+                return (
+                  <div
+                    className="absolute pointer-events-none bg-slate-900/95 text-white p-3 rounded-xl shadow-xl text-xs font-sans space-y-1 z-10 border border-slate-700/50 backdrop-blur-sm transition-all duration-150"
+                    style={{
+                      left: `${(x / 800) * 100}%`,
+                      top: `${(y / 350) * 100}%`,
+                      transform: "translate(-50%, -100%) translateY(-12px)",
+                    }}
+                  >
+                    <p className="font-bold text-slate-300 border-b border-slate-700/50 pb-1 mb-1">
+                      {formattedDate}
+                    </p>
+                    <div className="space-y-0.5">
+                      <p className="flex items-center justify-between gap-6">
+                        <span className="text-slate-400">Doanh thu:</span>
+                        <span className="font-bold text-emerald-400">{formatCurrency(d.revenue)}</span>
+                      </p>
+                      <p className="flex items-center justify-between gap-6">
+                        <span className="text-slate-400">Đơn hàng:</span>
+                        <span className="font-bold text-blue-400">{d.orders} đơn</span>
+                      </p>
+                    </div>
+                    {/* Arrow indicator */}
+                    <div
+                      className="absolute left-1/2 bottom-0 w-2.5 h-2.5 bg-slate-900 border-r border-b border-slate-700/50 rotate-45 -translate-x-1/2 translate-y-1.5"
+                    />
+                  </div>
+                );
+              })()}
+            </>
+          )}
         </div>
       </div>
 

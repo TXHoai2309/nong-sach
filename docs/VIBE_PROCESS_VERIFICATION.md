@@ -37,6 +37,7 @@ Trước khi thực hiện bất kỳ thay đổi nào trong mã nguồn, hệ t
   - **Banner thông tin Shop & Trang chi tiết Shop (Sprint 4.2)**: Triển khai Banner thông tin shop trên trang chi tiết sản phẩm hiển thị logo, đánh giá, số sản phẩm, vị trí, và nút xem shop. Thiết kế trang chi tiết cửa hàng `/shop/[id]` với cover, avatar, mô tả nông trại, nút theo dõi động, nút nhắn tin, tabs bộ lọc sản phẩm, đánh giá và giới thiệu chi tiết.
   - **Cải thiện giao diện Ảnh bìa Shop (UX Polish)**: Thu ngắn chiều cao banner, áp dụng thiết kế bo góc dưới (`rounded-b-3xl`) và giới hạn chiều rộng trong `site-container` để tăng tính thẩm mỹ và sự đồng bộ toàn trang.
   - **Xác thực Admin & Trang quản trị (/admin) (Sprint 5)**: Phân quyền vai trò `"admin"`, thiết lập đồng bộ cookie để hỗ trợ Edge Middleware bảo vệ các route `/admin` ở server-side. Xây dựng layout Admin có sidebar điều hướng, header và nút đăng xuất riêng biệt. Thiết kế dashboard thống kê số lượng thực tế của hệ thống, duyệt hồ sơ người bán (seller) từ `pending` sang `approved`/`rejected`, quản lý phân quyền các vai trò của tài khoản. Ẩn Header/Footer storefront khi truy cập `/admin`, đồng thời bổ sung lối tắt "Trang quản trị" trên Header storefront cho người dùng admin.
+  - **Nâng cấp Dashboard Admin & Biểu đồ SVG Line (Sprint 5.1)**: Triển khai 4 thẻ KPI dựa trên Firestore thật (Tổng người dùng, Seller chờ, Đơn hôm nay, Doanh thu). Thiết kế biểu đồ SVG Line tuỳ biến hiển thị doanh số và số đơn hàng với bộ lọc 7/30 ngày và chuyển đổi metric hiển thị. Tích hợp hiệu ứng tương tác hover dọc và tooltip lơ lửng cho từng điểm dữ liệu.
 
 ---
 
@@ -165,6 +166,10 @@ Các ảnh chụp màn hình và video kiểm thử được lưu trữ trực t
 | **TC-32: Duyệt hồ sơ người bán** | Click "Duyệt" (Approve) đối với tài khoản nông dân pending trong hồ sơ chờ duyệt. | Trạng thái chuyển đổi thành công. Tài khoản đổi sang role `seller`, tự động tạo dữ liệu gian hàng ở collection `shops` trên Firestore và gửi thông báo về chuông. | ✅ Pass |
 | **TC-33: Quản lý role thủ công** | Click "Lên Admin" hoặc "Lên Shop" / "Bỏ Shop" ở bảng người dùng. | Thay đổi vai trò người dùng thành công và đồng bộ tức thì trên giao diện/CSDL Firestore. | ✅ Pass |
 | **TC-34: Lối tắt truy cập Admin trên Header** | Đăng nhập bằng tài khoản Admin và quan sát thanh điều hướng Header storefront. | Nút "Trang quản trị" xuất hiện cạnh tên tài khoản trên cả Desktop và Mobile menu. | ✅ Pass |
+| **TC-35: Lọc thời gian 7/30 ngày của biểu đồ** | Chọn bộ lọc "7 ngày" và "30 ngày" trên biểu đồ hiệu suất nền tảng. | Biểu đồ thay đổi số điểm mốc thời gian tương ứng từ 7 xuống 30 ngày và trục X tự động giãn cách mốc nhãn ngày sạch đẹp. | ✅ Pass |
+| **TC-36: Chuyển đổi Metric của biểu đồ** | Chọn nút chuyển chỉ số "Doanh thu" và "Số đơn hàng". | Biểu đồ vẽ lại đường line, đổi màu chỉ số tương ứng (xanh lá sang xanh dương) và điều chỉnh đơn vị trục Y thích hợp. | ✅ Pass |
+| **TC-37: Tooltip hover tương tác** | Di chuột qua điểm mốc trên biểu đồ đường SVG. | Tooltip hiển thị động chứa Ngày chuẩn `DD/MM/YYYY`, Doanh thu và Số đơn hàng cùng đường nét đứt định vị chính xác. | ✅ Pass |
+| **TC-38: Cập nhật thẻ KPI Firestore** | Đặt đơn hàng mới thành công và vào dashboard Admin xem lại. | Thẻ "Đơn hôm nay" và "Doanh thu" tăng tương ứng theo đơn hàng mới mà không cần reload cứng trang, dữ liệu truy vấn trực tiếp từ Firestore. | ✅ Pass |
 
 ---
 

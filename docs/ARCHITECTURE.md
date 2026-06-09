@@ -511,7 +511,7 @@ Clear Session
 | profile/page.tsx           | Client | Tab navigation, Profile & Address updates |
 | app/shop/[id]/page.tsx     | Client | Shop Details, Follow and Products Filter & Sort |
 | app/admin/layout.tsx       | Client | Admin Session & Sidebar Layout |
-| app/admin/page.tsx         | Client | Dashboard stats & Firestore fetch (Users/Shops/Products) |
+| app/admin/page.tsx         | Client | Dashboard stats & Firestore fetch (Users/Orders) with Custom SVG line chart & hover tooltips |
 
 ---
 
