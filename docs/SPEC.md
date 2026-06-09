@@ -5,12 +5,12 @@
 | Thông tin         | Chi tiết                                    |
 | ----------------- | ------------------------------------------- |
 | Tên dự án         | NôngSạch — Nền tảng giao dịch nông sản sạch |
-| Phiên bản         | MVP v0.5.0                                  |
+| Phiên bản         | MVP v0.6.6                                  |
 | Ngày tạo          | 03/06/2026                                  |
 | Cập nhật lần cuối | 09/06/2026                                  |
 | Nhóm              | NôngSạch Team                               |
 | Môn học           | Vibe Coding Thực Chiến — Buổi 3             |
-| Trạng thái        | ✅ Hoàn thành Sprint 1, Sprint 2, Sprint 3, Sprint 4, Sprint 4.2, Sprint 4.3 & Sprint 5 |
+| Trạng thái        | ✅ Hoàn thành Sprint 1 đến Sprint 5.2 |
 
 ---
 
@@ -75,6 +75,8 @@ Người tiêu dùng ngày càng lo ngại về an toàn thực phẩm, đặc b
 | F-19 | Hệ thống thông báo    | Thông báo thời gian thực cho người mua và người bán về các sự kiện đơn hàng và hệ thống | P1      | ✅ Done     |
 | F-20 | Ổn định Profile & Báo cáo shop | Sửa lỗi runtime Profile, đảm bảo modal Báo cáo shop hiển thị đúng và lint/type toàn project không còn error | P0      | ✅ Done     |
 | F-21 | Trang quản trị & Phân quyền Admin | Trang quản trị `/admin` bảo mật bằng Middleware, xem stats và duyệt người bán | P1      | ✅ Done     |
+| F-22 | Dashboard KPI & Biểu đồ SVG Line | Báo cáo thực tế từ Firestore và biểu đồ SVG tương tác lọc 7/30 ngày | P1      | ✅ Done     |
+| F-23 | Quy trình duyệt/từ chối hồ sơ | Modal xem chi tiết hồ sơ (zoom CCCD), từ chối kèm lý do và quy trình nộp lại | P1      | ✅ Done     |
 
 
 > **Ghi chú cho team:** F-09 hiện đã có giao diện hoàn chỉnh theo Stitch HTML tại route `/contact`. Form liên hệ đang ở mức UI/UX MVP; nếu cần gửi dữ liệu thật, cần bổ sung API/Firebase handler ở Phase 2. Kênh bán hàng (F-11), Quản lý sản phẩm (F-12) và Trang chi tiết shop (F-14) hiện được lưu động tại `localStorage` phía client của từng người dùng để mô phỏng tính năng thực tế.
@@ -589,7 +591,7 @@ interface ContactMessage {
 | ID   | Task                                           | SP | Status |
 | ---- | ---------------------------------------------- | -- | ------ |
 | T-26 | Biểu mẫu đăng ký người bán 4 bước chi tiết     | 3  | ✅      |
-| T-27 | Phê duyệt & Nâng cấp phân quyền tự động (`seller`) | 2  | ✅      |
+| T-27 | Phê duyệt & Nâng cấp phân quyền thủ công (`seller`) | 2  | ✅      |
 | T-28 | Kênh bán hàng (Dashboard) và Thống kê tổng quan| 3  | ✅      |
 | T-29 | CRUD Sản phẩm tự đăng (Thêm, Sửa, Xóa)          | 4  | ✅      |
 | T-30 | Upload nhiều ảnh sản phẩm (tối đa 6 ảnh)        | 3  | ✅      |
@@ -633,6 +635,23 @@ interface ContactMessage {
 | T-53 | Layout trang Admin với sidebar và logout | 3  | ✅      |
 | T-54 | Dashboard Admin: thống kê, duyệt người bán, quản lý role | 4  | ✅      |
 | T-55 | Dọn lỗi compile & lint cho admin pages | 1  | ✅      |
+
+## Sprint 5.1 — Admin KPI & Biểu đồ SVG Line (✅ Hoàn thành)
+
+| ID   | Task                                           | SP | Status |
+| ---- | ---------------------------------------------- | -- | ------ |
+| T-56 | Thẻ KPI dựa trên dữ liệu thực tế Firestore     | 2  | ✅      |
+| T-57 | Vẽ biểu đồ SVG Line tuỳ biến (Doanh thu/Đơn)   | 3  | ✅      |
+| T-58 | Bộ lọc thời gian 7/30 ngày & Tooltip tương tác | 2  | ✅      |
+
+## Sprint 5.2 — Quy trình duyệt & Từ chối hồ sơ (✅ Hoàn thành)
+
+| ID   | Task                                           | SP | Status |
+| ---- | ---------------------------------------------- | -- | ------ |
+| T-59 | Modal chi tiết hồ sơ `SellerDetailsModal` (Zoom CCCD) | 3  | ✅      |
+| T-60 | Chức năng từ chối kèm lý do & gửi thông báo    | 2  | ✅      |
+| T-61 | UI cảnh báo từ chối & quy trình nộp lại hồ sơ  | 3  | ✅      |
+
 
 ## Backlog Phase 2 (Tương lai)
 

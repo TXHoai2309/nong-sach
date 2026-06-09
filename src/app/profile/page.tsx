@@ -135,7 +135,6 @@ function ProfileContent() {
     deleteAddress,
     setDefaultAddress,
     registerSeller,
-    approveSeller,
     updateSellerInfo,
   } = useAuthStore();
   const { addToCart } = useCartStore();
@@ -329,7 +328,7 @@ function ProfileContent() {
   }, [orders, currentUser]);
 
   const sellerOrders = useMemo(() => {
-    if (!currentUser || currentUser.role !== "seller") return [];
+    if (!currentUser || (currentUser.role !== "seller" && currentUser.sellerStatus !== "approved")) return [];
     return orders.filter((o) => o.sellerId === currentUser.id);
   }, [orders, currentUser]);
 
@@ -1346,7 +1345,7 @@ function ProfileContent() {
 
                   let sellerLabel = "Đăng ký bán hàng";
                   let sellerIcon = "storefront";
-                  if (currentUser.role === "seller") {
+                  if (currentUser.role === "seller" || currentUser.sellerStatus === "approved") {
                     sellerLabel = "Kênh người bán";
                     sellerIcon = "store";
                   } else if (currentUser.sellerStatus === "pending") {
@@ -2349,7 +2348,7 @@ function ProfileContent() {
             {activeTab === "seller" && (
               <div className="space-y-6">
                 {/* Steps indicator */}
-                {currentUser.role !== "seller" && (
+                {currentUser.role !== "seller" && currentUser.sellerStatus !== "approved" && (
                   <div className="mb-6 flex justify-center gap-2 sm:gap-4 rounded-2xl bg-gray-100 p-1.5 text-xs font-bold w-fit mx-auto">
                     <span className={`rounded-xl px-4 py-2 transition-all ${
                       !currentUser.sellerStatus 
@@ -2912,8 +2911,8 @@ function ProfileContent() {
 
                 {/* State 2: Pending Approval UI */}
                 {currentUser.sellerStatus === "pending" && (
-                  <div className="rounded-3xl border border-[#bbcabf]/30 bg-white p-6 shadow-sm text-center max-w-[580px] mx-auto py-10">
-                    <div className="w-16 h-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mb-6 mx-auto border border-amber-200">
+                  <div className="rounded-3xl border border-amber-200 bg-white p-6 shadow-sm text-center max-w-[580px] mx-auto py-10 animate-fade-in">
+                    <div className="w-16 h-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mb-6 mx-auto border border-amber-200 shadow-sm">
                       <span className="material-symbols-outlined text-[36px] animate-pulse">hourglass_empty</span>
                     </div>
 
@@ -2923,37 +2922,41 @@ function ProfileContent() {
                     </p>
 
                     {/* Summary Card */}
-                    <div className="my-6 border-t border-b border-[#bbcabf]/20 py-4.5 text-left text-xs space-y-2 text-[#3c4a42]/80">
+                    <div className="my-6 border-t border-[#bbcabf]/20 pt-6 text-left text-xs space-y-2.5 text-[#3c4a42]/80">
                       <p className="font-bold text-[#006c49] mb-3 text-sm flex items-center gap-1.5">
                         <span className="material-symbols-outlined text-base">storefront</span>
-                        Hồ sơ đã gửi:
+                        Chi tiết hồ sơ đã gửi chờ duyệt:
                       </p>
-                      <p><strong>Tên cửa hàng:</strong> {currentUser.sellerInfo?.shopName}</p>
-                      {currentUser.sellerInfo?.slogan && <p><strong>Slogan:</strong> {currentUser.sellerInfo?.slogan}</p>}
-                      <p><strong>Số điện thoại:</strong> {currentUser.sellerInfo?.shopPhone}</p>
-                      <p><strong>Địa chỉ trang trại:</strong> {currentUser.sellerInfo?.farmAddress}, {currentUser.sellerInfo?.province}</p>
-                      <p><strong>Nông sản chính:</strong> {currentUser.sellerInfo?.mainCategories.join(", ")}</p>
-                      <p><strong>CCCD số:</strong> {currentUser.sellerInfo?.idCardNumber.substring(0, 3)}*********</p>
-                      <p><strong>Ngân hàng thụ hưởng:</strong> {currentUser.sellerInfo?.bankName} - {currentUser.sellerInfo?.bankAccountNumber}</p>
-                    </div>
-
-                    {/* Simulation helper */}
-                    <div className="mt-8 rounded-2xl bg-[#e6f4ea] border border-[#006c49]/20 p-5">
-                      <p className="text-xs text-[#006c49] font-bold mb-3 flex items-center justify-center gap-1.5">
-                        <span className="material-symbols-outlined text-base">build</span>
-                        Khu vực thử nghiệm (Demo Helper)
+                      <p className="flex justify-between border-b border-slate-50 pb-1.5">
+                        <span className="text-[#3c4a42]/60 font-semibold">Tên cửa hàng:</span>
+                        <span className="font-bold text-[#3c4a42]">{currentUser.sellerInfo?.shopName}</span>
                       </p>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          approveSeller(currentUser.id);
-                          showToast("Chúc mừng! Cửa hàng đã được phê duyệt thành công.");
-                        }}
-                        className="rounded-full bg-[#006c49] px-6 py-2.5 text-xs font-bold text-white shadow hover:opacity-90 transition-all flex items-center gap-1.5 mx-auto"
-                      >
-                        <span className="material-symbols-outlined text-sm">done</span>
-                        Phê duyệt hồ sơ ngay (Demo/Test)
-                      </button>
+                      {currentUser.sellerInfo?.slogan && (
+                        <p className="flex justify-between border-b border-slate-50 pb-1.5">
+                          <span className="text-[#3c4a42]/60 font-semibold">Slogan:</span>
+                          <span className="font-semibold text-[#3c4a42]">{currentUser.sellerInfo?.slogan}</span>
+                        </p>
+                      )}
+                      <p className="flex justify-between border-b border-slate-50 pb-1.5">
+                        <span className="text-[#3c4a42]/60 font-semibold">Số điện thoại:</span>
+                        <span className="font-bold text-[#3c4a42]">{currentUser.sellerInfo?.shopPhone}</span>
+                      </p>
+                      <p className="flex justify-between border-b border-slate-50 pb-1.5">
+                        <span className="text-[#3c4a42]/60 font-semibold">Địa chỉ trang trại:</span>
+                        <span className="font-semibold text-[#3c4a42]">{currentUser.sellerInfo?.farmAddress}, {currentUser.sellerInfo?.province}</span>
+                      </p>
+                      <p className="flex justify-between border-b border-slate-50 pb-1.5">
+                        <span className="text-[#3c4a42]/60 font-semibold">Nông sản chính:</span>
+                        <span className="font-semibold text-[#3c4a42]">{currentUser.sellerInfo?.mainCategories?.join(", ")}</span>
+                      </p>
+                      <p className="flex justify-between border-b border-slate-50 pb-1.5">
+                        <span className="text-[#3c4a42]/60 font-semibold">CCCD số:</span>
+                        <span className="font-mono font-semibold text-[#3c4a42]">{currentUser.sellerInfo?.idCardNumber?.substring(0, 3)}*********</span>
+                      </p>
+                      <p className="flex justify-between border-b border-slate-50 pb-1.5">
+                        <span className="text-[#3c4a42]/60 font-semibold">Ngân hàng thụ hưởng:</span>
+                        <span className="font-semibold text-[#3c4a42]">{currentUser.sellerInfo?.bankName} - {currentUser.sellerInfo?.bankAccountNumber}</span>
+                      </p>
                     </div>
                   </div>
                 )}
@@ -3035,7 +3038,7 @@ function ProfileContent() {
                 )}
 
                 {/* State 3: Approved Seller Channel / Dashboard */}
-                {currentUser.role === "seller" && (
+                {(currentUser.role === "seller" || currentUser.sellerStatus === "approved") && (
                   <div className="space-y-6">
                     {/* Header */}
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white border border-[#bbcabf]/30 rounded-3xl p-5 shadow-sm">
