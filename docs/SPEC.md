@@ -5,12 +5,12 @@
 | Thông tin         | Chi tiết                                    |
 | ----------------- | ------------------------------------------- |
 | Tên dự án         | NôngSạch — Nền tảng giao dịch nông sản sạch |
-| Phiên bản         | MVP v0.7.2 (Sprint 5.7)                     |
+| Phiên bản         | MVP v0.7.3 (Sprint 5.8)                     |
 | Ngày tạo          | 03/06/2026                                  |
 | Cập nhật lần cuối | 10/06/2026                                  |
 | Nhóm              | NôngSạch Team                               |
 | Môn học           | Vibe Coding Thực Chiến — Buổi 3             |
-| Trạng thái        | ✅ Hoàn thành Sprint 1 đến Sprint 5.7 |
+| Trạng thái        | ✅ Hoàn thành Sprint 1 đến Sprint 5.8 |
 
 ---
 

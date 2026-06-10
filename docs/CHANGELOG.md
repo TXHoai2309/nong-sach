@@ -4,6 +4,23 @@ All notable changes to the **NôngSạch** project will be documented in this fi
 
 The format is based on **Keep a Changelog** and this project adheres to **Semantic Versioning**.
 
+## [0.7.3] - 2026-06-10
+
+### Theo dõi Đơn hàng Thời gian thực & Timeline hợp nhất (Real-time Order Tracking & Unified Timeline)
+
+### Added
+* **Cơ chế cập nhật Thời gian thực (Real-time Updates)**: Tích hợp Firestore `onSnapshot` vào `OrderStore` và trang Cá nhân, giúp đồng bộ trạng thái đơn hàng và mã vận đơn ngay lập tức khi người bán thay đổi dữ liệu.
+* **Component Timeline hợp nhất (`OrderTrackingTimeline`)**: Xây dựng thành phần giao diện theo dõi tiến trình 4 bước (Đặt hàng, Xác nhận, Đang giao, Đã nhận) chuyên nghiệp và trực quan.
+* **Giao diện Trạng thái Hủy**: Hiển thị thông báo và Timeline đặc biệt dành riêng cho các đơn hàng bị hủy.
+
+### Changed
+* **Hợp nhất trải nghiệm Theo dõi**: 
+  - Thay thế hệ thống Stepper cũ tại trang Hoàn tất đơn hàng (`/checkout/success`) bằng `OrderTrackingTimeline` thời gian thực.
+  - Tích hợp thông tin mã vận đơn GHN và link tra cứu trực tiếp vào bên dưới thanh Timeline để tạo luồng thông tin liền mạch.
+* **Tối ưu hóa Profile**: Cập nhật tab Đơn hàng để sử dụng subscription thời gian thực, đảm bảo người mua nhận được thông tin vận chuyển mới nhất mà không cần tải lại trang.
+
+---
+
 ## [0.7.2] - 2026-06-10
 
 ### Bảo mật quyền Quản trị & Tối ưu hóa Dashboard Admin (Admin Security Lockdown & Dashboard Optimization)
