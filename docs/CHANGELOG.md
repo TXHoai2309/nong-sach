@@ -4,6 +4,20 @@ All notable changes to the **NôngSạch** project will be documented in this fi
 
 The format is based on **Keep a Changelog** and this project adheres to **Semantic Versioning**.
 
+## [0.8.0] - 2026-06-10
+
+### Mã Giảm Giá của Người Bán (Seller Vouchers Feature)
+
+### Added
+* **Tạo & Quản lý Voucher cho Người bán**: Cho phép người bán tạo mã giảm giá (tự động chuyển thành chữ in hoa, không khoảng trắng), tùy chọn loại giảm giá (phần trăm % hoặc số tiền cố định), giới hạn số lượt dùng và ngày hết hạn. Người bán có thể dừng voucher sớm trực tiếp từ bảng quản lý.
+* **Áp dụng và Tính toán Giảm giá tự động**: Người mua có thể áp dụng mã giảm giá trực tiếp tại trang Giỏ hàng hoặc Thanh toán. Hệ thống tự động tính chiết khấu dựa trên tổng giá trị các sản phẩm thuộc về shop phát hành mã.
+* **Tích hợp Thanh toán Online (VNPay)**: Đồng bộ mã giảm giá và số tiền giảm giá thông qua đơn hàng tạm thời (`pending_orders`). Khi thanh toán online thành công, hệ thống tự động khấu trừ chiết khấu cho đơn hàng tương ứng của shop và cập nhật lượt sử dụng voucher.
+* **Tự động tách đơn hàng**: Lưu trữ thông tin `voucherCode` và `discountAmount` trực tiếp trong tài liệu đơn hàng của từng shop cụ thể sau khi tách đơn.
+* **API Xác thực bảo mật (Server-side Validation)**: Xây dựng route `/api/vouchers/apply` để xác thực trạng thái hoạt động, thời hạn, giới hạn lượt dùng của voucher và tính toán mức chiết khấu an toàn trước khi đặt hàng.
+
+### Changed
+* Cấu trúc dữ liệu đơn hàng (`Order`) được mở rộng với hai thuộc tính tùy chọn `voucherCode` và `discountAmount`.
+
 ## [0.7.8] - 2026-06-10
 
 ### Danh sách sản phẩm yêu thích (Wishlist Feature)

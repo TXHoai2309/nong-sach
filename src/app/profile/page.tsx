@@ -27,6 +27,8 @@ import { toggleFollow } from "@/lib/follows";
 import { getShopById, Shop } from "@/lib/shops";
 import { subscribeToUserWishlist } from "@/lib/wishlist";
 import ProductCard from "@/components/product/ProductCard";
+import { Voucher } from "@/types/voucher";
+import { createVoucher, stopVoucher, subscribeToSellerVouchers } from "@/lib/vouchers";
 
 const PROVINCES_API = "https://provinces.open-api.vn/api/v1/?depth=2";
 
@@ -173,8 +175,9 @@ function ProfileContent() {
     }
   }, [tabParam]);
 
-  const [sellerSubTab, setSellerSubTab] = useState<"products" | "orders">("products");
+  const [sellerSubTab, setSellerSubTab] = useState<"products" | "orders" | "vouchers">("products");
   const [focusedSellerOrderId, setFocusedSellerOrderId] = useState<string | null>(null);
+  const [nowTime] = useState(() => Date.now());
 
   useEffect(() => {
     if (tabParam !== "seller") return;
@@ -184,6 +187,10 @@ function ProfileContent() {
     }
     if (sellerTabParam === "products") {
       const timer = window.setTimeout(() => setSellerSubTab("products"), 0);
+      return () => window.clearTimeout(timer);
+    }
+    if (sellerTabParam === "vouchers") {
+      const timer = window.setTimeout(() => setSellerSubTab("vouchers"), 0);
       return () => window.clearTimeout(timer);
     }
   }, [tabParam, sellerTabParam]);
@@ -305,6 +312,16 @@ function ProfileContent() {
   // Wishlist states
   const [wishlistProducts, setWishlistProducts] = useState<Product[]>([]);
   const [loadingWishlist, setLoadingWishlist] = useState(false);
+
+  // Voucher states
+  const [shopVouchers, setShopVouchers] = useState<Voucher[]>([]);
+  const [isAddVoucherOpen, setIsAddVoucherOpen] = useState(false);
+  const [newVoucherCode, setNewVoucherCode] = useState("");
+  const [newVoucherType, setNewVoucherType] = useState<"percent" | "fixed">("percent");
+  const [newVoucherValue, setNewVoucherValue] = useState("");
+  const [newVoucherLimit, setNewVoucherLimit] = useState("");
+  const [newVoucherExpiry, setNewVoucherExpiry] = useState("");
+  const [isSubmittingVoucher, setIsSubmittingVoucher] = useState(false);
 
   // Show toast helper
   const showToast = (message: string, type: "success" | "error" = "success") => {
@@ -495,6 +512,16 @@ function ProfileContent() {
       return () => unsubscribe();
     }
   }, [mounted, activeTab, sellerSubTab, currentUser?.id, subscribeToSellerOrders]);
+
+  useEffect(() => {
+    if (!mounted || !currentUser) return;
+    if (activeTab === "seller" && sellerSubTab === "vouchers") {
+      const unsubscribe = subscribeToSellerVouchers(currentUser.id, (vouchers) => {
+        setShopVouchers(vouchers);
+      });
+      return () => unsubscribe();
+    }
+  }, [mounted, activeTab, sellerSubTab, currentUser?.id]);
 
   useEffect(() => {
     if (activeTab !== "seller" || sellerSubTab !== "orders" || !focusedSellerOrderId) return;
@@ -1213,6 +1240,95 @@ function ProfileContent() {
     } catch (error) {
       console.error(error);
       showToast("Đã có lỗi xảy ra khi lưu sản phẩm", "error");
+    }
+  };
+
+  const handleStopVoucher = async (code: string) => {
+    if (confirm(`Bạn có chắc muốn dừng sớm voucher ${code}?`)) {
+      try {
+        await stopVoucher(code);
+        showToast(`Đã dừng voucher ${code} thành công!`);
+      } catch (error) {
+        console.error(error);
+        showToast("Có lỗi xảy ra khi dừng voucher", "error");
+      }
+    }
+  };
+
+  const handleAddVoucherSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!currentUser) return;
+    const cleanCode = newVoucherCode.trim().toUpperCase();
+    
+    if (!cleanCode) {
+      showToast("Vui lòng nhập mã voucher", "error");
+      return;
+    }
+    if (!/^[A-Z0-9]+$/.test(cleanCode)) {
+      showToast("Mã voucher chỉ được chứa chữ cái và chữ số, không có khoảng trắng", "error");
+      return;
+    }
+    const val = Number(newVoucherValue);
+    if (Number.isNaN(val) || val <= 0) {
+      showToast("Giá trị giảm giá phải lớn hơn 0", "error");
+      return;
+    }
+    if (newVoucherType === "percent" && val > 100) {
+      showToast("Giá trị phần trăm giảm giá không được vượt quá 100%", "error");
+      return;
+    }
+    const lim = Number(newVoucherLimit);
+    if (Number.isNaN(lim) || lim <= 0 || !Number.isInteger(lim)) {
+      showToast("Giới hạn lượt dùng phải là số nguyên lớn hơn 0", "error");
+      return;
+    }
+    if (!newVoucherExpiry) {
+      showToast("Vui lòng chọn ngày hết hạn", "error");
+      return;
+    }
+    const expiryTime = new Date(`${newVoucherExpiry}T23:59:59`).getTime();
+    if (expiryTime < Date.now()) {
+      showToast("Ngày hết hạn phải ở trong tương lai", "error");
+      return;
+    }
+
+    setIsSubmittingVoucher(true);
+    try {
+      const { db } = await import("@/lib/firebase");
+      const { getDoc, doc } = await import("firebase/firestore");
+      const checkSnap = await getDoc(doc(db, "vouchers", cleanCode));
+      if (checkSnap.exists()) {
+        showToast("Mã voucher này đã tồn tại trên hệ thống", "error");
+        setIsSubmittingVoucher(false);
+        return;
+      }
+
+      const voucherData: Voucher = {
+        code: cleanCode,
+        sellerId: currentUser.id,
+        shopName: currentUser.sellerInfo?.shopName || "Shop của tôi",
+        type: newVoucherType,
+        value: val,
+        limit: lim,
+        usedCount: 0,
+        expiryDate: newVoucherExpiry,
+        status: "active",
+        createdAt: new Date().toISOString()
+      };
+
+      await createVoucher(voucherData);
+      showToast("Tạo voucher thành công!");
+      setNewVoucherCode("");
+      setNewVoucherType("percent");
+      setNewVoucherValue("");
+      setNewVoucherLimit("");
+      setNewVoucherExpiry("");
+      setIsAddVoucherOpen(false);
+    } catch (error) {
+      console.error(error);
+      showToast("Có lỗi xảy ra khi tạo voucher", "error");
+    } finally {
+      setIsSubmittingVoucher(false);
     }
   };
 
@@ -3546,9 +3662,19 @@ function ProfileContent() {
                           </span>
                         )}
                       </button>
+                      <button
+                        onClick={() => setSellerSubTab("vouchers")}
+                        className={`pb-3 text-sm font-bold transition-all ${
+                          sellerSubTab === "vouchers"
+                            ? "border-b-2 border-[#006c49] text-[#006c49]"
+                            : "text-[#3c4a42]/50 hover:text-[#3c4a42]"
+                        }`}
+                      >
+                        Khuyến mãi & Vouchers
+                      </button>
                     </div>
 
-                    {sellerSubTab === "products" ? (
+                    {sellerSubTab === "products" && (
                       <div className="rounded-3xl border border-[#bbcabf]/30 bg-white p-6 shadow-sm">
                         <div className="flex justify-between items-center mb-6">
                           <h4 className="text-sm font-bold text-[#006c49] flex items-center gap-2">
@@ -3691,7 +3817,9 @@ function ProfileContent() {
                           </div>
                         )}
                       </div>
-                    ) : (
+                    )}
+
+                    {sellerSubTab === "orders" && (
                       <div className="rounded-3xl border border-[#bbcabf]/30 bg-white p-6 shadow-sm">
                         <h4 className="text-sm font-bold text-[#006c49] flex items-center gap-2 mb-6">
                           <span className="material-symbols-outlined text-base">shopping_bag</span>
@@ -3881,6 +4009,114 @@ function ProfileContent() {
                               </div>
                               );
                             })}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {sellerSubTab === "vouchers" && (
+                      <div className="rounded-3xl border border-[#bbcabf]/30 bg-white p-6 shadow-sm">
+                        <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
+                          <h4 className="text-sm font-bold text-[#006c49] flex items-center gap-2">
+                            <span className="material-symbols-outlined text-base">local_offer</span>
+                            Chương trình khuyến mãi & Vouchers
+                          </h4>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (currentUser?.sellerStatus === "blocked") {
+                                alert("Cửa hàng của bạn đang bị khóa, không thể tạo voucher mới!");
+                              } else {
+                                setIsAddVoucherOpen(true);
+                              }
+                            }}
+                            className="rounded-full bg-[#006c49] px-4 py-2 text-xs font-bold text-white shadow-sm hover:opacity-90 transition-all flex items-center gap-1"
+                          >
+                            <span className="material-symbols-outlined text-sm">add</span>
+                            Tạo voucher mới
+                          </button>
+                        </div>
+
+                        {shopVouchers.length === 0 ? (
+                          <div className="py-14 text-center text-[#3c4a42]/60">
+                            <span className="material-symbols-outlined mb-2 text-[48px] text-[#3c4a42]/30">
+                              local_offer
+                            </span>
+                            <p className="text-xs font-bold">Cửa hàng chưa có mã giảm giá nào.</p>
+                            <p className="text-[10px] text-[#3c4a42]/50 mt-1">Bấm nút &quot;Tạo voucher mới&quot; ở trên để tạo mã khuyến mãi thu hút khách hàng nhé.</p>
+                          </div>
+                        ) : (
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-left text-xs border-collapse">
+                              <thead>
+                                <tr className="border-b border-[#bbcabf]/25 text-[#3c4a42]/50 font-bold">
+                                  <th className="pb-3 pr-2">Mã voucher</th>
+                                  <th className="pb-3 pr-2">Loại giảm giá</th>
+                                  <th className="pb-3 pr-2">Giá trị</th>
+                                  <th className="pb-3 pr-2">Lượt dùng (Đã dùng/Tối đa)</th>
+                                  <th className="pb-3 pr-2">Ngày hết hạn</th>
+                                  <th className="pb-3 pr-2">Trạng thái</th>
+                                  <th className="pb-3 pr-2 text-right">Thao tác</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-[#bbcabf]/15">
+                                {shopVouchers.map((v) => {
+                                  const isExpired = new Date(`${v.expiryDate}T23:59:59`).getTime() < nowTime;
+                                  const isOutOfUses = v.usedCount >= v.limit;
+                                  const isActive = v.status === "active" && !isExpired && !isOutOfUses;
+
+                                  return (
+                                    <tr key={v.code} className="text-[#3c4a42]">
+                                      <td className="py-3 pr-2 font-mono font-bold text-sm text-[#006c49]">{v.code}</td>
+                                      <td className="py-3 pr-2 font-semibold">
+                                        {v.type === "percent" ? "Theo phần trăm (%)" : "Số tiền cố định"}
+                                      </td>
+                                      <td className="py-3 pr-2 font-extrabold text-[#006c49]">
+                                        {v.type === "percent" ? `${v.value}%` : `${formatCurrency(v.value)}`}
+                                      </td>
+                                      <td className="py-3 pr-2 font-semibold">
+                                        <div className="flex items-center gap-2">
+                                          <span className="font-bold">{v.usedCount}</span>
+                                          <span className="text-gray-300">/</span>
+                                          <span className="text-gray-500">{v.limit}</span>
+                                        </div>
+                                      </td>
+                                      <td className="py-3 pr-2 font-semibold">{v.expiryDate}</td>
+                                      <td className="py-3 pr-2 font-semibold">
+                                        {v.status === "stopped" ? (
+                                          <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 px-2 py-1 text-xs font-bold text-gray-500">
+                                            Đã dừng
+                                          </span>
+                                        ) : isOutOfUses ? (
+                                          <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-1 text-xs font-bold text-red-600">
+                                            Hết lượt dùng
+                                          </span>
+                                        ) : isExpired ? (
+                                          <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-1 text-xs font-bold text-rose-600">
+                                            Hết hạn
+                                          </span>
+                                        ) : (
+                                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-700">
+                                            Đang chạy
+                                          </span>
+                                        )}
+                                      </td>
+                                      <td className="py-3 pr-2 text-right">
+                                        {isActive && (
+                                          <button
+                                            type="button"
+                                            onClick={() => handleStopVoucher(v.code)}
+                                            className="rounded-full bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 px-3 py-1.5 text-[10px] font-bold transition-all shadow-sm cursor-pointer border border-red-200/50"
+                                          >
+                                            Dừng sớm
+                                          </button>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
                           </div>
                         )}
                       </div>
@@ -4571,6 +4807,122 @@ function ProfileContent() {
                                 ) : (
                                   "Lưu thay đổi"
                                 )}
+                              </button>
+                            </div>
+                          </form>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Add Voucher Modal Dialog */}
+                    {isAddVoucherOpen && (
+                      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                        <div className="w-full max-w-[450px] rounded-3xl bg-white p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+                          <div className="flex justify-between items-center border-b border-[#bbcabf]/20 pb-3">
+                            <h4 className="text-sm font-bold text-[#006c49] flex items-center gap-1.5">
+                              <span className="material-symbols-outlined text-base">local_offer</span>
+                              Tạo voucher khuyến mãi mới
+                            </h4>
+                            <button
+                              type="button"
+                              onClick={() => setIsAddVoucherOpen(false)}
+                              className="text-gray-400 hover:text-gray-600 flex h-7 w-7 items-center justify-center rounded-full hover:bg-gray-100"
+                            >
+                              ✕
+                            </button>
+                          </div>
+
+                          <form onSubmit={handleAddVoucherSubmit} className="space-y-4 text-left">
+                            {/* Voucher Code */}
+                            <div>
+                              <label className="block text-[11px] font-bold text-[#3c4a42]/70 mb-1">
+                                Mã voucher (Viết liền không dấu, viết hoa) *
+                              </label>
+                              <input
+                                type="text"
+                                value={newVoucherCode}
+                                onChange={(e) => setNewVoucherCode(e.target.value.toUpperCase())}
+                                placeholder="Ví dụ: NONGSANXANH10, TOT20"
+                                className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-2.5 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49] font-mono"
+                                required
+                              />
+                            </div>
+
+                            {/* Discount Type */}
+                            <div>
+                              <label className="block text-[11px] font-bold text-[#3c4a42]/70 mb-1">
+                                Loại giảm giá *
+                              </label>
+                              <select
+                                value={newVoucherType}
+                                onChange={(e) => setNewVoucherType(e.target.value as "percent" | "fixed")}
+                                className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-2.5 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                                required
+                              >
+                                <option value="percent">Giảm theo phần trăm (%)</option>
+                                <option value="fixed">Giảm số tiền cố định (đ)</option>
+                              </select>
+                            </div>
+
+                            {/* Value */}
+                            <div>
+                              <label className="block text-[11px] font-bold text-[#3c4a42]/70 mb-1">
+                                {newVoucherType === "percent" ? "Phần trăm giảm (%) *" : "Số tiền giảm (đ) *"}
+                              </label>
+                              <input
+                                type="number"
+                                value={newVoucherValue}
+                                onChange={(e) => setNewVoucherValue(e.target.value)}
+                                placeholder={newVoucherType === "percent" ? "Ví dụ: 10, 15" : "Ví dụ: 20000, 50000"}
+                                className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-2.5 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                                required
+                              />
+                            </div>
+
+                            {/* Limit */}
+                            <div>
+                              <label className="block text-[11px] font-bold text-[#3c4a42]/70 mb-1">
+                                Giới hạn lượt sử dụng *
+                              </label>
+                              <input
+                                type="number"
+                                value={newVoucherLimit}
+                                onChange={(e) => setNewVoucherLimit(e.target.value)}
+                                placeholder="Ví dụ: 50, 100"
+                                className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-2.5 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                                required
+                              />
+                            </div>
+
+                            {/* Expiry Date */}
+                            <div>
+                              <label className="block text-[11px] font-bold text-[#3c4a42]/70 mb-1">
+                                Ngày hết hạn (Voucher có hiệu lực đến hết ngày này) *
+                              </label>
+                              <input
+                                type="date"
+                                value={newVoucherExpiry}
+                                onChange={(e) => setNewVoucherExpiry(e.target.value)}
+                                className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-2.5 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                                required
+                              />
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex justify-end gap-2 pt-2 border-t border-[#bbcabf]/15">
+                              <button
+                                type="button"
+                                onClick={() => setIsAddVoucherOpen(false)}
+                                className="rounded-full border border-[#bbcabf] px-5 py-2 text-xs font-bold text-[#3c4a42] transition hover:bg-[#f4f6fa] cursor-pointer"
+                              >
+                                Hủy bỏ
+                              </button>
+                              <button
+                                type="submit"
+                                disabled={isSubmittingVoucher}
+                                className="rounded-full bg-[#006c49] px-6 py-2 text-xs font-bold text-white transition hover:opacity-90 shadow-sm disabled:opacity-50 cursor-pointer"
+                              >
+                                {isSubmittingVoucher ? "Đang xử lý..." : "Tạo voucher"}
                               </button>
                             </div>
                           </form>

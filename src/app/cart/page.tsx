@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -20,7 +20,16 @@ export default function CartPage() {
   const [promoSuccess, setPromoSuccess] = useState("");
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setMounted(true), 0);
+    const timer = window.setTimeout(() => {
+      setMounted(true);
+      const code = sessionStorage.getItem("appliedVoucherCode");
+      const discountStr = sessionStorage.getItem("appliedVoucherDiscount");
+      if (code && discountStr) {
+        setPromoCode(code);
+        setDiscount(Number(discountStr));
+        setPromoSuccess(`Đang áp dụng mã: ${code}`);
+      }
+    }, 0);
     return () => window.clearTimeout(timer);
   }, []);
 
@@ -44,20 +53,63 @@ export default function CartPage() {
     getTotalItems,
   } = useCartStore();
 
-  const handleApplyPromo = () => {
+  const handleApplyPromo = async () => {
     setPromoError("");
     setPromoSuccess("");
-    if (promoCode.trim().toUpperCase() === "NONGSACK") {
-      setDiscount(15000);
-      setPromoSuccess("Áp dụng mã giảm giá 15.000đ thành công!");
-    } else if (!promoCode.trim()) {
+    const trimmedCode = promoCode.trim().toUpperCase();
+    if (!trimmedCode) {
       setPromoError("Vui lòng nhập mã giảm giá");
       setDiscount(0);
-    } else {
-      setPromoError("Mã giảm giá không chính xác");
+      sessionStorage.removeItem("appliedVoucherCode");
+      sessionStorage.removeItem("appliedVoucherDiscount");
+      sessionStorage.removeItem("appliedVoucherSellerId");
+      return;
+    }
+
+    try {
+      const selectedItems = items.filter(item => selectedProductIds.includes(item.productId));
+      const response = await fetch("/api/vouchers/apply", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          code: trimmedCode,
+          items: selectedItems,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        setPromoError(data.error || "Mã giảm giá không hợp lệ");
+        setDiscount(0);
+        sessionStorage.removeItem("appliedVoucherCode");
+        sessionStorage.removeItem("appliedVoucherDiscount");
+        sessionStorage.removeItem("appliedVoucherSellerId");
+      } else {
+        setDiscount(data.discount);
+        setPromoSuccess(data.message || "Áp dụng mã giảm giá thành công!");
+        sessionStorage.setItem("appliedVoucherCode", trimmedCode);
+        sessionStorage.setItem("appliedVoucherDiscount", data.discount.toString());
+        sessionStorage.setItem("appliedVoucherSellerId", data.sellerId);
+      }
+    } catch (error) {
+      console.error("Lỗi khi áp dụng voucher:", error);
+      setPromoError("Đã xảy ra lỗi khi kết nối với máy chủ");
       setDiscount(0);
     }
   };
+
+  useEffect(() => {
+    if (!mounted) return;
+    const code = sessionStorage.getItem("appliedVoucherCode");
+    if (code) {
+      const timer = window.setTimeout(() => {
+        void handleApplyPromo();
+      }, 100);
+      return () => window.clearTimeout(timer);
+    }
+  }, [selectedProductIds, mounted]);
 
   if (!mounted) {
     return (

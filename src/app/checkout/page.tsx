@@ -11,6 +11,7 @@ import { useCartStore } from "@/store/cart-store";
 import { useOrderStore } from "@/store/order-store";
 import { useNotificationStore } from "@/store/notification-store";
 import { Order } from "@/types/order";
+import { incrementVoucherUsage } from "@/lib/vouchers";
 
 const PROVINCES_API = "https://provinces.open-api.vn/api/v1/?depth=2";
 
@@ -92,6 +93,7 @@ export default function CheckoutPage() {
   const [mounted, setMounted] = useState(false);
   const { currentUser } = useAuthStore();
   const { items, getSelectedItems, getSelectedTotalItems, getSelectedTotalPrice, removePurchasedItems } = useCartStore();
+  const selectedItems = getSelectedItems();
   const addOrder = useOrderStore((state) => state.addOrder);
   const addNotification = useNotificationStore((state) => state.addNotification);
 
@@ -103,6 +105,12 @@ export default function CheckoutPage() {
   const [shippingMethod, setShippingMethod] = useState<"standard" | "fast" | "pickup">("standard");
   const [paymentMethod, setPaymentMethod] = useState<"cod" | "bank" | "credit" | "wallet" | "vnpay">("cod");
   const [errors, setErrors] = useState<FormErrors>({});
+
+  // Voucher states
+  const [appliedVoucher, setAppliedVoucher] = useState<{ code: string; discount: number; sellerId: string } | null>(null);
+  const [promoCodeInput, setPromoCodeInput] = useState("");
+  const [promoError, setPromoError] = useState("");
+  const [promoSuccess, setPromoSuccess] = useState("");
 
   const [showAddressForm, setShowAddressForm] = useState(true);
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
@@ -145,6 +153,83 @@ export default function CheckoutPage() {
       router.push("/login?redirect=/checkout");
     }
   }, [mounted, currentUser, router]);
+
+  // Read applied voucher from sessionStorage
+  useEffect(() => {
+    if (!mounted) return;
+    const code = sessionStorage.getItem("appliedVoucherCode");
+    const discountStr = sessionStorage.getItem("appliedVoucherDiscount");
+    const sellerId = sessionStorage.getItem("appliedVoucherSellerId");
+    if (code && discountStr && sellerId) {
+      const hasSellerItems = selectedItems.some((item) => (item.sellerId || "admin") === sellerId);
+      if (hasSellerItems) {
+        const timer = window.setTimeout(() => {
+          setAppliedVoucher({
+            code,
+            discount: Number(discountStr),
+            sellerId,
+          });
+          setPromoCodeInput(code);
+          setPromoSuccess(`Đang áp dụng mã: ${code}`);
+        }, 0);
+        return () => window.clearTimeout(timer);
+      } else {
+        sessionStorage.removeItem("appliedVoucherCode");
+        sessionStorage.removeItem("appliedVoucherDiscount");
+        sessionStorage.removeItem("appliedVoucherSellerId");
+      }
+    }
+  }, [mounted, selectedItems]);
+
+  const handleApplyPromoCheckout = async () => {
+    setPromoError("");
+    setPromoSuccess("");
+    const trimmedCode = promoCodeInput.trim().toUpperCase();
+    if (!trimmedCode) {
+      setPromoError("Vui lòng nhập mã giảm giá");
+      setAppliedVoucher(null);
+      sessionStorage.removeItem("appliedVoucherCode");
+      sessionStorage.removeItem("appliedVoucherDiscount");
+      sessionStorage.removeItem("appliedVoucherSellerId");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/vouchers/apply", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          code: trimmedCode,
+          items: selectedItems,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        setPromoError(data.error || "Mã giảm giá không hợp lệ");
+        setAppliedVoucher(null);
+        sessionStorage.removeItem("appliedVoucherCode");
+        sessionStorage.removeItem("appliedVoucherDiscount");
+        sessionStorage.removeItem("appliedVoucherSellerId");
+      } else {
+        setAppliedVoucher({
+          code: trimmedCode,
+          discount: data.discount,
+          sellerId: data.sellerId,
+        });
+        setPromoSuccess(data.message || "Áp dụng mã giảm giá thành công!");
+        sessionStorage.setItem("appliedVoucherCode", trimmedCode);
+        sessionStorage.setItem("appliedVoucherDiscount", data.discount.toString());
+        sessionStorage.setItem("appliedVoucherSellerId", data.sellerId);
+      }
+    } catch (error) {
+      console.error("Lỗi khi áp dụng voucher tại checkout:", error);
+      setPromoError("Đã xảy ra lỗi khi kết nối với máy chủ");
+      setAppliedVoucher(null);
+    }
+  };
 
   useEffect(() => {
     if (!currentUser) return;
@@ -218,9 +303,9 @@ export default function CheckoutPage() {
   }, []);
 
   const shippingFee = shippingMethod === "fast" ? 15000 : 0;
-  const selectedItems = getSelectedItems();
   const subtotal = getSelectedTotalPrice();
-  const total = subtotal + shippingFee;
+  const discountAmount = appliedVoucher && selectedItems.some(item => (item.sellerId || "admin") === appliedVoucher.sellerId) ? appliedVoucher.discount : 0;
+  const total = Math.max(0, subtotal + shippingFee - discountAmount);
   const totalItems = getSelectedTotalItems();
 
   const updateError = (field: keyof FormErrors) => {
@@ -311,6 +396,11 @@ export default function CheckoutPage() {
             note: note.trim(),
             items: selectedItems,
             totalAmount: total,
+            appliedVoucher: appliedVoucher ? {
+              code: appliedVoucher.code,
+              discount: discountAmount,
+              sellerId: appliedVoucher.sellerId,
+            } : undefined,
           }),
         });
 
@@ -320,14 +410,19 @@ export default function CheckoutPage() {
         }
 
         if (data.paymentUrl) {
+          // Clear sessionStorage upon successful redirection to payment gateway
+          sessionStorage.removeItem("appliedVoucherCode");
+          sessionStorage.removeItem("appliedVoucherDiscount");
+          sessionStorage.removeItem("appliedVoucherSellerId");
           window.location.href = data.paymentUrl;
           return;
         } else {
           throw new Error("Không nhận được liên kết thanh toán từ máy chủ");
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Lỗi VNPay checkout:", err);
-        showToast(err.message || "Đã xảy ra lỗi khi kết nối với cổng thanh toán VNPay.", "error");
+        const errMsg = err instanceof Error ? err.message : "Đã xảy ra lỗi khi kết nối với cổng thanh toán VNPay.";
+        showToast(errMsg, "error");
         return;
       }
     }
@@ -347,6 +442,10 @@ export default function CheckoutPage() {
       const sellerTotal = sellerItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
       const subOrderId = sellerIds.length > 1 ? `${orderIdBase}-${index + 1}` : orderIdBase;
 
+      // Check if this seller gets the voucher discount
+      const isSellerVoucher = appliedVoucher && (sellerId === appliedVoucher.sellerId);
+      const finalSellerTotal = isSellerVoucher ? Math.max(0, sellerTotal - discountAmount) : sellerTotal;
+
       const newOrder: Order = {
         id: subOrderId,
         userId: currentUser?.id || "guest",
@@ -358,13 +457,26 @@ export default function CheckoutPage() {
         address: fullAddress,
         note: note.trim(),
         items: sellerItems,
-        totalAmount: sellerTotal,
+        totalAmount: finalSellerTotal,
         status: "pending",
         paymentMethod,
         createdAt: new Date().toISOString(),
+        ...(isSellerVoucher ? {
+          voucherCode: appliedVoucher.code,
+          discountAmount: discountAmount,
+        } : {}),
       };
 
       await addOrder(newOrder);
+
+      // Decrement the voucher limit in Firestore if it was used
+      if (isSellerVoucher) {
+        try {
+          await incrementVoucherUsage(appliedVoucher.code);
+        } catch (error) {
+          console.error("Lỗi khi cập nhật lượt sử dụng voucher:", error);
+        }
+      }
 
       // Notify Seller
       await addNotification({
@@ -375,6 +487,11 @@ export default function CheckoutPage() {
         orderId: subOrderId,
       });
     }
+
+    // Clear sessionStorage since the order has been successfully placed
+    sessionStorage.removeItem("appliedVoucherCode");
+    sessionStorage.removeItem("appliedVoucherDiscount");
+    sessionStorage.removeItem("appliedVoucherSellerId");
 
     // Notify Buyer
     if (currentUser) {
@@ -768,6 +885,13 @@ export default function CheckoutPage() {
 
               <div className="space-y-3 border-t border-outline-variant/30 pt-4 text-sm">
                 <SummaryRow label="Tạm tính" value={formatCurrency(subtotal)} />
+                {discountAmount > 0 && (
+                  <SummaryRow
+                    label={`Giảm giá (${appliedVoucher?.code})`}
+                    value={`-${formatCurrency(discountAmount)}`}
+                    highlight={false}
+                  />
+                )}
                 <SummaryRow
                   label="Phí vận chuyển"
                   value={shippingFee > 0 ? formatCurrency(shippingFee) : "Miễn phí"}
@@ -789,15 +913,28 @@ export default function CheckoutPage() {
                   id="promo"
                   type="text"
                   placeholder="Nhập mã..."
+                  value={promoCodeInput}
+                  onChange={(e) => {
+                    setPromoCodeInput(e.target.value);
+                    if (promoError) setPromoError("");
+                    if (promoSuccess) setPromoSuccess("");
+                  }}
                   className="min-w-0 flex-1 rounded-xl border border-outline-variant bg-surface px-3 py-2.5 text-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
                 />
                 <button
                   type="button"
-                  className="rounded-xl bg-secondary px-4 py-2.5 text-sm font-bold text-white transition hover:opacity-90"
+                  onClick={handleApplyPromoCheckout}
+                  className="rounded-xl bg-secondary px-4 py-2.5 text-sm font-bold text-white transition hover:opacity-90 cursor-pointer"
                 >
                   Áp dụng
                 </button>
               </div>
+              {promoError && (
+                <p className="text-xs text-error font-semibold mt-1.5 pl-1">{promoError}</p>
+              )}
+              {promoSuccess && (
+                <p className="text-xs text-primary font-semibold mt-1.5 pl-1">{promoSuccess}</p>
+              )}
             </section>
 
             <div className="flex items-center justify-center gap-2 rounded-2xl bg-surface-container-low px-4 py-3 text-sm text-on-surface-variant">
