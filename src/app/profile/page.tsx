@@ -155,52 +155,6 @@ function ProfileContent() {
   const markAllAsRead = useNotificationStore((state) => state.markAllAsRead);
   const addNotification = useNotificationStore((state) => state.addNotification);
 
-  // Helper functions for image processing
-  const readFileAsDataUrl = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  };
-
-  const compressImage = async (
-    base64: string,
-    maxWidth: number,
-    maxHeight: number,
-    quality: number,
-    format: "image/jpeg" | "image/webp" = "image/jpeg"
-  ): Promise<string> => {
-    return new Promise((resolve) => {
-      const img = new (window as any).Image();
-      img.src = base64;
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        let width = img.width;
-        let height = img.height;
-
-        if (width > height) {
-          if (width > maxWidth) {
-            height *= maxWidth / width;
-            width = maxWidth;
-          }
-        } else {
-          if (height > maxHeight) {
-            width *= maxHeight / height;
-            height = maxHeight;
-          }
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        ctx?.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL(format, quality));
-      };
-    });
-  };
-
   // Navigation tab
   const [activeTab, setActiveTab] = useState<ProfileTab>("info");
 
