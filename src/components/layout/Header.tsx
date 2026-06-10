@@ -101,6 +101,15 @@ export default function Header() {
 
           {mounted && currentUser ? (
             <div className="hidden items-center gap-3 md:flex shrink-0">
+              {currentUser.role === "admin" && (
+                <Link
+                  href="/admin"
+                  className="flex items-center gap-2 rounded-full bg-[#f0f3ff] px-3 py-1.5 text-[#3c4a42] transition-all hover:bg-[#e7eeff] shrink-0 whitespace-nowrap border border-[#bbcabf]/20"
+                >
+                  <span className="material-symbols-outlined text-[20px]">dashboard</span>
+                  <span className="text-[13px] font-bold">Trang quản trị</span>
+                </Link>
+              )}
               <Link
                 href="/profile"
                 className="flex items-center gap-2 rounded-full px-2 py-2 text-[#3c4a42] transition-all hover:bg-[#10b981]/10 shrink-0 whitespace-nowrap"
@@ -162,6 +171,15 @@ export default function Header() {
 
             {mounted && currentUser ? (
               <>
+                {currentUser.role === "admin" && (
+                  <Link
+                    href="/admin"
+                    onClick={() => setMobileOpen(false)}
+                    className="mb-2 w-full rounded-2xl bg-[#f0f3ff] py-2.5 text-center text-[14px] font-bold text-[#3c4a42] transition-all hover:bg-[#e7eeff] border border-[#bbcabf]/20"
+                  >
+                    Trang quản trị
+                  </Link>
+                )}
                 <Link
                   href="/profile"
                   onClick={() => setMobileOpen(false)}

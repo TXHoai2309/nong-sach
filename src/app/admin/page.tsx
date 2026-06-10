@@ -223,6 +223,10 @@ export default function AdminDashboardPage() {
   };
 
   const handleChangeRole = async (userId: string, newRole: "buyer" | "seller" | "admin") => {
+    if (newRole === "admin") {
+      alert("Hệ thống chỉ cho phép duy nhất một tài khoản Quản trị.");
+      return;
+    }
     setActionLoading(userId + "-role");
     try {
       const userRef = doc(db, "users", userId);
@@ -1125,15 +1129,8 @@ export default function AdminDashboardPage() {
                     </td>
                     <td className="py-3 text-slate-500 text-xs">{user.memberSince || "N/A"}</td>
                     <td className="py-3 text-right font-sans">
-                      {user.role !== "admin" ? (
+                      {user.email !== "admin@nongsach.vn" ? (
                         <div className="flex justify-end gap-1.5 items-center">
-                          <button
-                            onClick={() => handleChangeRole(user.id, "admin")}
-                            disabled={actionLoading === user.id + "-role"}
-                            className="px-2 py-1 bg-purple-50 hover:bg-purple-100 text-purple-600 rounded-md text-[11px] font-bold border border-purple-100 cursor-pointer transition-all"
-                          >
-                            Lên Admin
-                          </button>
                           {user.role === "seller" ? (
                             <>
                               {user.sellerStatus === "blocked" ? (

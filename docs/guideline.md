@@ -310,7 +310,8 @@ Trang quản trị hệ thống cung cấp giao diện riêng tư, bảo mật d
       4. **Xóa vi phạm**: Xóa sản phẩm khỏi Firestore; hoặc thu hồi quyền bán hàng của shop (về `role = "buyer"`, `sellerStatus = "rejected"`) và xóa toàn bộ sản phẩm của shop khỏi Firestore.
 - **Danh sách người dùng & Phân quyền**:
   - Liệt kê toàn bộ người dùng đã đăng ký tài khoản trên hệ thống.
-  - Cho phép Admin trực tiếp đổi vai trò của bất kỳ tài khoản nào: click **"Lên Admin"** để phong quyền quản trị, click **"Lên Shop (Seller)"** để cấp quyền bán hàng nhanh, hoặc click **"Bỏ Shop (Buyer)"** để thu hồi quyền bán hàng về tài khoản mua thông thường.
+  - **Quy tắc Quản trị**: Hệ thống chỉ chấp nhận duy nhất tài khoản `admin@nongsach.vn` giữ vai trò Admin. Tính năng nâng cấp các tài khoản khác lên Admin đã bị vô hiệu hóa để bảo vệ tính toàn vẹn của hệ thống.
+  - Cho phép Admin trực tiếp đổi vai trò của các tài khoản khác: click **"Lên Shop (Seller)"** để cấp quyền bán hàng nhanh, hoặc click **"Bỏ Shop (Buyer)"** để thu hồi quyền bán hàng về tài khoản mua thông thường.
   - **Mở khóa Shop**: Nếu shop đang bị khóa tạm thời (`sellerStatus === "blocked"`), hiển thị badge cảnh báo màu đỏ và nút hành động chuyển thành **"Mở khóa Shop"**. Khi nhấn, tài khoản sẽ được chuyển lại trạng thái hoạt động bình thường, mở khóa toàn bộ sản phẩm và gửi thông báo vui cho seller.
 - **Lịch sử hoạt động Admin (Admin Activity Logs)**:
   - Bảng danh sách đặt ở cuối trang Admin Panel, hiển thị toàn bộ lịch sử các thao tác kiểm duyệt của Admin (Xóa, Khóa, Cảnh báo, Bỏ qua, Mở khóa) được đồng bộ từ Firestore theo thời gian thực.

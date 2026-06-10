@@ -345,8 +345,8 @@ Quy trình dưới đây là định hướng phát triển sau MVP, khi hệ th
   - Cung cấp nút **"Từ chối"** để mở modal phụ yêu cầu nhập lý do từ chối. Sau khi xác nhận, chuyển trạng thái người bán sang `rejected`, lưu lý do vào trường `sellerRejectionReason` trên Firestore, và gửi thông báo `account_update` chứa lý do từ chối cụ thể đến người bán.
 * **Quản lý phân quyền người dùng**:
   - Bảng hiển thị danh sách tất cả các tài khoản trên hệ thống kèm Email, Vai trò (role) và Ngày gia nhập.
-  - Cung cấp nút **"Lên Admin"** để nâng cấp một tài khoản thành quản trị viên.
-  - Cung cấp nút **"Bỏ Shop (Buyer)"** hoặc **"Lên Shop (Seller)"** để thay đổi nhanh vai trò của tài khoản đó.
+  - **Hạn chế quyền**: Hệ thống chỉ cho phép duy nhất tài khoản `admin@nongsach.vn` giữ vai trò Quản trị. Chức năng cấp quyền Admin cho tài khoản khác bị vô hiệu hóa để đảm bảo an ninh.
+  - Cung cấp nút **"Bỏ Shop (Buyer)"** hoặc **"Lên Shop (Seller)"** để thay đổi nhanh vai trò của các tài khoản khác.
 * **Nút lối tắt trên Header**:
   - Hiển thị nút "Trang quản trị" ngay cạnh tên tài khoản trên Header storefront cho các tài khoản là admin để truy cập nhanh.
 
