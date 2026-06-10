@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, getDocs, doc, updateDoc, setDoc, deleteDoc } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, setDoc, deleteDoc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { User } from "@/types/user";
 import { useAuthStore } from "@/store/auth-store";
@@ -119,6 +119,20 @@ export default function AdminDashboardPage() {
       fetchData();
     }, 0);
     return () => window.clearTimeout(timer);
+  }, []);
+
+  // Real-time listener for refund requests
+  useEffect(() => {
+    const refundsCol = collection(db, "refundRequests");
+    const unsubscribe = onSnapshot(refundsCol, (snapshot) => {
+      const fetchedRefunds: RefundRequest[] = [];
+      snapshot.forEach((docSnap) => {
+        fetchedRefunds.push(docSnap.data() as RefundRequest);
+      });
+      fetchedRefunds.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setRefundRequests(fetchedRefunds);
+    });
+    return () => unsubscribe();
   }, []);
 
   const handleApprove = async (userId: string) => {
@@ -834,7 +848,10 @@ export default function AdminDashboardPage() {
                       {/* Actions */}
                       <div className="flex gap-2 pt-1">
                         <button
-                          onClick={() => setSelectedRefund(req)}
+                          onClick={() => {
+                            setSelectedRefund(req);
+                            setIsRefundActionModalOpen(true);
+                          }}
                           className="flex-grow py-1.5 bg-[#006c49]/10 hover:bg-[#006c49]/20 text-[#006c49] rounded-lg text-xs font-bold transition-all border border-[#006c49]/20 cursor-pointer flex justify-center items-center gap-1.5"
                         >
                           <span className="material-symbols-outlined text-sm">visibility</span>
