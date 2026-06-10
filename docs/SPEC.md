@@ -75,7 +75,7 @@ Người tiêu dùng ngày càng lo ngại về an toàn thực phẩm, đặc b
 | F-19 | Hệ thống thông báo    | Thông báo thời gian thực cho người mua và người bán về các sự kiện đơn hàng và hệ thống | P1      | ✅ Done     |
 | F-20 | Ổn định Profile & Báo cáo shop | Sửa lỗi runtime Profile, đảm bảo modal Báo cáo shop hiển thị đúng và lint/type toàn project không còn error | P0      | ✅ Done     |
 | F-21 | Trang quản trị & Phân quyền Admin | Trang quản trị `/admin` bảo mật bằng Middleware, xem stats và duyệt người bán | P1      | ✅ Done     |
-| F-22 | Dashboard KPI & Biểu đồ SVG Line | Báo cáo thực tế từ Firestore và biểu đồ SVG tương tác lọc 7/30 ngày | P1      | ✅ Done     |
+| F-22 | Dashboard KPI | Thống kê số lượng người dùng và người bán chờ duyệt từ Firestore | P1      | ✅ Done     |
 | F-23 | Quy trình duyệt/từ chối hồ sơ | Modal xem chi tiết hồ sơ (zoom CCCD), từ chối kèm lý do và quy trình nộp lại | P1      | ✅ Done     |
 | F-24 | Quy trình duyệt/từ chối sản phẩm | Admin duyệt sản phẩm pending -> active hoặc từ chối kèm lý do và gửi thông báo | P1      | ✅ Done     |
 | F-25 | Xử lý báo cáo vi phạm | Quyết định xử lý của Admin (Bỏ qua/Cảnh báo/Khóa tạm/Xóa đối tượng) và ghi log kiểm toán Firestore | P1      | ✅ Done     |
@@ -328,16 +328,9 @@ Quy trình dưới đây là định hướng phát triển sau MVP, khi hệ th
   - Sidebar bên trái hiển thị tên NôngSạch Admin, mục "Tổng quan", thông tin Admin đăng nhập (tên, email) và nút Đăng xuất.
   - Main panel bên phải hiển thị Header có tiêu đề, nút "Xem cửa hàng" trỏ về trang chủ.
 * **Bảng thống kê nhanh (KPI)**:
-  - Hiển thị đúng dữ liệu thực tế truy vấn từ Firestore gồm 4 thẻ:
+  - Hiển thị đúng dữ liệu thực tế truy vấn từ Firestore gồm 2 thẻ:
     1. **Tổng người dùng**: Tổng số tài khoản trên hệ thống.
     2. **Seller chờ**: Số hồ sơ đăng ký người bán đang chờ duyệt (`sellerStatus === "pending"`).
-    3. **Đơn hôm nay**: Đếm số đơn hàng được tạo trong ngày hôm nay ở múi giờ local của trình duyệt.
-    4. **Doanh thu**: Tổng doanh thu thực tế (tổng tiền các đơn hàng ngoại trừ các đơn bị huỷ `"cancelled"`), được định dạng tiền tệ VND chuẩn.
-* **Biểu đồ hiệu suất nền tảng (SVG Line Chart)**:
-  - Biểu đồ line vẽ bằng SVG tuỳ biến, tự động co giãn (responsive ratio `800/350`) và có gradient màu bên dưới đường vẽ.
-  - Cho phép người dùng **lọc khoảng thời gian**: chuyển đổi giữa 7 ngày qua và 30 ngày qua. Ở chế độ 30 ngày, các nhãn ngày trên trục X tự động giãn cách cách nhau 5 ngày để không đè chữ.
-  - Cho phép **chuyển đổi chỉ số hiển thị** (Metric Toggle): chọn xem theo "Doanh thu" (VND, màu xanh lá) hoặc "Số đơn hàng" (màu xanh dương).
-  - Tích hợp **hiệu ứng tương tác**: Khi di chuột lên biểu đồ, hiển thị đường dẫn dọc nét đứt và vòng tròn chỉ điểm tại ngày gần nhất. Hiển thị tooltip dạng HTML nổi lơ lửng ngay phía trên điểm dữ liệu với đầy đủ thông tin: Ngày (dạng `DD/MM/YYYY`), Doanh thu (VND), và Số đơn hàng của ngày cụ thể đó.
 * **Duyệt hồ sơ người bán (Approvals Queue)**:
   - Hiển thị danh sách các tài khoản có trạng thái người bán đang chờ xử lý (`sellerStatus === "pending"`).
   - Thay vì các nút thao tác trực tiếp, cung cấp nút **"Xem chi tiết"** để hiển thị thông tin đầy đủ về: thông tin shop, thông tin liên hệ, nông trại và tiêu chuẩn canh tác (kèm danh sách ảnh thực địa), ảnh thẻ CCCD mặt trước/sau (hỗ trợ zoom/preview ảnh đầy đủ), thông tin tài khoản ngân hàng.
@@ -638,14 +631,7 @@ interface ContactMessage {
 | T-53 | Layout trang Admin với sidebar và logout | 3  | ✅      |
 | T-54 | Dashboard Admin: thống kê, duyệt người bán, quản lý role | 4  | ✅      |
 | T-55 | Dọn lỗi compile & lint cho admin pages | 1  | ✅      |
-
-## Sprint 5.1 — Admin KPI & Biểu đồ SVG Line (✅ Hoàn thành)
-
-| ID   | Task                                           | SP | Status |
-| ---- | ---------------------------------------------- | -- | ------ |
 | T-56 | Thẻ KPI dựa trên dữ liệu thực tế Firestore     | 2  | ✅      |
-| T-57 | Vẽ biểu đồ SVG Line tuỳ biến (Doanh thu/Đơn)   | 3  | ✅      |
-| T-58 | Bộ lọc thời gian 7/30 ngày & Tooltip tương tác | 2  | ✅      |
 
 ## Sprint 5.2 — Quy trình duyệt & Từ chối hồ sơ (✅ Hoàn thành)
 

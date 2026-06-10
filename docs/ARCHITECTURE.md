@@ -667,7 +667,7 @@ Admin Dashboard Queue (Duyệt Sản Phẩm Tab)
 | profile/page.tsx           | Client | Tab navigation, Profile & Address updates, Seller Registration Warning Banner & Resubmission form handling |
 | app/shop/[id]/page.tsx     | Client | Shop Details, Follow and Products Filter & Sort |
 | app/admin/layout.tsx       | Client | Admin Session & Sidebar Layout |
-| app/admin/page.tsx         | Client | Dashboard stats, Approvals Queue with Detail Modal (CCCD Zoom), Rejection modal, and custom SVG line chart |
+| app/admin/page.tsx         | Client | Dashboard stats, Approvals Queue with Detail Modal (CCCD Zoom), and Rejection modal |
 
 ---
 

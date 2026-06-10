@@ -279,15 +279,9 @@ Trang quản trị hệ thống cung cấp giao diện riêng tư, bảo mật d
   - Nếu cố tình truy cập bằng tài khoản buyer hoặc chưa đăng nhập, Next.js Edge Middleware sẽ tự động chặn và chuyển hướng về trang chủ `/` hoặc trang đăng nhập.
 
 ### 2. Các chức năng chính
-- **Bảng chỉ số tổng quan (KPI)**: Hiển thị 4 thẻ thông tin được truy vấn thời gian thực từ Firestore:
+- **Bảng chỉ số tổng quan (KPI)**: Hiển thị các thẻ thông tin được truy vấn thời gian thực từ Firestore:
   1. **Tổng người dùng**: Tổng số lượng tài khoản đăng ký trên hệ thống.
   2. **Seller chờ**: Số hồ sơ nông dân xin đăng ký người bán đang ở trạng thái chờ duyệt.
-  3. **Đơn hôm nay**: Số lượng đơn hàng phát sinh trong ngày hôm nay.
-  4. **Doanh thu**: Tổng số tiền thu được từ tất cả đơn hàng đã giao hoặc đang xử lý (không tính các đơn hàng bị hủy `"cancelled"`).
-- **Biểu đồ hiệu suất nền tảng**:
-  - **Lọc thời gian**: Admin có thể chọn xem báo cáo theo chu kỳ **7 ngày** hoặc **30 ngày** qua các nút bấm tương ứng.
-  - **Chuyển đổi chỉ số**: Cho phép lựa chọn xem theo **Doanh thu** (thể hiện bằng đường màu xanh lá cây, thang đo VND viết tắt dạng M/K) hoặc **Số đơn hàng** (thể hiện bằng đường màu xanh dương, thang đo số nguyên đơn hàng).
-  - **Tooltip tương tác**: Khi di chuột qua các mốc điểm của biểu đồ, hệ thống sẽ hiện đường nét đứt định vị dọc và một tooltip nổi màu tối hiển thị chính xác ngày tháng cùng số liệu doanh thu & số đơn hàng của ngày đó.
 - **Hàng đợi kiểm duyệt (Approvals Queue)**:
   - Tích hợp hệ thống tab chuyển đổi linh hoạt: **Người Bán**, **Sản Phẩm** và **Báo Cáo**.
   - **Người Bán**:
