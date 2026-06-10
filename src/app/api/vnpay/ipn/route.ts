@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
 import crypto from "crypto";
+import { incrementVoucherUsage, saveVoucherHistory } from "@/lib/vouchers";
+import { CartItem } from "@/types/cart";
 
 // Helper to sort and encode parameters
 function sortObject(obj: Record<string, string>) {
@@ -87,20 +89,26 @@ export async function GET(request: Request) {
       });
 
       // Split order by sellerId, similar to verify-payment logic
-      const items = pendingOrder.items || [];
-      const itemsBySeller = items.reduce((acc: any, item: any) => {
+      const items: CartItem[] = pendingOrder.items || [];
+      const itemsBySeller = items.reduce((acc: Record<string, CartItem[]>, item: CartItem) => {
         const sellerId = item.sellerId || "admin";
         if (!acc[sellerId]) acc[sellerId] = [];
         acc[sellerId].push(item);
         return acc;
-      }, {} as Record<string, any[]>);
+      }, {} as Record<string, CartItem[]>);
 
       const sellerIds = Object.keys(itemsBySeller);
+      const appliedVoucher = pendingOrder.appliedVoucher; // { code, discount, sellerId }
 
       for (const [index, sellerId] of sellerIds.entries()) {
         const sellerItems = itemsBySeller[sellerId];
-        const sellerTotal = sellerItems.reduce((sum: number, item: any) => sum + item.price * item.quantity, 0);
+        const sellerTotal = sellerItems.reduce((sum: number, item: CartItem) => sum + item.price * item.quantity, 0);
         const subOrderId = sellerIds.length > 1 ? `${orderId}-${index + 1}` : orderId;
+
+        // Check if this seller gets the voucher discount
+        const isSellerVoucher = appliedVoucher && (sellerId === appliedVoucher.sellerId);
+        const voucherDiscount = isSellerVoucher ? appliedVoucher.discount : 0;
+        const finalSellerTotal = Math.max(0, sellerTotal - voucherDiscount);
 
         // Save official order in orders collection
         const officialOrderRef = doc(db, "orders", subOrderId);
@@ -115,14 +123,34 @@ export async function GET(request: Request) {
           address: pendingOrder.address,
           note: pendingOrder.note,
           items: sellerItems,
-          totalAmount: sellerTotal,
+          totalAmount: finalSellerTotal,
           status: "pending",
           paymentMethod: pendingOrder.paymentMethod || "vnpay",
           payment_status: "success",
           vnp_TransactionNo: transactionNo,
           vnp_ResponseCode: responseCode,
           createdAt: pendingOrder.createdAt || new Date().toISOString(),
+          ...(isSellerVoucher ? {
+            voucherCode: appliedVoucher.code,
+            discountAmount: voucherDiscount,
+          } : {}),
         });
+
+        // Decrement the voucher limit in Firestore if it was used
+        if (isSellerVoucher) {
+          try {
+            await incrementVoucherUsage(appliedVoucher.code);
+            await saveVoucherHistory({
+              voucherCode: appliedVoucher.code,
+              userId: pendingOrder.userId || "guest",
+              orderId: subOrderId,
+              discountAmount: voucherDiscount,
+              sellerId: appliedVoucher.sellerId,
+            });
+          } catch (error) {
+            console.error("Lỗi khi cập nhật lượt sử dụng voucher trong VNPay IPN:", error);
+          }
+        }
 
         // Add seller notification
         const sellerNotiId = `NOTI-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -170,7 +198,7 @@ export async function GET(request: Request) {
 
       return NextResponse.json({ RspCode: "00", Message: "Confirm Success" }); // Still return RspCode 00 to VNPay as we successfully recorded the failure status
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("IPN Webhook Error:", error);
     return NextResponse.json({ RspCode: "99", Message: "Unkown error" });
   }

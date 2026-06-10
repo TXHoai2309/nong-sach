@@ -34,7 +34,7 @@ function sortObject(obj: Record<string, string>) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { userId, fullName, phone, email, address, note, items, totalAmount, paymentMethod } = body;
+    const { userId, fullName, phone, email, address, note, items, totalAmount, paymentMethod, appliedVoucher } = body;
 
     if (!items || items.length === 0 || !totalAmount) {
       return NextResponse.json({ error: "Dữ liệu đơn hàng không hợp lệ" }, { status: 400 });
@@ -58,6 +58,7 @@ export async function POST(request: Request) {
       createdAt: new Date().toISOString(),
       payment_status: "pending",
       processed: false,
+      ...(appliedVoucher ? { appliedVoucher } : {}),
     });
 
     // Configure VNPay Sandbox parameters
@@ -113,7 +114,7 @@ export async function POST(request: Request) {
     const paymentUrl = `${vnpUrl}?${queryStr}&vnp_SecureHash=${secureHash}`;
 
     return NextResponse.json({ paymentUrl });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Lỗi create-payment route:", error);
     return NextResponse.json({ error: "Lỗi hệ thống khi tạo liên kết thanh toán" }, { status: 500 });
   }

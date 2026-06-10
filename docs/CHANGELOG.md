@@ -4,6 +4,55 @@ All notable changes to the **NôngSạch** project will be documented in this fi
 
 The format is based on **Keep a Changelog** and this project adheres to **Semantic Versioning**.
 
+## [0.8.2] - 2026-06-10
+
+### Tích hợp Voucher tại Checkout & Lưu Lịch sử sử dụng (Voucher Checkout & History Logging)
+
+### Added
+* **Tích hợp Voucher tại Checkout**: Cho phép người mua nhập và áp dụng mã voucher trực tiếp tại trang checkout, tính toán chiết khấu và khấu trừ trực tiếp vào tổng tiền thanh toán của đơn hàng.
+* **Xác thực 4 trường hợp lỗi (Server-side Validation)**: Trả về và hiển thị đúng 4 thông báo lỗi màu đỏ khi mã không hợp lệ: mã không tồn tại, mã hết hạn, mã hết lượt dùng, và mã đã dừng hoạt động.
+* **Lưu Lịch sử Sử dụng vào Firestore**: Tự động ghi lại bản ghi lịch sử sử dụng voucher (bao gồm `voucherCode`, `userId`, `orderId`, `discountAmount`, `sellerId`, `usedAt`) vào collection `voucherHistories` khi đơn hàng được đặt thành công (cả đối với COD, chuyển khoản ngân hàng và thanh toán VNPay trực tuyến).
+* **Tự động cập nhật usedCount**: Trường `usedCount` của voucher được tăng thêm 1 khi áp dụng thành công.
+
+### Changed
+* Đồng bộ hóa logic xử lý VNPay IPN webhook (`src/app/api/vnpay/ipn/route.ts`) để thực hiện đầy đủ việc trừ chiết khấu voucher, ghi nhận voucherCode/discountAmount vào đơn hàng chính thức, tăng lượt usedCount và lưu lịch sử dùng.
+
+### Fixed
+* Loại bỏ tất cả các kiểu `any` không an toàn trong `src/app/api/vnpay/ipn/route.ts` để đáp ứng các tiêu chuẩn TypeScript nghiêm ngặt và giải quyết triệt để cảnh báo/lỗi linter.
+
+## [0.8.0] - 2026-06-10
+
+### Mã Giảm Giá của Người Bán (Seller Vouchers Feature)
+
+### Added
+* **Tạo & Quản lý Voucher cho Người bán**: Cho phép người bán tạo mã giảm giá (tự động chuyển thành chữ in hoa, không khoảng trắng), tùy chọn loại giảm giá (phần trăm % hoặc số tiền cố định), giới hạn số lượt dùng và ngày hết hạn. Người bán có thể dừng voucher sớm trực tiếp từ bảng quản lý.
+* **Áp dụng và Tính toán Giảm giá tự động**: Người mua có thể áp dụng mã giảm giá trực tiếp tại trang Giỏ hàng hoặc Thanh toán. Hệ thống tự động tính chiết khấu dựa trên tổng giá trị các sản phẩm thuộc về shop phát hành mã.
+* **Tích hợp Thanh toán Online (VNPay)**: Đồng bộ mã giảm giá và số tiền giảm giá thông qua đơn hàng tạm thời (`pending_orders`). Khi thanh toán online thành công, hệ thống tự động khấu trừ chiết khấu cho đơn hàng tương ứng của shop và cập nhật lượt sử dụng voucher.
+* **Tự động tách đơn hàng**: Lưu trữ thông tin `voucherCode` và `discountAmount` trực tiếp trong tài liệu đơn hàng của từng shop cụ thể sau khi tách đơn.
+* **API Xác thực bảo mật (Server-side Validation)**: Xây dựng route `/api/vouchers/apply` để xác thực trạng thái hoạt động, thời hạn, giới hạn lượt dùng của voucher và tính toán mức chiết khấu an toàn trước khi đặt hàng.
+
+### Changed
+* Cấu trúc dữ liệu đơn hàng (`Order`) được mở rộng với hai thuộc tính tùy chọn `voucherCode` và `discountAmount`.
+
+## [0.7.8] - 2026-06-10
+
+### Danh sách sản phẩm yêu thích (Wishlist Feature)
+
+### Added
+* **Nút trái tim Yêu thích trên ProductCard**: Tích hợp nút hình trái tim ở góc trên bên trái của ảnh sản phẩm để thêm/xoá sản phẩm yêu thích nhanh chóng.
+* **Nút trái tim Yêu thích trên ProductDetail**: Tích hợp nút hình trái tim cạnh menu tiện ích ở góc trên bên phải ảnh sản phẩm trong trang chi tiết.
+* **Tab Yêu thích tại Trang cá nhân (Profile)**: Thêm tab mới cho phép người dùng xem tất cả sản phẩm đã lưu vào danh sách yêu thích, hỗ trợ hủy yêu thích realtime hoặc truy cập nhanh đến chi tiết sản phẩm.
+* **Đồng bộ cơ sở dữ liệu Firestore**: Toàn bộ dữ liệu được lưu vết trong collection `wishlists` trên Firestore, hỗ trợ đồng bộ hóa trạng thái theo thời gian thực giữa các thiết bị đăng nhập cùng tài khoản (cross-device sync).
+
+## [0.7.7] - 2026-06-10
+
+### Theo dõi Cửa hàng & Quản lý Shop đã theo dõi (Shop Follow & Following Dashboard)
+
+### Added
+* **Tab Shop đã theo dõi tại Profile**: Thêm tab mới cho phép người dùng xem danh sách các shop đang theo dõi với đầy đủ thông tin (Logo, tên, đánh giá, tiêu chuẩn, location, slogan).
+* **Nút Bỏ theo dõi và Xem shop**: Người dùng có thể bỏ theo dõi trực tiếp từ trang cá nhân (danh sách tự động cập nhật thời gian thực qua listener `onSnapshot` trên Firestore) hoặc chuyển hướng nhanh đến gian hàng.
+* **Tích hợp Firestore**: Đồng bộ hóa toàn bộ trạng thái theo dõi qua `follows` collection trong Firestore, tự động tăng/giảm số lượng follower của shop tương ứng.
+
 ## [0.7.6] - 2026-06-10
 
 ### Phân xử Hoàn trả Đơn hàng (Admin Refund Mediation)

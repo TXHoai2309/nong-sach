@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -20,7 +20,16 @@ export default function CartPage() {
   const [promoSuccess, setPromoSuccess] = useState("");
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setMounted(true), 0);
+    const timer = window.setTimeout(() => {
+      setMounted(true);
+      const code = sessionStorage.getItem("appliedVoucherCode");
+      const discountStr = sessionStorage.getItem("appliedVoucherDiscount");
+      if (code && discountStr) {
+        setPromoCode(code);
+        setDiscount(Number(discountStr));
+        setPromoSuccess(`Đang áp dụng mã: ${code}`);
+      }
+    }, 0);
     return () => window.clearTimeout(timer);
   }, []);
 
@@ -44,20 +53,78 @@ export default function CartPage() {
     getTotalItems,
   } = useCartStore();
 
-  const handleApplyPromo = () => {
+  const handleApplyPromo = async () => {
     setPromoError("");
     setPromoSuccess("");
-    if (promoCode.trim().toUpperCase() === "NONGSACK") {
-      setDiscount(15000);
-      setPromoSuccess("Áp dụng mã giảm giá 15.000đ thành công!");
-    } else if (!promoCode.trim()) {
-      setPromoError("Vui lòng nhập mã giảm giá");
+    const trimmedCode = promoCode.trim().toUpperCase();
+    if (!trimmedCode) {
+      const wasApplied = sessionStorage.getItem("appliedVoucherCode");
       setDiscount(0);
-    } else {
-      setPromoError("Mã giảm giá không chính xác");
+      sessionStorage.removeItem("appliedVoucherCode");
+      sessionStorage.removeItem("appliedVoucherDiscount");
+      sessionStorage.removeItem("appliedVoucherSellerId");
+      if (wasApplied) {
+        setPromoSuccess("Đã hủy áp dụng mã giảm giá");
+      } else {
+        setPromoError("Vui lòng nhập mã giảm giá");
+      }
+      return;
+    }
+
+    try {
+      const selectedItems = items.filter(item => selectedProductIds.includes(item.productId));
+      const response = await fetch("/api/vouchers/apply", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          code: trimmedCode,
+          items: selectedItems,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        setPromoError(data.error || "Mã giảm giá không hợp lệ");
+        setDiscount(0);
+        sessionStorage.removeItem("appliedVoucherCode");
+        sessionStorage.removeItem("appliedVoucherDiscount");
+        sessionStorage.removeItem("appliedVoucherSellerId");
+      } else {
+        setDiscount(data.discount);
+        setPromoSuccess(data.message || "Áp dụng mã giảm giá thành công!");
+        sessionStorage.setItem("appliedVoucherCode", trimmedCode);
+        sessionStorage.setItem("appliedVoucherDiscount", data.discount.toString());
+        sessionStorage.setItem("appliedVoucherSellerId", data.sellerId);
+      }
+    } catch (error: unknown) {
+      console.error("Lỗi khi áp dụng voucher:", error);
+      setPromoError("Đã xảy ra lỗi khi kết nối với máy chủ");
       setDiscount(0);
     }
   };
+
+  const handleClearPromo = () => {
+    setPromoCode("");
+    setDiscount(0);
+    setPromoError("");
+    setPromoSuccess("Đã hủy áp dụng mã giảm giá");
+    sessionStorage.removeItem("appliedVoucherCode");
+    sessionStorage.removeItem("appliedVoucherDiscount");
+    sessionStorage.removeItem("appliedVoucherSellerId");
+  };
+
+  useEffect(() => {
+    if (!mounted) return;
+    const code = sessionStorage.getItem("appliedVoucherCode");
+    if (code) {
+      const timer = window.setTimeout(() => {
+        void handleApplyPromo();
+      }, 100);
+      return () => window.clearTimeout(timer);
+    }
+  }, [selectedProductIds, mounted]);
 
   if (!mounted) {
     return (
@@ -285,12 +352,21 @@ export default function CartPage() {
                     }}
                     className="w-full sm:w-64 rounded-xl border border-outline-variant focus:border-primary p-sm bg-surface text-sm focus:outline-none"
                   />
-                  <button
-                    onClick={handleApplyPromo}
-                    className="px-md bg-primary text-white rounded-xl font-bold hover:opacity-95 transition-colors cursor-pointer text-sm"
-                  >
-                    Áp dụng
-                  </button>
+                  {discount > 0 ? (
+                    <button
+                      onClick={handleClearPromo}
+                      className="px-md bg-error text-white rounded-xl font-bold hover:opacity-95 transition-colors cursor-pointer text-sm"
+                    >
+                      Hủy
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleApplyPromo}
+                      className="px-md bg-primary text-white rounded-xl font-bold hover:opacity-95 transition-colors cursor-pointer text-sm"
+                    >
+                      Áp dụng
+                    </button>
+                  )}
                 </div>
                 {promoError && (
                   <p className="text-xs text-error font-semibold mt-1 pl-1">{promoError}</p>

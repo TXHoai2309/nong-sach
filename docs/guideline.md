@@ -20,6 +20,7 @@ http://localhost:3000
 3. Chọn danh mục để lọc sản phẩm theo nhóm.
 4. Dùng bộ sắp xếp để xem sản phẩm theo giá tăng dần hoặc giảm dần.
 5. Bấm `Chi tiết` để xem thông tin đầy đủ của sản phẩm.
+6. **Lưu sản phẩm yêu thích (Wishlist)**: Bấm vào biểu tượng trái tim ở góc trên bên trái thẻ sản phẩm để lưu lại xem sau.
 
 ## 3. Xem chi tiết sản phẩm
 
@@ -37,13 +38,16 @@ Tại trang chi tiết sản phẩm, người dùng có thể:
    - **Sao chép liên kết**: Lưu URL vào bộ nhớ tạm.
    - **Báo cáo sản phẩm**: Mở hộp thoại báo cáo vi phạm với lý do cụ thể.
    - **Bạn cần giúp đỡ?**: Hiển thị hotline hỗ trợ nhanh.
+9. **Yêu thích sản phẩm**: Bấm nút hình trái tim nằm cạnh menu tiện ích ở góc trên bên phải ảnh sản phẩm để lưu nhanh vào Wishlist.
+10. **Quản lý Danh sách yêu thích**: Truy cập **Trang cá nhân** -> chọn tab **"Yêu thích"** để xem toàn bộ danh sách sản phẩm đã lưu và thực hiện bỏ thích nhanh trực tiếp từ đây.
+
 
 ## 4. Xem chi tiết Cửa hàng (Shop Profile)
 
 Tại trang chi tiết cửa hàng (`/shop/[id]`), người dùng có thể:
 
 1. Xem ảnh bìa, logo đại diện, tên cửa hàng, slogan, địa điểm và các tiêu chuẩn chất lượng (như VietGAP, USDA Organic).
-2. **Theo dõi cửa hàng**: Bấm nút `+ Theo dõi` để theo dõi cửa hàng (số lượng "Người theo dõi" sẽ tự động tăng lên và nút chuyển sang `Đang theo dõi`).
+2. **Theo dõi cửa hàng**: Bấm nút `+ Theo dõi` để theo dõi cửa hàng (số lượng "Người theo dõi" sẽ tự động tăng lên và nút chuyển sang `Đang theo dõi`). Người dùng có thể quản lý danh sách các cửa hàng đã theo dõi bằng cách vào **Trang cá nhân** -> chọn tab **"Shop đã theo dõi"**. Tại đây có thể thực hiện bỏ theo dõi nhanh hoặc xem nhanh thông tin cửa hàng trực tiếp.
 3. Bấm `Nhắn tin` để kích hoạt mô phỏng hộp thoại trò chuyện với chủ vườn.
 4. Xem tab `Sản phẩm`: Lọc sản phẩm theo danh mục của shop, tìm kiếm sản phẩm trong shop, và sắp xếp theo giá cả hoặc tên gọi.
 5. Xem tab `Đánh giá`: Xem các đánh giá chi tiết từ khách hàng cũ về nhà vườn.
@@ -444,3 +448,28 @@ Tính năng này cho phép người mua gửi yêu cầu hoàn trả nếu sản
 7. Hệ thống sẽ tự động gửi thông báo kết quả kèm ghi chú của bạn cho người mua.
 
 *Lưu ý: Quản trị viên (Admin) chỉ quản lý tài khoản và sức khỏe hệ thống, không can thiệp vào các giao dịch hoàn trả cá nhân giữa người mua và người bán.*
+
+## 22. Hướng dẫn Tạo & Sử dụng Mã giảm giá (Seller Vouchers)
+
+Chức năng Mã giảm giá cho phép người bán tự thiết lập các chiến dịch khuyến mãi để thu hút khách hàng, và người mua áp dụng trực tiếp khi thanh toán.
+
+### 22.1. Đối với Người bán (Seller)
+
+1. Truy cập **Kênh người bán** > **Quản lý Khuyến mãi** (Vouchers).
+2. Hệ thống hiển thị giao diện Tạo voucher gồm các thông tin:
+   - **Mã voucher**: Nhập mã viết liền không dấu (hệ thống tự động in hoa và bỏ khoảng trắng, ví dụ: `SALEOFF20`).
+   - **Loại giảm giá**: Chọn giảm theo phần trăm (`%`) hoặc số tiền cố định (`VND`).
+   - **Giá trị giảm**: Nhập mức giảm mong muốn (ví dụ: `20` cho 20%, hoặc `50000` cho 50.000 VND).
+   - **Giới hạn số lần sử dụng**: Số lượt tối đa voucher được áp dụng (ví dụ: `50`).
+   - **Ngày hết hạn**: Chọn thời điểm voucher hết hiệu lực (voucher có giá trị sử dụng đến hết `23:59:59` của ngày được chọn).
+3. Bấm **"Tạo voucher"** để ghi nhận vào hệ thống. Danh sách voucher sẽ hiển thị chi tiết trạng thái, lượt dùng thực tế (`usedCount`) và ngày hết hạn.
+4. **Dừng voucher sớm**: Người bán có thể chủ động bấm nút **"Dừng sớm"** bên cạnh các voucher đang hoạt động để hủy kích hoạt lập tức.
+
+### 22.2. Đối với Người mua (Buyer)
+
+1. Thêm các sản phẩm của shop đó vào giỏ hàng.
+2. Tại trang **Giỏ hàng** hoặc trang **Thanh toán**, nhập mã giảm giá vào ô **"Mã giảm giá / Quà tặng"** và bấm **"Áp dụng"**.
+3. Hệ thống sẽ xác thực mã giảm giá trên máy chủ:
+   - **Áp dụng thành công**: Hiển thị thông báo thành công và khấu trừ trực tiếp số tiền chiết khấu vào phần tính tổng tiền của đơn hàng (chỉ áp dụng đối với tổng giá trị các sản phẩm của chính shop phát hành mã).
+   - **Lỗi áp dụng**: Hiển thị thông báo lỗi chi tiết nếu mã đã hết hạn, hết lượt sử dụng, bị dừng sớm hoặc giỏ hàng không chứa sản phẩm của shop phát hành mã.
+4. Chọn phương thức thanh toán (COD, Chuyển khoản hoặc VNPay) và hoàn tất đặt hàng. Số tiền giảm giá và mã voucher được ghi nhận trực tiếp vào hóa đơn của từng shop cụ thể sau khi đơn hàng được tách. Đồng thời, hệ thống sẽ tự động cập nhật số lượt đã dùng của voucher (`usedCount` +1) và lưu lại bản ghi lịch sử sử dụng vào bộ sưu tập `voucherHistories` trên Firestore để tiện theo dõi và kiểm toán.

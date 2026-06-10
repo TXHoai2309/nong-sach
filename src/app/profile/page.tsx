@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo, type FormEvent, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { collection, doc, getDocs, query, where } from "firebase/firestore";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import { formatCurrency } from "@/lib/format";
@@ -23,6 +23,12 @@ import { getAllProducts, addProduct, deleteProduct } from "@/lib/products";
 import { addReview, checkReviewedItems, getBaseProductId, getReviewsByOrderId } from "@/lib/reviews";
 import { Review } from "@/types/review";
 import { OrderTrackingTimeline } from "@/components/order/OrderTrackingTimeline";
+import { toggleFollow } from "@/lib/follows";
+import { getShopById, Shop } from "@/lib/shops";
+import { subscribeToUserWishlist } from "@/lib/wishlist";
+import ProductCard from "@/components/product/ProductCard";
+import { Voucher } from "@/types/voucher";
+import { createVoucher, stopVoucher, subscribeToSellerVouchers } from "@/lib/vouchers";
 
 const PROVINCES_API = "https://provinces.open-api.vn/api/v1/?depth=2";
 
@@ -56,7 +62,7 @@ const fallbackProvinces = [
   },
 ];
 
-type ProfileTab = "info" | "orders" | "addresses" | "password" | "notifications" | "seller";
+type ProfileTab = "info" | "orders" | "addresses" | "password" | "notifications" | "followed_shops" | "wishlist" | "seller";
 type ProfileGender = NonNullable<User["gender"]>;
 
 const normalizeVietnamPhone = (phone?: string) => {
@@ -161,7 +167,7 @@ function ProfileContent() {
   // Listen to tab URL query param
   useEffect(() => {
     if (tabParam) {
-      const validTabs: ProfileTab[] = ["info", "orders", "addresses", "password", "notifications", "seller"];
+      const validTabs: ProfileTab[] = ["info", "orders", "addresses", "password", "notifications", "followed_shops", "wishlist", "seller"];
       if (validTabs.includes(tabParam as ProfileTab)) {
         const timer = window.setTimeout(() => setActiveTab(tabParam as ProfileTab), 0);
         return () => window.clearTimeout(timer);
@@ -169,8 +175,9 @@ function ProfileContent() {
     }
   }, [tabParam]);
 
-  const [sellerSubTab, setSellerSubTab] = useState<"products" | "orders">("products");
+  const [sellerSubTab, setSellerSubTab] = useState<"products" | "orders" | "vouchers">("products");
   const [focusedSellerOrderId, setFocusedSellerOrderId] = useState<string | null>(null);
+  const [nowTime] = useState(() => Date.now());
 
   useEffect(() => {
     if (tabParam !== "seller") return;
@@ -180,6 +187,10 @@ function ProfileContent() {
     }
     if (sellerTabParam === "products") {
       const timer = window.setTimeout(() => setSellerSubTab("products"), 0);
+      return () => window.clearTimeout(timer);
+    }
+    if (sellerTabParam === "vouchers") {
+      const timer = window.setTimeout(() => setSellerSubTab("vouchers"), 0);
       return () => window.clearTimeout(timer);
     }
   }, [tabParam, sellerTabParam]);
@@ -293,6 +304,24 @@ function ProfileContent() {
   const [reviewComment, setReviewComment] = useState("");
   const [reviewImages, setReviewImages] = useState<string[]>([]);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+
+  // Followed shops states
+  const [followedShops, setFollowedShops] = useState<Shop[]>([]);
+  const [loadingFollowedShops, setLoadingFollowedShops] = useState(false);
+
+  // Wishlist states
+  const [wishlistProducts, setWishlistProducts] = useState<Product[]>([]);
+  const [loadingWishlist, setLoadingWishlist] = useState(false);
+
+  // Voucher states
+  const [shopVouchers, setShopVouchers] = useState<Voucher[]>([]);
+  const [isAddVoucherOpen, setIsAddVoucherOpen] = useState(false);
+  const [newVoucherCode, setNewVoucherCode] = useState("");
+  const [newVoucherType, setNewVoucherType] = useState<"percent" | "fixed">("percent");
+  const [newVoucherValue, setNewVoucherValue] = useState("");
+  const [newVoucherLimit, setNewVoucherLimit] = useState("");
+  const [newVoucherExpiry, setNewVoucherExpiry] = useState("");
+  const [isSubmittingVoucher, setIsSubmittingVoucher] = useState(false);
 
   // Show toast helper
   const showToast = (message: string, type: "success" | "error" = "success") => {
@@ -411,6 +440,71 @@ function ProfileContent() {
     }
   }, [mounted, activeTab, currentUser?.id, subscribeToUserOrders]);
 
+  // Subscribe to followed shops in real-time
+  useEffect(() => {
+    if (!mounted || !currentUser || activeTab !== "followed_shops") return;
+
+    const timer = window.setTimeout(() => setLoadingFollowedShops(true), 0);
+    const q = query(collection(db, "follows"), where("userId", "==", currentUser.id));
+    
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
+      const shopIds = snapshot.docs.map(doc => doc.data().shopId as string);
+      if (shopIds.length === 0) {
+        setFollowedShops([]);
+        setLoadingFollowedShops(false);
+        return;
+      }
+      
+      try {
+        const shopPromises = shopIds.map(id => getShopById(id));
+        const resolvedShops = (await Promise.all(shopPromises)).filter((s): s is Shop => s !== null);
+        setFollowedShops(resolvedShops);
+      } catch (err) {
+        console.error("Error fetching followed shops:", err);
+      } finally {
+        setLoadingFollowedShops(false);
+      }
+    }, (error) => {
+      console.error("Error listening to follows:", error);
+      setLoadingFollowedShops(false);
+    });
+
+    return () => {
+      window.clearTimeout(timer);
+      unsubscribe();
+    };
+  }, [mounted, currentUser, activeTab]);
+
+  // Subscribe to wishlist products in real-time
+  useEffect(() => {
+    if (!mounted || !currentUser || activeTab !== "wishlist") return;
+
+    const timer = window.setTimeout(() => setLoadingWishlist(true), 0);
+    
+    const unsubscribe = subscribeToUserWishlist(currentUser.id, async (productIds) => {
+      if (productIds.length === 0) {
+        setWishlistProducts([]);
+        setLoadingWishlist(false);
+        return;
+      }
+      
+      try {
+        const allProds = await getAllProducts(true);
+        const resolvedProducts = allProds.filter(p => productIds.includes(p.id));
+        setWishlistProducts(resolvedProducts);
+      } catch (err) {
+        console.error("Error fetching wishlist products:", err);
+      } finally {
+        setLoadingWishlist(false);
+      }
+    });
+
+    return () => {
+      window.clearTimeout(timer);
+      unsubscribe();
+    };
+  }, [mounted, currentUser, activeTab]);
+
   useEffect(() => {
     if (!mounted || !currentUser) return;
     if (activeTab === "seller" && sellerSubTab === "orders") {
@@ -418,6 +512,16 @@ function ProfileContent() {
       return () => unsubscribe();
     }
   }, [mounted, activeTab, sellerSubTab, currentUser?.id, subscribeToSellerOrders]);
+
+  useEffect(() => {
+    if (!mounted || !currentUser) return;
+    if (activeTab === "seller" && sellerSubTab === "vouchers") {
+      const unsubscribe = subscribeToSellerVouchers(currentUser.id, (vouchers) => {
+        setShopVouchers(vouchers);
+      });
+      return () => unsubscribe();
+    }
+  }, [mounted, activeTab, sellerSubTab, currentUser?.id]);
 
   useEffect(() => {
     if (activeTab !== "seller" || sellerSubTab !== "orders" || !focusedSellerOrderId) return;
@@ -1139,6 +1243,95 @@ function ProfileContent() {
     }
   };
 
+  const handleStopVoucher = async (code: string) => {
+    if (confirm(`Bạn có chắc muốn dừng sớm voucher ${code}?`)) {
+      try {
+        await stopVoucher(code);
+        showToast(`Đã dừng voucher ${code} thành công!`);
+      } catch (error) {
+        console.error(error);
+        showToast("Có lỗi xảy ra khi dừng voucher", "error");
+      }
+    }
+  };
+
+  const handleAddVoucherSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!currentUser) return;
+    const cleanCode = newVoucherCode.trim().toUpperCase();
+    
+    if (!cleanCode) {
+      showToast("Vui lòng nhập mã voucher", "error");
+      return;
+    }
+    if (!/^[A-Z0-9]+$/.test(cleanCode)) {
+      showToast("Mã voucher chỉ được chứa chữ cái và chữ số, không có khoảng trắng", "error");
+      return;
+    }
+    const val = Number(newVoucherValue);
+    if (Number.isNaN(val) || val <= 0) {
+      showToast("Giá trị giảm giá phải lớn hơn 0", "error");
+      return;
+    }
+    if (newVoucherType === "percent" && val > 100) {
+      showToast("Giá trị phần trăm giảm giá không được vượt quá 100%", "error");
+      return;
+    }
+    const lim = Number(newVoucherLimit);
+    if (Number.isNaN(lim) || lim <= 0 || !Number.isInteger(lim)) {
+      showToast("Giới hạn lượt dùng phải là số nguyên lớn hơn 0", "error");
+      return;
+    }
+    if (!newVoucherExpiry) {
+      showToast("Vui lòng chọn ngày hết hạn", "error");
+      return;
+    }
+    const expiryTime = new Date(`${newVoucherExpiry}T23:59:59`).getTime();
+    if (expiryTime < Date.now()) {
+      showToast("Ngày hết hạn phải ở trong tương lai", "error");
+      return;
+    }
+
+    setIsSubmittingVoucher(true);
+    try {
+      const { db } = await import("@/lib/firebase");
+      const { getDoc, doc } = await import("firebase/firestore");
+      const checkSnap = await getDoc(doc(db, "vouchers", cleanCode));
+      if (checkSnap.exists()) {
+        showToast("Mã voucher này đã tồn tại trên hệ thống", "error");
+        setIsSubmittingVoucher(false);
+        return;
+      }
+
+      const voucherData: Voucher = {
+        code: cleanCode,
+        sellerId: currentUser.id,
+        shopName: currentUser.sellerInfo?.shopName || "Shop của tôi",
+        type: newVoucherType,
+        value: val,
+        limit: lim,
+        usedCount: 0,
+        expiryDate: newVoucherExpiry,
+        status: "active",
+        createdAt: new Date().toISOString()
+      };
+
+      await createVoucher(voucherData);
+      showToast("Tạo voucher thành công!");
+      setNewVoucherCode("");
+      setNewVoucherType("percent");
+      setNewVoucherValue("");
+      setNewVoucherLimit("");
+      setNewVoucherExpiry("");
+      setIsAddVoucherOpen(false);
+    } catch (error) {
+      console.error(error);
+      showToast("Có lỗi xảy ra khi tạo voucher", "error");
+    } finally {
+      setIsSubmittingVoucher(false);
+    }
+  };
+
   const closeReviewModal = () => {
     setIsReviewModalOpen(false);
     setReviewComment("");
@@ -1519,6 +1712,8 @@ function ProfileContent() {
                     { id: "addresses", label: "Địa chỉ giao hàng", icon: "location_on" },
                     { id: "password", label: "Đổi mật khẩu", icon: "lock" },
                     { id: "notifications", label: "Thông báo", icon: "notifications" },
+                    { id: "followed_shops", label: "Shop đã theo dõi", icon: "storefront" },
+                    { id: "wishlist", label: "Yêu thích", icon: "favorite" },
                   ];
 
                   let sellerLabel = "Đăng ký bán hàng";
@@ -2543,6 +2738,122 @@ function ProfileContent() {
                 </div>
               </div>
             )}
+
+            {/* 5.5. FOLLOWED SHOPS TAB */}
+            {activeTab === "followed_shops" && (
+              <div className="rounded-3xl border border-[#bbcabf]/30 bg-white p-6 shadow-sm">
+                <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <h3 className="text-lg font-bold text-[#006c49]">Shop đã theo dõi</h3>
+                  <p className="text-xs font-medium text-[#3c4a42]/60">
+                    {followedShops.length > 0
+                      ? `Đang theo dõi ${followedShops.length} cửa hàng`
+                      : "Chưa theo dõi cửa hàng nào"}
+                  </p>
+                </div>
+                
+                {loadingFollowedShops ? (
+                  <div className="py-20 text-center text-[#3c4a42]/50 animate-pulse">
+                    <p className="text-sm font-bold">Đang tải danh sách cửa hàng...</p>
+                  </div>
+                ) : followedShops.length === 0 ? (
+                  <div className="py-16 text-center border border-dashed border-[#bbcabf]/30 rounded-2xl bg-slate-50/50">
+                    <span className="material-symbols-outlined text-4xl mb-2 text-[#3c4a42]/30">storefront</span>
+                    <h3 className="text-base font-bold text-[#3c4a42]">Bạn chưa theo dõi cửa hàng nào.</h3>
+                    <p className="text-xs text-[#3c4a42]/60 mt-1">Hãy khám phá các cửa hàng nông sản sạch và nhấn Theo dõi nhé!</p>
+                    <Link href="/products" className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-[#006c49] px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#005236] transition-all">
+                      Khám phá ngay
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {followedShops.map((item) => (
+                      <div key={item.id} className="p-4 border border-[#bbcabf]/20 bg-white rounded-2xl shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="relative w-12 h-12 overflow-hidden rounded-full border border-slate-100 shrink-0 bg-slate-50">
+                            <Image src={item.logo} alt={item.name} fill className="object-cover" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-bold text-on-surface text-sm line-clamp-1">{item.name}</h4>
+                            <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-on-surface-variant font-semibold">
+                              <div className="flex items-center gap-0.5 text-[#FFB800]">
+                                <span className="material-symbols-outlined text-[10px] [font-variation-settings:'FILL'_1]">star</span>
+                                <span>{item.rating}</span>
+                              </div>
+                              <span>•</span>
+                              <span>{item.standard}</span>
+                            </div>
+                          </div>
+                        </div>
+                        {item.slogan && (
+                          <p className="text-xs text-on-surface-variant/90 line-clamp-1 mb-4 italic leading-relaxed">&ldquo;{item.slogan}&rdquo;</p>
+                        )}
+                        <div className="flex items-center justify-between gap-2 border-t border-[#bbcabf]/10 pt-3">
+                          <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-on-surface-variant/80">
+                            <span className="material-symbols-outlined text-sm text-red-400">location_on</span>
+                            {item.location}
+                          </span>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={async () => {
+                                if (!currentUser) return;
+                                try {
+                                  await toggleFollow(currentUser.id, item.id);
+                                  showToast(`Đã bỏ theo dõi ${item.name}`, "success");
+                                } catch (e) {
+                                  console.error(e);
+                                  showToast("Có lỗi xảy ra khi bỏ theo dõi", "error");
+                                }
+                              }}
+                              className="inline-flex rounded-xl bg-slate-50 hover:bg-red-50 border border-slate-200 hover:border-red-200 text-xs font-bold text-slate-600 hover:text-red-600 transition-all px-3 py-1.5"
+                            >
+                              Bỏ theo dõi
+                            </button>
+                            <Link href={`/shop/${item.id}`} className="inline-flex rounded-xl bg-[#e6f4ea] hover:bg-[#d8efe0] border border-[#006c49]/10 text-xs font-bold text-[#006c49] transition-all px-3.5 py-1.5">
+                              Xem shop
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 5.6. WISHLIST TAB */}
+            {activeTab === "wishlist" && (
+              <div className="rounded-3xl border border-[#bbcabf]/30 bg-white p-6 shadow-sm">
+                <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <h3 className="text-lg font-bold text-[#006c49]">Sản phẩm yêu thích</h3>
+                  <p className="text-xs font-medium text-[#3c4a42]/60">
+                    {wishlistProducts.length > 0
+                      ? `Có ${wishlistProducts.length} sản phẩm trong danh sách`
+                      : "Chưa có sản phẩm yêu thích"}
+                  </p>
+                </div>
+                
+                {loadingWishlist ? (
+                  <div className="py-20 text-center text-[#3c4a42]/50 animate-pulse">
+                    <p className="text-sm font-bold">Đang tải danh sách yêu thích...</p>
+                  </div>
+                ) : wishlistProducts.length === 0 ? (
+                  <div className="py-16 text-center border border-dashed border-[#bbcabf]/30 rounded-2xl bg-slate-50/50">
+                    <span className="material-symbols-outlined text-4xl mb-2 text-[#3c4a42]/30">favorite</span>
+                    <h3 className="text-base font-bold text-[#3c4a42]">Danh sách yêu thích trống.</h3>
+                    <p className="text-xs text-[#3c4a42]/60 mt-1">Hãy thêm các nông sản tươi sạch bạn yêu thích để lưu lại tại đây!</p>
+                    <Link href="/products" className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-[#006c49] px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#005236] transition-all">
+                      Xem sản phẩm
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {wishlistProducts.map((item) => (
+                      <ProductCard key={item.id} product={item} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
             {/* 6. SELLER REGISTRATION & CHANNEL TAB */}
             {activeTab === "seller" && (
               <div className="space-y-6">
@@ -3351,9 +3662,19 @@ function ProfileContent() {
                           </span>
                         )}
                       </button>
+                      <button
+                        onClick={() => setSellerSubTab("vouchers")}
+                        className={`pb-3 text-sm font-bold transition-all ${
+                          sellerSubTab === "vouchers"
+                            ? "border-b-2 border-[#006c49] text-[#006c49]"
+                            : "text-[#3c4a42]/50 hover:text-[#3c4a42]"
+                        }`}
+                      >
+                        Khuyến mãi & Vouchers
+                      </button>
                     </div>
 
-                    {sellerSubTab === "products" ? (
+                    {sellerSubTab === "products" && (
                       <div className="rounded-3xl border border-[#bbcabf]/30 bg-white p-6 shadow-sm">
                         <div className="flex justify-between items-center mb-6">
                           <h4 className="text-sm font-bold text-[#006c49] flex items-center gap-2">
@@ -3496,7 +3817,9 @@ function ProfileContent() {
                           </div>
                         )}
                       </div>
-                    ) : (
+                    )}
+
+                    {sellerSubTab === "orders" && (
                       <div className="rounded-3xl border border-[#bbcabf]/30 bg-white p-6 shadow-sm">
                         <h4 className="text-sm font-bold text-[#006c49] flex items-center gap-2 mb-6">
                           <span className="material-symbols-outlined text-base">shopping_bag</span>
@@ -3686,6 +4009,114 @@ function ProfileContent() {
                               </div>
                               );
                             })}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {sellerSubTab === "vouchers" && (
+                      <div className="rounded-3xl border border-[#bbcabf]/30 bg-white p-6 shadow-sm">
+                        <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
+                          <h4 className="text-sm font-bold text-[#006c49] flex items-center gap-2">
+                            <span className="material-symbols-outlined text-base">local_offer</span>
+                            Chương trình khuyến mãi & Vouchers
+                          </h4>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (currentUser?.sellerStatus === "blocked") {
+                                alert("Cửa hàng của bạn đang bị khóa, không thể tạo voucher mới!");
+                              } else {
+                                setIsAddVoucherOpen(true);
+                              }
+                            }}
+                            className="rounded-full bg-[#006c49] px-4 py-2 text-xs font-bold text-white shadow-sm hover:opacity-90 transition-all flex items-center gap-1"
+                          >
+                            <span className="material-symbols-outlined text-sm">add</span>
+                            Tạo voucher mới
+                          </button>
+                        </div>
+
+                        {shopVouchers.length === 0 ? (
+                          <div className="py-14 text-center text-[#3c4a42]/60">
+                            <span className="material-symbols-outlined mb-2 text-[48px] text-[#3c4a42]/30">
+                              local_offer
+                            </span>
+                            <p className="text-xs font-bold">Cửa hàng chưa có mã giảm giá nào.</p>
+                            <p className="text-[10px] text-[#3c4a42]/50 mt-1">Bấm nút &quot;Tạo voucher mới&quot; ở trên để tạo mã khuyến mãi thu hút khách hàng nhé.</p>
+                          </div>
+                        ) : (
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-left text-xs border-collapse">
+                              <thead>
+                                <tr className="border-b border-[#bbcabf]/25 text-[#3c4a42]/50 font-bold">
+                                  <th className="pb-3 pr-2">Mã voucher</th>
+                                  <th className="pb-3 pr-2">Loại giảm giá</th>
+                                  <th className="pb-3 pr-2">Giá trị</th>
+                                  <th className="pb-3 pr-2">Lượt dùng (Đã dùng/Tối đa)</th>
+                                  <th className="pb-3 pr-2">Ngày hết hạn</th>
+                                  <th className="pb-3 pr-2">Trạng thái</th>
+                                  <th className="pb-3 pr-2 text-right">Thao tác</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-[#bbcabf]/15">
+                                {shopVouchers.map((v) => {
+                                  const isExpired = new Date(`${v.expiryDate}T23:59:59`).getTime() < nowTime;
+                                  const isOutOfUses = v.usedCount >= v.limit;
+                                  const isActive = v.status === "active" && !isExpired && !isOutOfUses;
+
+                                  return (
+                                    <tr key={v.code} className="text-[#3c4a42]">
+                                      <td className="py-3 pr-2 font-mono font-bold text-sm text-[#006c49]">{v.code}</td>
+                                      <td className="py-3 pr-2 font-semibold">
+                                        {v.type === "percent" ? "Theo phần trăm (%)" : "Số tiền cố định"}
+                                      </td>
+                                      <td className="py-3 pr-2 font-extrabold text-[#006c49]">
+                                        {v.type === "percent" ? `${v.value}%` : `${formatCurrency(v.value)}`}
+                                      </td>
+                                      <td className="py-3 pr-2 font-semibold">
+                                        <div className="flex items-center gap-2">
+                                          <span className="font-bold">{v.usedCount}</span>
+                                          <span className="text-gray-300">/</span>
+                                          <span className="text-gray-500">{v.limit}</span>
+                                        </div>
+                                      </td>
+                                      <td className="py-3 pr-2 font-semibold">{v.expiryDate}</td>
+                                      <td className="py-3 pr-2 font-semibold">
+                                        {v.status === "stopped" ? (
+                                          <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 px-2 py-1 text-xs font-bold text-gray-500">
+                                            Đã dừng
+                                          </span>
+                                        ) : isOutOfUses ? (
+                                          <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-1 text-xs font-bold text-red-600">
+                                            Hết lượt dùng
+                                          </span>
+                                        ) : isExpired ? (
+                                          <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-1 text-xs font-bold text-rose-600">
+                                            Hết hạn
+                                          </span>
+                                        ) : (
+                                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-700">
+                                            Đang chạy
+                                          </span>
+                                        )}
+                                      </td>
+                                      <td className="py-3 pr-2 text-right">
+                                        {isActive && (
+                                          <button
+                                            type="button"
+                                            onClick={() => handleStopVoucher(v.code)}
+                                            className="rounded-full bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 px-3 py-1.5 text-[10px] font-bold transition-all shadow-sm cursor-pointer border border-red-200/50"
+                                          >
+                                            Dừng sớm
+                                          </button>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
                           </div>
                         )}
                       </div>
@@ -4376,6 +4807,122 @@ function ProfileContent() {
                                 ) : (
                                   "Lưu thay đổi"
                                 )}
+                              </button>
+                            </div>
+                          </form>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Add Voucher Modal Dialog */}
+                    {isAddVoucherOpen && (
+                      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                        <div className="w-full max-w-[450px] rounded-3xl bg-white p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+                          <div className="flex justify-between items-center border-b border-[#bbcabf]/20 pb-3">
+                            <h4 className="text-sm font-bold text-[#006c49] flex items-center gap-1.5">
+                              <span className="material-symbols-outlined text-base">local_offer</span>
+                              Tạo voucher khuyến mãi mới
+                            </h4>
+                            <button
+                              type="button"
+                              onClick={() => setIsAddVoucherOpen(false)}
+                              className="text-gray-400 hover:text-gray-600 flex h-7 w-7 items-center justify-center rounded-full hover:bg-gray-100"
+                            >
+                              ✕
+                            </button>
+                          </div>
+
+                          <form onSubmit={handleAddVoucherSubmit} className="space-y-4 text-left">
+                            {/* Voucher Code */}
+                            <div>
+                              <label className="block text-[11px] font-bold text-[#3c4a42]/70 mb-1">
+                                Mã voucher (Viết liền không dấu, viết hoa) *
+                              </label>
+                              <input
+                                type="text"
+                                value={newVoucherCode}
+                                onChange={(e) => setNewVoucherCode(e.target.value.toUpperCase())}
+                                placeholder="Ví dụ: NONGSANXANH10, TOT20"
+                                className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-2.5 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49] font-mono"
+                                required
+                              />
+                            </div>
+
+                            {/* Discount Type */}
+                            <div>
+                              <label className="block text-[11px] font-bold text-[#3c4a42]/70 mb-1">
+                                Loại giảm giá *
+                              </label>
+                              <select
+                                value={newVoucherType}
+                                onChange={(e) => setNewVoucherType(e.target.value as "percent" | "fixed")}
+                                className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-2.5 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                                required
+                              >
+                                <option value="percent">Giảm theo phần trăm (%)</option>
+                                <option value="fixed">Giảm số tiền cố định (đ)</option>
+                              </select>
+                            </div>
+
+                            {/* Value */}
+                            <div>
+                              <label className="block text-[11px] font-bold text-[#3c4a42]/70 mb-1">
+                                {newVoucherType === "percent" ? "Phần trăm giảm (%) *" : "Số tiền giảm (đ) *"}
+                              </label>
+                              <input
+                                type="number"
+                                value={newVoucherValue}
+                                onChange={(e) => setNewVoucherValue(e.target.value)}
+                                placeholder={newVoucherType === "percent" ? "Ví dụ: 10, 15" : "Ví dụ: 20000, 50000"}
+                                className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-2.5 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                                required
+                              />
+                            </div>
+
+                            {/* Limit */}
+                            <div>
+                              <label className="block text-[11px] font-bold text-[#3c4a42]/70 mb-1">
+                                Giới hạn lượt sử dụng *
+                              </label>
+                              <input
+                                type="number"
+                                value={newVoucherLimit}
+                                onChange={(e) => setNewVoucherLimit(e.target.value)}
+                                placeholder="Ví dụ: 50, 100"
+                                className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-2.5 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                                required
+                              />
+                            </div>
+
+                            {/* Expiry Date */}
+                            <div>
+                              <label className="block text-[11px] font-bold text-[#3c4a42]/70 mb-1">
+                                Ngày hết hạn (Voucher có hiệu lực đến hết ngày này) *
+                              </label>
+                              <input
+                                type="date"
+                                value={newVoucherExpiry}
+                                onChange={(e) => setNewVoucherExpiry(e.target.value)}
+                                className="w-full rounded-xl border-none bg-[#f4f6fa] px-3.5 py-2.5 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                                required
+                              />
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex justify-end gap-2 pt-2 border-t border-[#bbcabf]/15">
+                              <button
+                                type="button"
+                                onClick={() => setIsAddVoucherOpen(false)}
+                                className="rounded-full border border-[#bbcabf] px-5 py-2 text-xs font-bold text-[#3c4a42] transition hover:bg-[#f4f6fa] cursor-pointer"
+                              >
+                                Hủy bỏ
+                              </button>
+                              <button
+                                type="submit"
+                                disabled={isSubmittingVoucher}
+                                className="rounded-full bg-[#006c49] px-6 py-2 text-xs font-bold text-white transition hover:opacity-90 shadow-sm disabled:opacity-50 cursor-pointer"
+                              >
+                                {isSubmittingVoucher ? "Đang xử lý..." : "Tạo voucher"}
                               </button>
                             </div>
                           </form>

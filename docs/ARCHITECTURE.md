@@ -243,6 +243,8 @@ interface Order {
   vnp_ResponseCode?: string;
   trackingCode?: string;
   trackingUrl?: string;
+  voucherCode?: string;
+  discountAmount?: number;
 }
 
 ```
@@ -268,6 +270,37 @@ interface Shop {
   description: string
   farmImages: string[]
   mainCategories: string[]
+}
+```
+
+## Voucher
+
+```ts
+interface Voucher {
+  code: string;
+  sellerId: string;
+  shopName: string;
+  type: "percent" | "fixed";
+  value: number;
+  limit: number;
+  usedCount: number;
+  expiryDate: string;
+  status: "active" | "stopped";
+  createdAt: string;
+}
+```
+
+## Voucher History
+
+```ts
+interface VoucherHistory {
+  id: string;
+  voucherCode: string;
+  userId: string;
+  orderId: string;
+  discountAmount: number;
+  sellerId: string;
+  usedAt: string;
 }
 ```
 
@@ -413,6 +446,31 @@ fetchOrdersBySellerId(sellerId: string)
 
 * Quản lý trạng thái đơn hàng và lịch sử mua sắm/bán hàng trên Firestore.
 * **Cập nhật mã vận đơn**: Cho phép người bán nhập mã vận đơn GHN cho các đơn hàng đang xử lý. Hệ thống tự động tạo link tra cứu GHN và gửi thông báo cho người mua.
+
+---
+
+## Vouchers Utility
+
+File:
+
+```text
+src/lib/vouchers.ts
+```
+
+### Core Functions
+
+```ts
+createVoucher(voucher: Voucher)
+stopVoucher(code: string)
+subscribeToSellerVouchers(sellerId: string, callback: (vouchers: Voucher[]) => void)
+incrementVoucherUsage(code: string)
+saveVoucherHistory(history: { voucherCode: string, userId: string, orderId: string, discountAmount: number, sellerId: string })
+```
+
+### Business Rules
+
+* **Xác thực và Áp dụng (Server-side Apply)**: Endpoint `/api/vouchers/apply` thực hiện xác thực và trả về discount. Check 4 case: không tồn tại, hết hạn, hết lượt, đã dừng hoạt động.
+* **Cập nhật và Ghi log Lịch sử**: Khi đơn hàng được đặt thành công (qua COD/Bank hoặc cổng VNPay), tự động tăng `usedCount` của voucher đồng thời lưu một bản ghi lịch sử sử dụng vào collection `voucherHistories` trong Firestore.
 
 ---
 

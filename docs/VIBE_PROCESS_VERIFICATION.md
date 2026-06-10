@@ -1,9 +1,9 @@
 # 🛡️ VIBE PROCESS VERIFICATION
 
-> **Tài liệu chứng minh quy trình phát triển và kiểm định chất lượng sản phẩm (Plan — Doc — Build — Test) trước khi xuất xưởng (Ship) phiên bản NôngSạch MVP v0.7.6.**
+> **Tài liệu chứng minh quy trình phát triển và kiểm định chất lượng sản phẩm (Plan — Doc — Build — Test) trước khi xuất xưởng (Ship) phiên bản NôngSạch MVP v0.8.2.**
 > 
 > * **Dự án**: NôngSạch — Nền tảng giao dịch nông sản sạch
-> * **Phiên bản**: v0.7.6
+> * **Phiên bản**: v0.8.2
 > * **Ngày xác nhận**: 10/06/2026
 > * **Quy trình áp dụng**: Vibe Coding Standard (Plan ➔ Doc ➔ Build ➔ Test)
 > * **Trạng thái**: ✅ **ĐÃ THÔNG QUA (PASSED) & SẴN SÀNG SHIP**
@@ -46,6 +46,7 @@ Trước khi thực hiện bất kỳ thay đổi nào trong mã nguồn, hệ t
   - **Bảo mật Quản trị & Tối ưu Dashboard (Sprint 5.7)**: Thiết lập khóa quyền Admin duy nhất cho `admin@nongsach.vn`, vô hiệu hóa thăng cấp Admin cho các tài khoản khác. Loại bỏ các chỉ số bán hàng (doanh thu, đơn hàng, biểu đồ) khỏi trang Admin để tập trung vào quản lý nhân sự và hệ thống.
   - **Nhập mã vận đơn & Theo dõi đơn hàng GHN (Sprint 5.8)**: Cơ chế cập nhật thời gian thực bằng Firestore onSnapshot, tích hợp Component Timeline hợp nhất cho trang Cá nhân và Hoàn tất đơn hàng.
   - **Hệ thống Yêu cầu Hoàn trả Đơn hàng (Sprint 5.9)**: Cho phép người mua gửi yêu cầu hoàn trả kèm lý do và ảnh minh chứng cho đơn hàng `delivered`. Tự động lưu vào collection `refundRequests` và thông báo cho Seller/Admin.
+  - **Tích hợp Voucher tại Checkout & Lịch sử sử dụng (Sprint 6.0)**: Cho phép áp dụng voucher trực tiếp tại trang checkout, tính toán chiết khấu và khấu trừ trực tiếp vào tổng tiền của đơn hàng. Thiết kế cơ chế validation server-side với 4 lỗi (mã không tồn tại, mã hết hạn, mã hết lượt, mã đã dừng hoạt động). Tự động cập nhật `usedCount` +1 của voucher và ghi nhận lịch sử dùng voucher vào collection `voucherHistories` trong Firestore cho cả phương thức COD/Bank và thanh toán online VNPay.
 
 ---
 
@@ -199,6 +200,9 @@ Các ảnh chụp màn hình và video kiểm thử được lưu trữ trực t
 | **TC-57: Tối ưu Dashboard Admin** | Truy cập trang Dashboard Admin và kiểm tra các thành phần chỉ số/biểu đồ. | Các thẻ doanh thu/đơn hàng và biểu đồ hiệu suất đã được gỡ bỏ. Dashboard hiển thị sạch sẽ 2 thẻ KPI về nhân sự. | ✅ Pass |
 | **TC-58: Gửi yêu cầu hoàn trả** | Người mua chọn lý do, nhập mô tả và tải 3 ảnh minh chứng trong modal hoàn trả. | Yêu cầu được lưu vào Firestore collection `refundRequests`. Trạng thái đơn hàng chuyển sang `refunding`. | ✅ Pass |
 | **TC-59: Thông báo yêu cầu hoàn trả** | Sau khi người mua gửi yêu cầu hoàn trả thành công. | Người bán nhận được thông báo chuông về yêu cầu hoàn trả mới của mã đơn hàng đó để kịp thời xử lý. | ✅ Pass |
+| **TC-60: Áp dụng Voucher & Khấu trừ tại Checkout** | Nhập mã voucher `VALID10` tại trang checkout và click Áp dụng. | Thông báo thành công hiển thị, Tổng tiền được khấu trừ đúng 10.000₫. | ✅ Pass |
+| **TC-61: Validation 4 Case lỗi Voucher** | Thử nhập lần lượt các mã voucher không hợp lệ (Không tồn tại, hết hạn, hết lượt, đã dừng). | Hệ thống chặn và hiển thị đúng 4 thông báo lỗi tương ứng từ server-side. | ✅ Pass |
+| **TC-62: Ghi nhận usedCount & Lịch sử sử dụng** | Tiến hành đặt hàng thành công (COD hoặc VNPay) có áp dụng voucher `VALID10`. | Trường `usedCount` của voucher tăng thêm 1, đồng thời 1 record mới được lưu vào collection `voucherHistories`. | ✅ Pass |
 
 ---
 
