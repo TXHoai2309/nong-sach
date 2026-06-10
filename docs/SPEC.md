@@ -82,6 +82,7 @@ Người tiêu dùng ngày càng lo ngại về an toàn thực phẩm, đặc b
 | F-25 | Xử lý báo cáo vi phạm | Quyết định xử lý của Admin (Bỏ qua/Cảnh báo/Khóa tạm/Xóa đối tượng) và ghi log kiểm toán Firestore | P1      | ✅ Done     |
 | F-26 | Nhập mã vận đơn & Theo dõi đơn hàng | Người bán nhập mã GHN, hệ thống tự tạo link tra cứu và thông báo cho người mua | P1      | ✅ Done     |
 | F-27 | Yêu cầu hoàn trả đơn hàng | Người mua gửi yêu cầu hoàn trả kèm lý do và ảnh minh chứng cho đơn hàng đã giao | P1      | ✅ Done     |
+| F-28 | Phân xử hoàn trả (Admin Mediation) | Admin phân xử yêu cầu hoàn trả (Chấp nhận/Từ chối), ghi log và thông báo 2 bên | P1      | ✅ Done     |
 
 
 > **Ghi chú cho team:** F-09 hiện đã có giao diện hoàn chỉnh theo Stitch HTML tại route `/contact`. Form liên hệ đang ở mức UI/UX MVP; nếu cần gửi dữ liệu thật, cần bổ sung API/Firebase handler ở Phase 2. Kênh bán hàng (F-11), Quản lý sản phẩm (F-12) và Trang chi tiết shop (F-14) hiện được lưu động tại `localStorage` phía client của từng người dùng để mô phỏng tính năng thực tế.

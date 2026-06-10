@@ -4,6 +4,24 @@ All notable changes to the **NôngSạch** project will be documented in this fi
 
 The format is based on **Keep a Changelog** and this project adheres to **Semantic Versioning**.
 
+## [0.7.6] - 2026-06-10
+
+### Phân xử Hoàn trả Đơn hàng (Admin Refund Mediation)
+
+### Added
+* **Tab Hoàn trả tại Admin Dashboard**: Admin có thể xem danh sách các yêu cầu hoàn trả đang chờ xử lý (`pending`) trực tiếp trong hàng đợi kiểm duyệt (Approvals Queue).
+* **Modal Phân xử Hoàn trả**: Giao diện chi tiết cho Admin xem xét lý do, mô tả và bằng chứng hình ảnh do người mua cung cấp, đồng thời có thông tin người bán liên quan.
+* **Quyết định phân xử (Mediation)**: 
+  - Admin có quyền can thiệp vào tranh chấp bằng cách **"Chấp nhận hoàn trả"** hoặc **"Từ chối"** yêu cầu hoàn trả.
+  - Yêu cầu nhập ghi chú quyết định từ Admin.
+* **Thông báo Phân xử**: Hệ thống tự động gửi Notification thông báo kết quả (kèm ghi chú của Admin) cho **cả Người mua và Người bán** để đảm bảo tính minh bạch.
+* **Log kiểm toán**: Hành động phân xử hoàn trả của Admin được tự động lưu vào bộ sưu tập `adminLogs` trên Firestore.
+
+### Changed
+* Cập nhật `order-store.ts` với hàm `adminMediateRefund` để xử lý logic backend, thay đổi trạng thái hoàn trả và ghi log.
+
+---
+
 ## [0.7.5] - 2026-06-10
 
 ### Hoàn thiện luồng Hoàn trả Đơn hàng (End-to-End Refund Processing Flow)
