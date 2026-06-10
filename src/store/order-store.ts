@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { Order, OrderStatus } from "@/types/order";
 import { RefundRequest } from "@/types/refund";
 import { db } from "@/lib/firebase";
-import { collection, doc, setDoc, updateDoc, query, where, getDocs, onSnapshot, Unsubscribe } from "firebase/firestore";
+import { collection, doc, setDoc, updateDoc, query, where, getDocs, getDoc, onSnapshot, Unsubscribe } from "firebase/firestore";
 
 interface OrderState {
   orders: Order[];
@@ -13,6 +13,7 @@ interface OrderState {
   requestRefund: (refundData: Omit<RefundRequest, "id" | "status" | "createdAt">) => Promise<void>;
   getRefundRequest: (refundRequestId: string) => Promise<RefundRequest | null>;
   processRefund: (orderId: string, refundRequestId: string, status: "approved" | "rejected", note?: string) => Promise<void>;
+  adminMediateRefund: (orderId: string, refundRequestId: string, status: "approved" | "rejected", adminNote: string, adminId: string, adminEmail: string) => Promise<void>;
   getOrdersByUserId: (userId: string) => Promise<Order[]>;
   getOrdersBySellerId: (sellerId: string) => Promise<Order[]>;
   fetchOrdersByUserId: (userId: string) => Promise<void>;
@@ -133,6 +134,73 @@ export const useOrderStore = create<OrderState>()((set) => ({
       }));
     } catch (error) {
       console.error("Lỗi processRefund:", error);
+      throw error;
+    }
+  },
+
+  adminMediateRefund: async (orderId, refundRequestId, status, adminNote, adminId, adminEmail) => {
+    try {
+      const refundRef = doc(db, "refundRequests", refundRequestId);
+      const orderRef = doc(db, "orders", orderId);
+
+      const orderSnap = await getDoc(orderRef);
+      if (!orderSnap.exists()) {
+        throw new Error("Không tìm thấy đơn hàng");
+      }
+      const orderData = orderSnap.data() as Order;
+
+      if (status === "approved" && orderData.paymentMethod !== "cod") {
+        // Trigger VNPay Refund API
+        try {
+          const res = await fetch("/api/vnpay/refund", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              orderId: orderData.id,
+              amount: orderData.totalAmount,
+              transDate: orderData.createdAt,
+              transNo: orderData.vnp_TransactionNo,
+              adminId
+            })
+          });
+          if (!res.ok) {
+            console.warn("Cảnh báo: Lỗi khi gọi VNPay Refund API (Sandbox).");
+          }
+        } catch (apiError) {
+          console.error("Lỗi gọi API Refund VNPay:", apiError);
+        }
+      }
+
+      const updateData: any = { status, updatedAt: new Date().toISOString() };
+      updateData.adminNote = adminNote;
+
+      await updateDoc(refundRef, updateData);
+
+      const newOrderStatus: OrderStatus = status === "approved" ? "refunded" : "delivered";
+      await updateDoc(orderRef, { status: newOrderStatus });
+
+      // Log the admin action
+      const logRef = doc(collection(db, "adminLogs"));
+      await setDoc(logRef, {
+        id: logRef.id,
+        adminId,
+        adminEmail,
+        action: status === "approved" ? "approve_refund" : "reject_refund",
+        targetType: "order",
+        targetId: orderId,
+        targetName: `Yêu cầu hoàn trả ${refundRequestId}`,
+        details: adminNote,
+        createdAt: new Date().toISOString()
+      });
+
+      // Update local state
+      set((state) => ({
+        orders: state.orders.map((order) =>
+          order.id === orderId ? { ...order, status: newOrderStatus } : order
+        ),
+      }));
+    } catch (error) {
+      console.error("Lỗi adminMediateRefund:", error);
       throw error;
     }
   },

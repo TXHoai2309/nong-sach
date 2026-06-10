@@ -11,6 +11,9 @@ import { useNotificationStore } from "@/store/notification-store";
 import { Product } from "@/types/product";
 import { getAllProducts } from "@/lib/products";
 import { Report } from "@/types/report";
+import { RefundRequest } from "@/types/refund";
+import { useOrderStore } from "@/store/order-store";
+import Image from "next/image";
 
 interface AdminLog {
   id: string;
@@ -40,7 +43,7 @@ export default function AdminDashboardPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isRejectProductModalOpen, setIsRejectProductModalOpen] = useState(false);
   const [rejectProductReason, setRejectProductReason] = useState("");
-  const [approvalTab, setApprovalTab] = useState<"sellers" | "products" | "reports">("sellers");
+  const [approvalTab, setApprovalTab] = useState<"sellers" | "products" | "reports" | "refunds">("sellers");
 
   const [reports, setReports] = useState<Report[]>([]);
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
@@ -49,8 +52,15 @@ export default function AdminDashboardPage() {
   const [actionReason, setActionReason] = useState("");
   const [adminLogs, setAdminLogs] = useState<AdminLog[]>([]);
 
+  const [refundRequests, setRefundRequests] = useState<RefundRequest[]>([]);
+  const [selectedRefund, setSelectedRefund] = useState<RefundRequest | null>(null);
+  const [isRefundActionModalOpen, setIsRefundActionModalOpen] = useState(false);
+  const [refundActionType, setRefundActionType] = useState<"approved" | "rejected" | null>(null);
+  const [refundAdminNote, setRefundAdminNote] = useState("");
+
   const approveSeller = useAuthStore((s) => s.approveSeller);
   const { currentUser } = useAuthStore();
+  const adminMediateRefund = useOrderStore((s) => s.adminMediateRefund);
 
   const fetchData = async () => {
     setLoading(true);
@@ -77,6 +87,16 @@ export default function AdminDashboardPage() {
       });
       fetchedReports.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       setReports(fetchedReports);
+
+      // Fetch refund requests
+      const refundsCol = collection(db, "refundRequests");
+      const refundsSnap = await getDocs(refundsCol);
+      const fetchedRefunds: RefundRequest[] = [];
+      refundsSnap.forEach((docSnap) => {
+        fetchedRefunds.push(docSnap.data() as RefundRequest);
+      });
+      fetchedRefunds.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setRefundRequests(fetchedRefunds);
 
       // Fetch admin logs
       const logsCol = collection(db, "adminLogs");
@@ -483,6 +503,62 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleResolveReport = async (reportId: string, status: "resolved" | "dismissed", action: string, note?: string) => {
+    // ... logic for reports ...
+  };
+
+  const handleMediateRefund = async () => {
+    if (!selectedRefund || !refundActionType || !currentUser) return;
+
+    if (!refundAdminNote.trim()) {
+      alert("Vui lòng nhập lý do/ghi chú phân xử!");
+      return;
+    }
+
+    setActionLoading("refund-action");
+    try {
+      await adminMediateRefund(
+        selectedRefund.orderId,
+        selectedRefund.id,
+        refundActionType,
+        refundAdminNote.trim(),
+        currentUser.id,
+        currentUser.email
+      );
+
+      const statusLabel = refundActionType === "approved" ? "chấp nhận" : "bác bỏ";
+      
+      // Notify Buyer
+      await useNotificationStore.getState().addNotification({
+        userId: selectedRefund.userId,
+        title: `Phân xử hoàn trả: ${statusLabel}`,
+        message: `Admin đã ${statusLabel} yêu cầu hoàn trả cho đơn hàng #${selectedRefund.orderId}. Ghi chú: ${refundAdminNote.trim()}`,
+        type: "order_update",
+        orderId: selectedRefund.orderId,
+      });
+
+      // Notify Seller
+      await useNotificationStore.getState().addNotification({
+        userId: selectedRefund.sellerId,
+        title: `Phân xử hoàn trả: ${statusLabel}`,
+        message: `Admin đã ${statusLabel} yêu cầu hoàn trả cho đơn hàng #${selectedRefund.orderId} của khách hàng. Ghi chú: ${refundAdminNote.trim()}`,
+        type: "order_update",
+        orderId: selectedRefund.orderId,
+      });
+
+      setIsRefundActionModalOpen(false);
+      setSelectedRefund(null);
+      setRefundAdminNote("");
+      setRefundActionType(null);
+      await fetchData();
+    } catch (error) {
+      console.error("Error mediating refund:", error);
+      alert("Xử lý hoàn trả thất bại!");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex h-[400px] items-center justify-center">
@@ -501,6 +577,12 @@ export default function AdminDashboardPage() {
   const pendingSellersList = users.filter((u) => u.sellerStatus === "pending");
   const pendingProductsList = products.filter((p) => p.status === "pending");
   const pendingReportsList = reports.filter((r) => r.status === "pending");
+  
+  const pendingRefundsList = refundRequests.filter((r) => r.status === "pending");
+  const overdueRefundsCount = pendingRefundsList.filter((r) => {
+    const hoursSince = (Date.now() - new Date(r.createdAt).getTime()) / (1000 * 60 * 60);
+    return hoursSince > 48;
+  }).length;
 
   return (
     <>
@@ -574,6 +656,22 @@ export default function AdminDashboardPage() {
               ].join(" ")}
             >
               Báo Cáo ({pendingReportsList.length})
+            </button>
+            <button
+              onClick={() => setApprovalTab("refunds")}
+              className={[
+                "flex-1 pb-3 text-center transition-all border-b-2 cursor-pointer bg-transparent whitespace-nowrap",
+                approvalTab === "refunds"
+                  ? "border-[#006c49] text-[#006c49]"
+                  : "border-transparent text-slate-500 hover:text-slate-700",
+              ].join(" ")}
+            >
+              Hoàn Trả ({pendingRefundsList.length})
+              {overdueRefundsCount > 0 && (
+                <span className="ml-1 inline-flex items-center justify-center w-4 h-4 text-[10px] bg-rose-500 text-white rounded-full">
+                  !
+                </span>
+              )}
             </button>
           </div>
 
@@ -651,7 +749,7 @@ export default function AdminDashboardPage() {
                   </div>
                 ))
               )
-            ) : (
+            ) : approvalTab === "reports" ? (
               pendingReportsList.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-48 border border-dashed border-slate-200 rounded-xl bg-slate-50/50 p-4 text-center">
                   <span className="material-symbols-outlined text-3xl text-slate-400">check_circle</span>
@@ -696,6 +794,56 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
                 ))
+              )
+            ) : (
+              pendingRefundsList.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-48 border border-dashed border-slate-200 rounded-xl bg-slate-50/50 p-4 text-center">
+                  <span className="material-symbols-outlined text-3xl text-slate-400">check_circle</span>
+                  <p className="text-slate-500 text-xs font-bold mt-2">Đã xử lý hết yêu cầu!</p>
+                  <p className="text-slate-400 text-[10px] mt-0.5">Không có yêu cầu hoàn trả mới.</p>
+                </div>
+              ) : (
+                pendingRefundsList.map((req) => {
+                  const hoursSince = (Date.now() - new Date(req.createdAt).getTime()) / (1000 * 60 * 60);
+                  const isOverdue = hoursSince > 48;
+                  
+                  return (
+                    <div key={req.id} className={`border rounded-xl p-4 space-y-3 ${isOverdue ? 'border-rose-200 bg-rose-50/30' : 'border-slate-100 bg-slate-50/50'}`}>
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-bold text-slate-800 text-sm line-clamp-1">Đơn hàng #{req.orderId}</h4>
+                          <p className="text-slate-500 text-xs mt-1 font-semibold flex items-center gap-1">
+                            Lý do: {req.reason}
+                          </p>
+                          <p className="text-slate-400 text-[10px] font-medium mt-1">
+                            Người mua: {req.userId.substring(0,8)}...
+                          </p>
+                        </div>
+                        <div className="flex flex-col gap-1 items-end">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 flex-shrink-0 font-sans">
+                            Chờ xử lý
+                          </span>
+                          {isOverdue && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 flex-shrink-0 font-sans animate-pulse">
+                              Quá 48h
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex gap-2 pt-1">
+                        <button
+                          onClick={() => setSelectedRefund(req)}
+                          className="flex-grow py-1.5 bg-[#006c49]/10 hover:bg-[#006c49]/20 text-[#006c49] rounded-lg text-xs font-bold transition-all border border-[#006c49]/20 cursor-pointer flex justify-center items-center gap-1.5"
+                        >
+                          <span className="material-symbols-outlined text-sm">visibility</span>
+                          Xem & Xử lý
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
               )
             )}
           </div>
@@ -1604,6 +1752,155 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       )}
+      {/* Refund Request Mediation Modal */}
+      {isRefundActionModalOpen && selectedRefund && (
+        <div style={{position:'fixed',inset:0,zIndex:50,display:'flex',alignItems:'center',justifyContent:'center',backgroundColor:'rgba(0,0,0,0.6)',padding:'1rem'}}>
+          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden border border-slate-200">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div>
+                <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 font-sans">
+                  <span className="material-symbols-outlined text-orange-600">gavel</span>
+                  Phân xử yêu cầu hoàn trả
+                </h3>
+                <p className="text-slate-500 text-xs mt-0.5 font-sans">Xem xét bằng chứng và đưa ra quyết định cuối cùng.</p>
+              </div>
+              <button
+                onClick={() => {
+                  setIsRefundActionModalOpen(false);
+                  setRefundActionType(null);
+                  setRefundAdminNote("");
+                }}
+                className="h-8 w-8 rounded-full hover:bg-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-all border-none cursor-pointer"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto space-y-6 flex-1 text-sm text-slate-700 font-sans">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider font-sans">Thông tin đơn hàng</h4>
+                  <div className="space-y-2.5 text-xs font-sans">
+                    <p className="flex justify-between border-b border-slate-100 pb-1.5">
+                      <span className="text-slate-500">Mã đơn hàng:</span>
+                      <span className="font-mono font-bold text-slate-800">#{selectedRefund.orderId}</span>
+                    </p>
+                    <p className="flex justify-between border-b border-slate-100 pb-1.5">
+                      <span className="text-slate-500">Mã người mua:</span>
+                      <span className="font-mono text-slate-700">{selectedRefund.userId}</span>
+                    </p>
+                    <p className="flex justify-between border-b border-slate-100 pb-1.5">
+                      <span className="text-slate-500">Mã người bán:</span>
+                      <span className="font-mono text-slate-700">{selectedRefund.sellerId}</span>
+                    </p>
+                    <p className="flex justify-between border-b border-slate-100 pb-1.5">
+                      <span className="text-slate-500">Ngày gửi yêu cầu:</span>
+                      <span className="font-bold text-slate-800">{new Date(selectedRefund.createdAt).toLocaleString('vi-VN')}</span>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider font-sans">Lý do hoàn trả</h4>
+                  <div className="space-y-2.5 text-xs font-sans">
+                    <p className="font-bold text-orange-600">{selectedRefund.reason}</p>
+                    <div className="text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100 text-xs leading-relaxed whitespace-pre-line italic">
+                      &quot;{selectedRefund.description}&quot;
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Proof Images */}
+              {selectedRefund.images && selectedRefund.images.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider font-sans">Ảnh minh chứng</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedRefund.images.map((img, idx) => (
+                      <div key={idx} className="relative h-24 w-24 rounded-xl overflow-hidden border border-slate-200">
+                        <Image src={img} alt="Proof" fill className="object-cover" sizes="96px" unoptimized />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Admin Decision Input */}
+              {refundActionType && (
+                <div className="space-y-2 pt-4 border-t border-slate-100 animate-in fade-in slide-in-from-top-2">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider font-sans">
+                    {refundActionType === "approved" ? "Ghi chú chấp nhận hoàn trả" : "Lý do từ chối yêu cầu"} *
+                  </label>
+                  <textarea
+                    value={refundAdminNote}
+                    onChange={(e) => setRefundAdminNote(e.target.value)}
+                    placeholder={`Nhập lý do để người mua và người bán cùng được biết...`}
+                    rows={3}
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-[#006c49] transition-all resize-none bg-slate-50 font-sans"
+                  />
+                  <div className="flex justify-end gap-2 mt-2">
+                    <button
+                      onClick={() => {
+                        setRefundActionType(null);
+                        setRefundAdminNote("");
+                      }}
+                      className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-50 transition-all cursor-pointer bg-white font-sans"
+                    >
+                      Hủy thao tác
+                    </button>
+                    <button
+                      onClick={handleMediateRefund}
+                      disabled={actionLoading === "refund-action"}
+                      className={`px-4 py-2 rounded-lg text-xs font-bold text-white transition-all flex items-center gap-1.5 border-none cursor-pointer font-sans ${
+                        refundActionType === "approved" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700"
+                      }`}
+                    >
+                      {actionLoading === "refund-action" ? (
+                        <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                      ) : (
+                        <span className="material-symbols-outlined text-[16px]">
+                          {refundActionType === "approved" ? "check_circle" : "cancel"}
+                        </span>
+                      )}
+                      Xác nhận {refundActionType === "approved" ? "Chấp nhận" : "Từ chối"}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer Actions (only show if no action selected yet) */}
+            {!refundActionType && (
+              <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex flex-wrap gap-2.5 justify-end font-sans">
+                <button
+                  onClick={() => {
+                    setIsRefundActionModalOpen(false);
+                    setSelectedRefund(null);
+                  }}
+                  className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl text-xs font-bold transition-all cursor-pointer bg-white"
+                >
+                  Đóng
+                </button>
+                <button
+                  onClick={() => setRefundActionType("rejected")}
+                  className="px-4 py-2 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <span className="material-symbols-outlined text-[16px]">cancel</span>
+                  Bác bỏ yêu cầu
+                </button>
+                <button
+                  onClick={() => setRefundActionType("approved")}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all border-none cursor-pointer flex items-center gap-1.5 shadow-md shadow-emerald-200"
+                >
+                  <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                  Phê duyệt hoàn trả
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
     </>
   );
 }
