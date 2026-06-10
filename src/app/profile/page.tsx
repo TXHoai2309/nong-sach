@@ -140,6 +140,7 @@ function ProfileContent() {
   const { addToCart } = useCartStore();
   const orders = useOrderStore((state) => state.orders);
   const updateOrderStatus = useOrderStore((state) => state.updateOrderStatus);
+  const updateTrackingCode = useOrderStore((state) => state.updateTrackingCode);
   const fetchOrdersByUserId = useOrderStore((state) => state.fetchOrdersByUserId);
   const fetchOrdersBySellerId = useOrderStore((state) => state.fetchOrdersBySellerId);
   const isOrdersLoading = useOrderStore((state) => state.isLoading);
@@ -260,6 +261,7 @@ function ProfileContent() {
   // Order filter
   const [orderFilter, setOrderFilter] = useState<"all" | "processing" | "completed">("all");
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+  const [trackingInputs, setTrackingInputs] = useState<Record<string, string>>({});
 
   // Review states
   const [reviewedItemsMap, setReviewedItemsMap] = useState<Record<string, boolean>>({});
@@ -875,6 +877,33 @@ function ProfileContent() {
     });
     
     showToast(`Đã cập nhật đơn hàng: ${statusMeta.label}`);
+  };
+
+  const handleUpdateTrackingCode = async (orderId: string, userId: string) => {
+    const code = trackingInputs[orderId];
+    if (!code || !code.trim()) {
+      showToast("Vui lòng nhập mã vận đơn", "error");
+      return;
+    }
+
+    await updateTrackingCode(orderId, code.trim());
+    
+    const trackingUrl = `https://ghn.vn/blogs/trang-thai-don-hang?v=${code.trim()}`;
+    await addNotification({
+      userId,
+      title: "Cập nhật mã vận đơn",
+      message: `Đơn hàng #${orderId} đã có mã vận đơn: ${code.trim()}. Bạn có thể theo dõi tại GHN.`,
+      type: "order_update",
+      orderId,
+    });
+
+    showToast("Đã cập nhật mã vận đơn thành công!");
+    // Clear input for this order
+    setTrackingInputs(prev => {
+      const next = { ...prev };
+      delete next[orderId];
+      return next;
+    });
   };
 
   const handleEditProduct = (p: ShopProduct) => {
@@ -1713,8 +1742,15 @@ function ProfileContent() {
                               <p><strong className="text-[#3c4a42]">Số điện thoại:</strong> {order.phone}</p>
                               <p><strong className="text-[#3c4a42]">Địa chỉ giao hàng:</strong> {order.address}</p>
                               <p><strong className="text-[#3c4a42]">Phương thức thanh toán:</strong> {
-                                order.paymentMethod === "cod" ? "Thanh toán khi nhận hàng (COD)" : "Chuyển khoản ngân hàng"
+                                order.paymentMethod === "cod" ? "Thanh toán khi nhận hàng (COD)" :
+                                order.paymentMethod === "bank" ? "Chuyển khoản ngân hàng" :
+                                order.paymentMethod === "vnpay" ? "Thanh toán online qua VNPay" :
+                                order.paymentMethod === "credit" ? "Thẻ Visa / Mastercard" :
+                                order.paymentMethod === "wallet" ? "Ví điện tử" : order.paymentMethod
                               }</p>
+                              {order.vnp_TransactionNo && (
+                                <p><strong className="text-[#3c4a42]">Mã giao dịch VNPay:</strong> {order.vnp_TransactionNo}</p>
+                              )}
                               
                               {/* Order items detail list */}
                               <div className="border-t border-[#bbcabf]/15 pt-3 mt-3">
@@ -1819,6 +1855,28 @@ function ProfileContent() {
                                   })}
                                 </div>
                               </div>
+                            </div>
+                          )}
+
+                          {/* Tracking Information for Buyer */}
+                          {order.trackingCode && (
+                            <div className="bg-[#e6f4ea]/40 rounded-xl p-3 border border-[#006c49]/10 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                              <div className="flex items-center gap-2">
+                                <span className="material-symbols-outlined text-[#006c49] text-xl">local_shipping</span>
+                                <div>
+                                  <p className="text-[10px] font-bold text-[#3c4a42]/50 uppercase">Mã vận đơn GHN</p>
+                                  <p className="text-xs font-bold text-[#006c49]">{order.trackingCode}</p>
+                                </div>
+                              </div>
+                              <a
+                                href={order.trackingUrl || `https://ghn.vn/blogs/trang-thai-don-hang?v=${order.trackingCode}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 rounded-lg bg-[#006c49] px-3 py-1.5 text-[10px] font-bold text-white transition hover:opacity-90 shadow-sm w-fit"
+                              >
+                                <span className="material-symbols-outlined text-sm">open_in_new</span>
+                                Theo dõi tại GHN
+                              </a>
                             </div>
                           )}
 
@@ -3408,6 +3466,33 @@ function ProfileContent() {
                                     <p className="text-[10px] text-[#3c4a42]/40 mt-0.5">{new Date(order.createdAt).toLocaleString("vi-VN")}</p>
                                   </div>
                                 </div>
+
+                                {/* Tracking Code Input for Seller */}
+                                {(order.status === "confirmed" || order.status === "shipping") && (
+                                  <div className="space-y-2 pt-2 border-t border-[#bbcabf]/10">
+                                    <p className="text-[10px] font-bold text-[#3c4a42]/50 uppercase">Mã vận đơn GHN</p>
+                                    <div className="flex gap-2">
+                                      <input
+                                        type="text"
+                                        placeholder={order.trackingCode || "Nhập mã vận đơn..."}
+                                        value={trackingInputs[order.id] || ""}
+                                        onChange={(e) => setTrackingInputs(prev => ({ ...prev, [order.id]: e.target.value }))}
+                                        className="flex-1 rounded-xl border-none bg-[#f4f6fa] px-3 py-2 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                                      />
+                                      <button
+                                        onClick={() => handleUpdateTrackingCode(order.id, order.userId)}
+                                        className="px-4 bg-[#006c49] text-white text-[10px] font-bold py-2 rounded-xl hover:opacity-90 transition-all shadow-sm"
+                                      >
+                                        {order.trackingCode ? "Cập nhật" : "Lưu mã"}
+                                      </button>
+                                    </div>
+                                    {order.trackingCode && (
+                                      <p className="text-[10px] font-medium text-[#006c49]">
+                                        Hiện tại: <span className="font-bold">{order.trackingCode}</span>
+                                      </p>
+                                    )}
+                                  </div>
+                                )}
 
                                 <div className="flex flex-wrap gap-2 pt-1">
                                   {order.status === "pending" && (

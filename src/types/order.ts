@@ -17,4 +17,9 @@ export interface Order {
   status: OrderStatus;
   paymentMethod: string;
   createdAt: string;
+  payment_status?: string;
+  vnp_TransactionNo?: string;
+  vnp_ResponseCode?: string;
+  trackingCode?: string;
+  trackingUrl?: string;
 }

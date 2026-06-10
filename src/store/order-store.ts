@@ -8,6 +8,7 @@ interface OrderState {
   isLoading: boolean;
   addOrder: (order: Order) => Promise<void>;
   updateOrderStatus: (orderId: string, status: OrderStatus) => Promise<void>;
+  updateTrackingCode: (orderId: string, trackingCode: string) => Promise<void>;
   getOrdersByUserId: (userId: string) => Promise<Order[]>;
   getOrdersBySellerId: (sellerId: string) => Promise<Order[]>;
   fetchOrdersByUserId: (userId: string) => Promise<void>;
@@ -39,6 +40,21 @@ export const useOrderStore = create<OrderState>()((set) => ({
       }));
     } catch (error) {
       console.error("Lỗi updateOrderStatus:", error);
+    }
+  },
+
+  updateTrackingCode: async (orderId, trackingCode) => {
+    try {
+      const trackingUrl = `https://ghn.vn/blogs/trang-thai-don-hang?v=${trackingCode}`;
+      const docRef = doc(db, "orders", orderId);
+      await updateDoc(docRef, { trackingCode, trackingUrl });
+      set((state) => ({
+        orders: state.orders.map((order) =>
+          order.id === orderId ? { ...order, trackingCode, trackingUrl } : order
+        ),
+      }));
+    } catch (error) {
+      console.error("Lỗi updateTrackingCode:", error);
     }
   },
 

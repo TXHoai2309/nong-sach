@@ -5,12 +5,12 @@
 | Thông tin         | Chi tiết                                    |
 | ----------------- | ------------------------------------------- |
 | Tên dự án         | NôngSạch — Nền tảng giao dịch nông sản sạch |
-| Phiên bản         | MVP v0.6.8 (Sprint 5.4)                     |
+| Phiên bản         | MVP v0.7.0 (Sprint 5.5)                     |
 | Ngày tạo          | 03/06/2026                                  |
-| Cập nhật lần cuối | 09/06/2026                                  |
+| Cập nhật lần cuối | 10/06/2026                                  |
 | Nhóm              | NôngSạch Team                               |
 | Môn học           | Vibe Coding Thực Chiến — Buổi 3             |
-| Trạng thái        | ✅ Hoàn thành Sprint 1 đến Sprint 5.4 |
+| Trạng thái        | ✅ Hoàn thành Sprint 1 đến Sprint 5.5 |
 
 ---
 
@@ -85,7 +85,7 @@ Người tiêu dùng ngày càng lo ngại về an toàn thực phẩm, đặc b
 
 ## 2.2. Ngoài phạm vi MVP
 
-* Thanh toán online (VNPay, MoMo, ZaloPay, Stripe)
+* Thanh toán online (MoMo, ZaloPay, Stripe) (VNPay Sandbox đã hoàn thành)
 * Hệ thống đánh giá và nhận xét sản phẩm
 * Chat trực tiếp với nông dân
 * Multi-vendor marketplace
@@ -675,13 +675,23 @@ interface ContactMessage {
 | T-71 | Tính năng "Mở khóa Shop" trong danh sách người dùng Admin | 2  | ✅      |
 | T-72 | Khắc phục lỗi Firestore write do properties undefined | 2  | ✅      |
 
+## Sprint 5.5 — VNPay Sandbox Payment Integration (✅ Hoàn thành)
+
+| ID   | Task                                           | SP | Status |
+| ---- | ---------------------------------------------- | -- | ------ |
+| T-73 | Xây dựng API Route tạo liên kết VNPay Sandbox  | 3  | ✅      |
+| T-74 | Xây dựng API Route xác thực kết quả thanh toán | 3  | ✅      |
+| T-75 | Thiết lập IPN Webhook tự động cập nhật đơn hàng| 2  | ✅      |
+| T-76 | Landing page callback `/vnpay-return` xử lý UI | 3  | ✅      |
+| T-77 | Tích hợp Visa/Mastercard và Ví điện tử qua VNPay| 2  | ✅      |
+| T-78 | Hiển thị mã giao dịch ở Success & Profile      | 1  | ✅      |
+
 ## Backlog Phase 2 (Tương lai)
 
 | ID    | Tính năng          | Mô tả                                   | Priority |
 | ----- | ------------------ | --------------------------------------- | -------- |
 | P2-01 | Firebase Firestore | Migrate mock data sang Cloud Firestore  | High     |
 | P2-02 | Firebase Auth thật | Google OAuth + email thực tế            | High     |
-| P2-03 | Thanh toán VNPay   | Tích hợp cổng thanh toán VNPay sandbox  | Medium   |
 | P2-04 | Đánh giá sản phẩm  | Rating 5 sao + review text              | Medium   |
 | P2-06 | Order Tracking     | Theo dõi trạng thái giao hàng real-time | Low      |
 | P2-07 | Contact Backend    | Lưu/gửi form liên hệ qua API/Firebase   | Medium   |

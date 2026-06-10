@@ -60,18 +60,15 @@ Mục tiêu của kiến trúc MVP:
 └─────────────────────┘
 ```
 
-## Future Architecture (Phase 2)
+## Current Core Architecture
 
 ```text
-Next.js
+Next.js 16 (App Router)
    │
-   ├── Firebase Auth
-   │
-   ├── Cloud Firestore
-   │
-   ├── Firebase Storage
-   │
-   └── VNPay Integration
+   ├── Cloud Firestore (Database & Real-time)
+   ├── Firebase Storage (Product & CCCD Images)
+   ├── Zustand + Persist (Client Session & Cart)
+   └── VNPay Sandbox (Payment Gateway)
 ```
 
 ---
@@ -803,9 +800,9 @@ adminLogs
 
 ## Payment Gateway
 
-* VNPay
-* MoMo
-* ZaloPay
+* VNPay (Đã tích hợp bản Sandbox)
+* MoMo (Định hướng tương lai)
+* ZaloPay (Định hướng tương lai)
 
 ## Admin Dashboard
 
@@ -831,9 +828,16 @@ NEXT_PUBLIC_FIREBASE_PROJECT_ID=
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
 NEXT_PUBLIC_FIREBASE_APP_ID=
+NEXT_PUBLIC_FIREBASE_DATABASE_URL=
+
+# VNPay Sandbox credentials
+VNP_TMNCODE=
+VNP_HASHSECRET=
+VNP_RETURNURL=
 ```
 
 Lưu ý:
 
-MVP hiện tại chưa sử dụng Firebase. Các biến môi trường chỉ cần khi triển khai Phase 2.
+Dự án hiện đã tích hợp hoàn toàn cơ sở dữ liệu Firestore, Firebase Storage và cổng thanh toán VNPay Sandbox. Bạn cần cấu hình đầy đủ các biến môi trường trên để các chức năng này hoạt động ổn định.
+
       

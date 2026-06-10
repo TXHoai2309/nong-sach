@@ -4,6 +4,39 @@ All notable changes to the **NôngSạch** project will be documented in this fi
 
 The format is based on **Keep a Changelog** and this project adheres to **Semantic Versioning**.
 
+## [0.7.0] - 2026-06-10
+
+### Tích hợp cổng thanh toán VNPay Sandbox & Tối ưu hóa luồng Đơn hàng (VNPay Sandbox Payment Gateway Integration & Order Workflow Optimization)
+
+### Added
+* **Tích hợp cổng thanh toán VNPay Sandbox**: Hỗ trợ 3 phương thức thanh toán trực tuyến qua cổng VNPay Sandbox:
+  - *Thanh toán online qua VNPay (vnpay)*: Cho phép người dùng quét mã QR, thanh toán bằng thẻ ATM nội địa hoặc thẻ quốc tế trực tiếp trên cổng VNPay.
+  - *Thẻ Visa / Mastercard (credit)*: Chuyển hướng trực tiếp đến VNPay Sandbox với tuỳ chọn thẻ quốc tế (`vnp_BankCode: "INTCARD"`).
+  - *Ví điện tử (wallet)*: Chuyển hướng trực tiếp đến VNPay Sandbox với tuỳ chọn thanh toán quét mã QR (`vnp_BankCode: "VNPAYQR"`).
+* **Cơ chế thanh toán 2 bước an toàn (Two-Step Order Placement)**:
+  - Khi chọn phương thức thanh toán online (VNPay, Credit, Wallet), thông tin đơn hàng tạm thời được lưu trong collection `"pending_orders"` trên Firestore với trạng thái `"pending"`.
+  - Đơn hàng chính thức trong collection `"orders"` chỉ được tạo sau khi thanh toán thành công (nhận kết quả response code `"00"`), đảm bảo **không tạo đơn hàng khi thanh toán thất bại hoặc bị hủy**.
+* **Đường dẫn Callback & xử lý kết quả (`src/app/checkout/vnpay-return/page.tsx`)**:
+  - Giao diện Landing page hiển thị trạng thái đang xử lý xác thực, tự động gọi API xác thực chữ ký bảo mật từ server.
+  - Nếu thành công: tự động xóa sản phẩm đã mua khỏi giỏ hàng (`removePurchasedItems`), tạo đơn hàng và chuyển hướng sang trang thành công `/checkout/success`.
+  - Nếu bị hủy (Response code `"24"`): hiển thị màn hình thông báo hủy, giữ nguyên giỏ hàng để người dùng thao tác lại.
+  - Nếu lỗi khác: hiển thị màn hình lỗi thanh toán thất bại, giữ nguyên giỏ hàng.
+* **Server-side API Routes cho VNPay**:
+  - `/api/vnpay/create-payment`: Tạo URL thanh toán VNPay bằng thuật toán ký bảo mật HMAC-SHA512 của danh sách tham số đã được sắp xếp theo bảng chữ cái.
+  - `/api/vnpay/verify-payment`: Xác thực mã Hash chữ ký trả về từ VNPay, xử lý lưu đơn hàng chính thức lên Firestore và tạo thông báo (Notifications) cho người mua và người bán.
+  - `/api/vnpay/ipn`: Webhook xác nhận giao dịch tự động server-to-server (Instant Payment Notification) để đảm bảo đồng bộ trạng thái đơn hàng khi người dùng đóng trình duyệt đột ngột.
+
+### Changed
+* **Cập nhật trang thanh toán (`src/app/checkout/page.tsx`)**: Tích hợp các tùy chọn thanh toán trực tuyến vào menu và chuyển hướng sang API khởi tạo thanh toán VNPay.
+* **Trang xác nhận thành công (`src/app/checkout/success/page.tsx`)**: Hiển thị nhãn thanh toán trực tuyến phù hợp và kết xuất trực tiếp Mã giao dịch VNPay (`vnp_TransactionNo`) nếu có.
+* **Trang thông tin cá nhân (`src/app/profile/page.tsx`)**: Cập nhật lịch sử đơn hàng để hiển thị nhãn phương thức thanh toán tương ứng và mã giao dịch VNPay.
+* **Cấu trúc dữ liệu đơn hàng (`src/types/order.ts`)**: Mở rộng thuộc tính `payment_status`, `vnp_TransactionNo`, và `vnp_ResponseCode` trong interface `Order`.
+
+### Verification
+* **Type Safety & Build**: Chạy lệnh `npm run build` thành công, các kiểm tra kiểu TypeScript của route API và frontend đều vượt qua không lỗi.
+
+---
+
 ## [0.6.8] - 2026-06-09
 
 ### Admin xử lý báo cáo vi phạm, Lịch sử Hoạt động & Mở khóa Shop (Admin Violation Reports Handling, Audit Logs & Shop Unblocking)

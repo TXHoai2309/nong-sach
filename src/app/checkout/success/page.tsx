@@ -26,6 +26,8 @@ function SuccessContent() {
   const [notificationStatus, setNotificationStatus] = useState<"idle" | "enabled" | "dismissed">("idle");
   const [order, setOrder] = useState<Order | null>(null);
   const [recommendedProducts, setRecommendedProducts] = useState<Product[]>([]);
+  
+  const vnpTransactionNo = searchParams.get("vnp_TransactionNo") || order?.vnp_TransactionNo || "";
 
   useEffect(() => {
     let active = true;
@@ -77,6 +79,8 @@ function SuccessContent() {
         return "Tiền mặt khi nhận hàng (COD)";
       case "bank":
         return "Chuyển khoản ngân hàng";
+      case "vnpay":
+        return "Thanh toán online qua VNPay";
       case "credit":
         return "Thẻ Visa / Mastercard";
       case "wallet":
@@ -168,6 +172,11 @@ function SuccessContent() {
                 <div className="space-y-0.5">
                   <p className="text-xs text-on-surface-variant font-medium">Thanh toán</p>
                   <p className="text-sm font-bold text-on-surface">{getPaymentLabel(paymentMethod)}</p>
+                  {vnpTransactionNo && (
+                    <p className="text-xs text-on-surface-variant font-semibold mt-1">
+                      Mã GD VNPay: <span className="text-primary font-bold">{vnpTransactionNo}</span>
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -183,6 +192,28 @@ function SuccessContent() {
                   </p>
                 </div>
               </div>
+
+              {/* Row 5: Tracking Code (New) */}
+              {order?.trackingCode && (
+                <div className="flex gap-sm">
+                  <span className="material-symbols-outlined text-[#006c49] text-[20px] shrink-0 mt-0.5">
+                    local_shipping
+                  </span>
+                  <div className="space-y-0.5">
+                    <p className="text-xs text-on-surface-variant font-medium uppercase tracking-tight">Mã vận đơn GHN</p>
+                    <p className="text-sm font-bold text-[#006c49]">{order.trackingCode}</p>
+                    <a
+                      href={order.trackingUrl || `https://ghn.vn/blogs/trang-thai-don-hang?v=${order.trackingCode}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[10px] font-bold text-[#006c49] hover:underline flex items-center gap-1 mt-1"
+                    >
+                      <span className="material-symbols-outlined text-[12px]">open_in_new</span>
+                      Tra cứu tại GHN
+                    </a>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -353,11 +384,17 @@ function SuccessContent() {
       {/* Direct CTA Buttons */}
       <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
         <button
-          onClick={() => alert("Chức năng theo dõi đơn hàng đang được cập nhật ở Phase 2!")}
+          onClick={() => {
+            if (order?.trackingCode) {
+              window.open(order.trackingUrl || `https://ghn.vn/blogs/trang-thai-don-hang?v=${order.trackingCode}`, "_blank");
+            } else {
+              alert("Mã vận đơn đang được người bán cập nhật. Vui lòng quay lại sau!");
+            }
+          }}
           className="px-6 py-3.5 bg-primary text-white font-bold rounded-2xl hover:opacity-90 active:scale-[0.99] transition-all shadow-md flex items-center justify-center gap-xs cursor-pointer w-full sm:w-auto"
         >
           Theo dõi đơn hàng
-          <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+          <span className="material-symbols-outlined text-[18px]">local_shipping</span>
         </button>
 
         <Link
