@@ -1,7 +1,7 @@
 # 🌿 NôngSạch Architecture
 
 > Architecture Document
-> Version: v1.2.9
+> Version: v1.3.0
 > Project: NôngSạch — Nền tảng giao dịch nông sản sạch
 
 ---

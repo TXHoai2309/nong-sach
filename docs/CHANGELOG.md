@@ -4,6 +4,23 @@ All notable changes to the **NôngSạch** project will be documented in this fi
 
 The format is based on **Keep a Changelog** and this project adheres to **Semantic Versioning**.
 
+## [0.7.4] - 2026-06-10
+
+### Hệ thống Yêu cầu Hoàn trả Đơn hàng (Order Refund Request System)
+
+### Added
+* **Tính năng Yêu cầu hoàn trả cho người mua**: Cho phép người mua gửi yêu cầu hoàn trả cho các đơn hàng đã được giao (`delivered`) nếu sản phẩm không đúng mô tả hoặc bị hư hỏng.
+* **Biểu mẫu yêu cầu chi tiết**: Tích hợp Modal với các tùy chọn lý do, mô tả chi tiết và hỗ trợ tải lên tối đa 3 ảnh minh chứng.
+* **Thông báo đa kênh**: Tự động gửi thông báo thời gian thực đến cả Người bán và Quản trị viên (Admin) ngay khi có yêu cầu hoàn trả mới.
+* **Mô hình dữ liệu Hoàn trả**: Tạo collection `refundRequests` trên Firestore để lưu trữ và quản lý các yêu cầu hoàn trả.
+
+### Changed
+* **Cấu trúc Đơn hàng**: Mở rộng trạng thái đơn hàng (`refunding`, `refunded`) và thêm trường `refundRequestId` để theo dõi liên kết.
+* **Giao diện Người mua**: Hiển thị nút "Yêu cầu hoàn trả" trên thẻ đơn hàng đã giao trong trang Cá nhân.
+* **Metadata Trạng thái**: Cập nhật màu sắc và biểu tượng cho các trạng thái hoàn trả mới trong hệ thống.
+
+---
+
 ## [0.7.3] - 2026-06-10
 
 ### Theo dõi Đơn hàng Thời gian thực & Timeline hợp nhất (Real-time Order Tracking & Unified Timeline)

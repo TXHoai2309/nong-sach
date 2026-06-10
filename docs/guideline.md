@@ -413,3 +413,23 @@ Tính năng này cho phép người bán cung cấp thông tin vận chuyển v�
 3. Tại thẻ đơn hàng tương ứng, bạn sẽ thấy mục **"Mã vận đơn GHN"**.
 4. Bấm nút **"Theo dõi tại GHN"** để mở trang tra cứu vận đơn chính thức của Giao Hàng Nhanh với mã đã được điền sẵn.
 5. Bạn cũng có thể xem thông tin này tại trang **Hoàn tất đơn hàng** ngay sau khi người bán cập nhật mã.
+
+## 21. Hướng dẫn Yêu cầu Hoàn trả Đơn hàng
+
+Tính năng này cho phép người mua gửi yêu cầu hoàn trả nếu sản phẩm nhận được không đúng như mô tả hoặc bị hư hỏng.
+
+### 21.1. Đối với Người mua (Buyer)
+
+1. Truy cập **Trang cá nhân** > **Đơn hàng của tôi**.
+2. Tìm đơn hàng ở trạng thái **Đã giao**.
+3. Bấm nút **"Yêu cầu hoàn trả"** trên thẻ đơn hàng.
+4. Trong hộp thoại hiện ra:
+   - Chọn **Lý do hoàn trả** (Sản phẩm không đúng mô tả, hư hỏng, giao sai,...).
+   - Nhập **Mô tả chi tiết** về vấn đề.
+   - Tải lên tối đa **3 ảnh minh chứng** thực tế.
+5. Bấm **"Gửi yêu cầu"**. Hệ thống sẽ đổi trạng thái đơn hàng sang **Đang hoàn trả** và thông báo cho các bên liên quan.
+
+### 21.2. Đối với Người bán và Quản trị viên
+
+1. Nhận thông báo chuông về yêu cầu hoàn trả mới.
+2. Kiểm tra dữ liệu tại collection `refundRequests` trên Firestore để xem xét bằng chứng và xử lý yêu cầu.

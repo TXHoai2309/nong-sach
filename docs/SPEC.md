@@ -5,16 +5,17 @@
 | Thông tin         | Chi tiết                                    |
 | ----------------- | ------------------------------------------- |
 | Tên dự án         | NôngSạch — Nền tảng giao dịch nông sản sạch |
-| Phiên bản         | MVP v0.7.3 (Sprint 5.8)                     |
+| Phiên bản         | MVP v0.7.4 (Sprint 5.9)                     |
 | Ngày tạo          | 03/06/2026                                  |
 | Cập nhật lần cuối | 10/06/2026                                  |
 | Nhóm              | NôngSạch Team                               |
 | Môn học           | Vibe Coding Thực Chiến — Buổi 3             |
-| Trạng thái        | ✅ Hoàn thành Sprint 1 đến Sprint 5.8 |
+| Trạng thái        | ✅ Hoàn thành Sprint 1 đến Sprint 5.9 |
 
 ---
 
 # 1. Tổng quan sản phẩm
+
 
 NôngSạch là nền tảng thương mại điện tử B2C kết nối trực tiếp nông dân Việt Nam với người tiêu dùng, tập trung vào nông sản sạch và hữu cơ. Sứ mệnh của nền tảng là loại bỏ các khâu trung gian không cần thiết, giúp người tiêu dùng tiếp cận thực phẩm an toàn với giá hợp lý, đồng thời tăng thu nhập cho nông dân Việt Nam.
 
@@ -80,6 +81,7 @@ Người tiêu dùng ngày càng lo ngại về an toàn thực phẩm, đặc b
 | F-24 | Quy trình duyệt/từ chối sản phẩm | Admin duyệt sản phẩm pending -> active hoặc từ chối kèm lý do và gửi thông báo | P1      | ✅ Done     |
 | F-25 | Xử lý báo cáo vi phạm | Quyết định xử lý của Admin (Bỏ qua/Cảnh báo/Khóa tạm/Xóa đối tượng) và ghi log kiểm toán Firestore | P1      | ✅ Done     |
 | F-26 | Nhập mã vận đơn & Theo dõi đơn hàng | Người bán nhập mã GHN, hệ thống tự tạo link tra cứu và thông báo cho người mua | P1      | ✅ Done     |
+| F-27 | Yêu cầu hoàn trả đơn hàng | Người mua gửi yêu cầu hoàn trả kèm lý do và ảnh minh chứng cho đơn hàng đã giao | P1      | ✅ Done     |
 
 
 > **Ghi chú cho team:** F-09 hiện đã có giao diện hoàn chỉnh theo Stitch HTML tại route `/contact`. Form liên hệ đang ở mức UI/UX MVP; nếu cần gửi dữ liệu thật, cần bổ sung API/Firebase handler ở Phase 2. Kênh bán hàng (F-11), Quản lý sản phẩm (F-12) và Trang chi tiết shop (F-14) hiện được lưu động tại `localStorage` phía client của từng người dùng để mô phỏng tính năng thực tế.
@@ -682,6 +684,16 @@ interface ContactMessage {
 | T-81 | Thiết kế ô nhập mã vận đơn cho Seller trong Profile | 2  | ✅      |
 | T-82 | Tự động gửi Notification cho Buyer khi có mã mới | 1  | ✅      |
 | T-83 | Hiển thị link tra cứu GHN tại Profile & Success Page | 2  | ✅      |
+
+## Sprint 5.9 — Hệ thống Yêu cầu Hoàn trả Đơn hàng (✅ Hoàn thành)
+
+| ID   | Task                                           | SP | Status |
+| ---- | ---------------------------------------------- | -- | ------ |
+| T-84 | Khai báo interface RefundRequest & Status mới | 1  | ✅      |
+| T-85 | Triển khai requestRefund trong Order Store    | 2  | ✅      |
+| T-86 | Thiết kế Modal yêu cầu hoàn trả kèm ảnh minh chứng | 3  | ✅      |
+| T-87 | Tích hợp nút Yêu cầu hoàn trả trên Đơn hàng đã giao | 1  | ✅      |
+| T-88 | Tự động gửi Notification cho Seller và Admin | 1  | ✅      |
 
 ## Backlog Phase 2 (Tương lai)
 

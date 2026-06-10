@@ -4,22 +4,25 @@ import { useEffect, useState, useMemo, type FormEvent, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { collection, doc, getDocs, query, where } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import { formatCurrency } from "@/lib/format";
 import { getOrderStatusMeta } from "@/lib/order-status";
-import { Order } from "@/types/order";
+import { Order, OrderStatus } from "@/types/order";
+import { RefundRequest } from "@/types/refund";
 import { useAuthStore } from "@/store/auth-store";
 import { useCartStore } from "@/store/cart-store";
 import { useOrderStore } from "@/store/order-store";
 import { useNotificationStore } from "@/store/notification-store";
 import { Notification } from "@/types/notification";
-import { OrderStatus } from "@/types/order";
 import { Product, ProductCategory } from "@/types/product";
 import { UserAddress, User } from "@/types/user";
 import CoverImageCropper from "@/components/ui/CoverImageCropper";
 import { getAllProducts, addProduct, deleteProduct } from "@/lib/products";
 import { addReview, checkReviewedItems, getBaseProductId, getReviewsByOrderId } from "@/lib/reviews";
 import { Review } from "@/types/review";
+import { OrderTrackingTimeline } from "@/components/order/OrderTrackingTimeline";
 
 const PROVINCES_API = "https://provinces.open-api.vn/api/v1/?depth=2";
 
@@ -141,8 +144,9 @@ function ProfileContent() {
   const orders = useOrderStore((state) => state.orders);
   const updateOrderStatus = useOrderStore((state) => state.updateOrderStatus);
   const updateTrackingCode = useOrderStore((state) => state.updateTrackingCode);
-  const fetchOrdersByUserId = useOrderStore((state) => state.fetchOrdersByUserId);
-  const fetchOrdersBySellerId = useOrderStore((state) => state.fetchOrdersBySellerId);
+  const requestRefund = useOrderStore((state) => state.requestRefund);
+  const subscribeToUserOrders = useOrderStore((state) => state.subscribeToUserOrders);
+  const subscribeToSellerOrders = useOrderStore((state) => state.subscribeToSellerOrders);
   const isOrdersLoading = useOrderStore((state) => state.isLoading);
   const notifications = useNotificationStore((state) => state.notifications);
   const markAsRead = useNotificationStore((state) => state.markAsRead);
@@ -241,6 +245,14 @@ function ProfileContent() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showCurrentPass, setShowCurrentPass] = useState(false);
   const [showNewPass, setShowNewPass] = useState(false);
+
+  // Refund states
+  const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
+  const [refundingOrder, setRefundingOrder] = useState<Order | null>(null);
+  const [refundReason, setRefundReason] = useState("");
+  const [refundDesc, setRefundDesc] = useState("");
+  const [refundImages, setRefundImages] = useState<string[]>([]);
+  const [isSubmittingRefund, setIsSubmittingRefund] = useState(false);
 
   // Address Dialog/Form State
   const [isAddressFormOpen, setIsAddressFormOpen] = useState(false);
@@ -386,16 +398,18 @@ function ProfileContent() {
   useEffect(() => {
     if (!mounted || !currentUser) return;
     if (activeTab === "orders") {
-      fetchOrdersByUserId(currentUser.id);
+      const unsubscribe = subscribeToUserOrders(currentUser.id);
+      return () => unsubscribe();
     }
-  }, [mounted, activeTab, currentUser?.id, fetchOrdersByUserId]);
+  }, [mounted, activeTab, currentUser?.id, subscribeToUserOrders]);
 
   useEffect(() => {
     if (!mounted || !currentUser) return;
     if (activeTab === "seller" && sellerSubTab === "orders") {
-      fetchOrdersBySellerId(currentUser.id);
+      const unsubscribe = subscribeToSellerOrders(currentUser.id);
+      return () => unsubscribe();
     }
-  }, [mounted, activeTab, sellerSubTab, currentUser?.id, fetchOrdersBySellerId]);
+  }, [mounted, activeTab, sellerSubTab, currentUser?.id, subscribeToSellerOrders]);
 
   useEffect(() => {
     if (activeTab !== "seller" || sellerSubTab !== "orders" || !focusedSellerOrderId) return;
@@ -904,6 +918,93 @@ function ProfileContent() {
       delete next[orderId];
       return next;
     });
+  };
+
+  const handleRefundImagesUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const remainingCount = 3 - refundImages.length;
+    if (remainingCount <= 0) {
+      showToast("Tối đa 3 ảnh minh chứng", "error");
+      e.target.value = "";
+      return;
+    }
+
+    const filesArray = Array.from(files).slice(0, remainingCount);
+    void (async () => {
+      for (const file of filesArray) {
+        try {
+          const base64 = await readFileAsDataUrl(file);
+          const compressed = await compressImage(base64, 800, 800, 0.8, "image/webp");
+          setRefundImages((prev) => (prev.length >= 3 ? prev : [...prev, compressed]));
+        } catch {
+          showToast("Có lỗi khi xử lý ảnh minh chứng", "error");
+        }
+      }
+    })();
+    e.target.value = "";
+  };
+
+  const handleRefundSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!currentUser || !refundingOrder) return;
+    if (!refundReason) {
+      showToast("Vui lòng chọn lý do hoàn trả", "error");
+      return;
+    }
+    if (!refundDesc.trim()) {
+      showToast("Vui lòng nhập mô tả chi tiết", "error");
+      return;
+    }
+
+    setIsSubmittingRefund(true);
+    try {
+      await requestRefund({
+        orderId: refundingOrder.id,
+        userId: currentUser.id,
+        sellerId: refundingOrder.sellerId || "",
+        reason: refundReason,
+        description: refundDesc.trim(),
+        images: refundImages,
+      });
+
+      // Notify Seller
+      if (refundingOrder.sellerId) {
+        await addNotification({
+          userId: refundingOrder.sellerId,
+          title: "Yêu cầu hoàn trả mới",
+          message: `Khách hàng yêu cầu hoàn trả cho đơn hàng #${refundingOrder.id}. Lý do: ${refundReason}`,
+          type: "order_update",
+          orderId: refundingOrder.id,
+        });
+      }
+
+      // Notify Admin
+      const q = query(collection(db, "users"), where("role", "==", "admin"));
+      const adminSnap = await getDocs(q);
+      adminSnap.forEach(async (adminDoc) => {
+        await addNotification({
+          userId: adminDoc.id,
+          title: "Yêu cầu hoàn trả cần xử lý",
+          message: `Đơn hàng #${refundingOrder.id} có yêu cầu hoàn trả mới.`,
+          type: "system",
+          orderId: refundingOrder.id,
+        });
+      });
+
+      showToast("Đã gửi yêu cầu hoàn trả thành công!");
+      setIsRefundModalOpen(false);
+      setRefundingOrder(null);
+      setRefundReason("");
+      setRefundDesc("");
+      setRefundImages([]);
+    } catch (err) {
+      console.error(err);
+      showToast("Lỗi khi gửi yêu cầu hoàn trả", "error");
+    } finally {
+      setIsSubmittingRefund(false);
+    }
   };
 
   const handleEditProduct = (p: ShopProduct) => {
@@ -1735,6 +1836,9 @@ function ProfileContent() {
                             </div>
                           </div>
 
+                          {/* Order Tracking Timeline for Buyer */}
+                          <OrderTrackingTimeline order={order} />
+
                           {/* Expanded Details section */}
                           {isExpanded && (
                             <div className="bg-[#f9f9ff] rounded-xl p-4 border border-[#bbcabf]/15 mb-4 text-xs space-y-2 text-[#3c4a42]/80">
@@ -1882,6 +1986,17 @@ function ProfileContent() {
 
                           {/* Action Buttons */}
                           <div className="flex justify-end gap-2 border-t border-[#bbcabf]/10 pt-4">
+                            {order.status === "delivered" && (
+                              <button
+                                onClick={() => {
+                                  setRefundingOrder(order);
+                                  setIsRefundModalOpen(true);
+                                }}
+                                className="rounded-full border border-red-200 bg-red-50 px-5 py-2 text-xs font-bold text-red-600 transition hover:bg-red-100"
+                              >
+                                Yêu cầu hoàn trả
+                              </button>
+                            )}
                             <button
                               onClick={() => setExpandedOrderId(isExpanded ? null : order.id)}
                               className="rounded-full border border-[#bbcabf] px-5 py-2 text-xs font-bold text-[#3c4a42] transition hover:bg-[#f4f6fa]"
@@ -4407,6 +4522,130 @@ function ProfileContent() {
         </div>
       </div>
     )}
+      {/* ── Refund Request Modal ───────────────────────────────────────────── */}
+      {isRefundModalOpen && refundingOrder && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsRefundModalOpen(false)} />
+          <div className="relative w-full max-w-[500px] max-h-[92vh] overflow-hidden rounded-3xl bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+              <h2 className="text-lg font-bold text-[#3c4a42] flex items-center gap-2">
+                <span className="material-symbols-outlined text-red-500">assignment_return</span>
+                Yêu cầu hoàn trả
+              </h2>
+              <button 
+                onClick={() => setIsRefundModalOpen(false)} 
+                className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-all cursor-pointer border-none"
+              >
+                <span className="material-symbols-outlined text-sm text-slate-600">close</span>
+              </button>
+            </div>
+
+            <form onSubmit={handleRefundSubmit} className="max-h-[calc(92vh-76px)] overflow-y-auto p-6 space-y-5">
+              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 mb-4">
+                <p className="text-xs font-bold text-[#3c4a42]/60 uppercase tracking-tight">Đang yêu cầu cho đơn hàng</p>
+                <p className="font-bold text-[#3c4a42]">#{refundingOrder.id}</p>
+              </div>
+
+              {/* Refund Reason */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-[#3c4a42]/70 uppercase tracking-wider">Lý do hoàn trả *</label>
+                <select
+                  value={refundReason}
+                  onChange={(e) => setRefundReason(e.target.value)}
+                  required
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-2xl text-sm outline-none focus:border-[#006c49] bg-slate-50 text-[#3c4a42]"
+                >
+                  <option value="">-- Chọn lý do --</option>
+                  <option value="Sản phẩm không đúng mô tả">Sản phẩm không đúng mô tả</option>
+                  <option value="Sản phẩm bị hư hỏng/dập nát">Sản phẩm bị hư hỏng/dập nát</option>
+                  <option value="Giao sai sản phẩm">Giao sai sản phẩm</option>
+                  <option value="Sản phẩm hết hạn sử dụng">Sản phẩm hết hạn sử dụng</option>
+                  <option value="Lý do khác">Lý do khác</option>
+                </select>
+              </div>
+
+              {/* Description */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-[#3c4a42]/70 uppercase tracking-wider">Mô tả chi tiết *</label>
+                <textarea
+                  value={refundDesc}
+                  onChange={(e) => setRefundDesc(e.target.value)}
+                  rows={4}
+                  required
+                  className="w-full px-4 py-3 border border-slate-200 rounded-2xl text-sm outline-none focus:border-[#006c49] transition-all resize-none bg-slate-50 text-[#3c4a42]"
+                  placeholder="Vui lòng mô tả chi tiết vấn đề bạn gặp phải..."
+                />
+              </div>
+
+              {/* Proof Images */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-[#3c4a42]/70 uppercase tracking-wider">Ảnh minh chứng *</label>
+                  <span className="text-[11px] font-bold text-[#3c4a42]/45">{refundImages.length}/3 ảnh</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {refundImages.map((image, index) => (
+                    <div key={index} className="relative h-20 w-20 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+                      <Image
+                        src={image}
+                        alt={`Minh chứng ${index + 1}`}
+                        fill
+                        sizes="80px"
+                        unoptimized
+                        className="object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setRefundImages(prev => prev.filter((_, idx) => idx !== index))}
+                        className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white transition hover:bg-black/75"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">close</span>
+                      </button>
+                    </div>
+                  ))}
+
+                  {refundImages.length < 3 && (
+                    <label className="flex h-20 w-20 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#bbcabf]/70 bg-slate-50 text-[#006c49] transition hover:bg-[#006c49]/5">
+                      <span className="material-symbols-outlined text-[22px]">add_a_photo</span>
+                      <span className="mt-1 text-[10px] font-extrabold">Thêm ảnh</span>
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handleRefundImagesUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsRefundModalOpen(false)}
+                  className="flex-1 px-6 py-2.5 rounded-full border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all cursor-pointer"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingRefund}
+                  className="flex-1 px-6 py-2.5 rounded-full bg-red-600 text-white text-sm font-bold hover:bg-red-700 transition-all disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer border-none shadow-md shadow-red-200"
+                >
+                  {isSubmittingRefund ? (
+                    <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <span className="material-symbols-outlined text-sm">send</span>
+                  )}
+                  Gửi yêu cầu
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 }

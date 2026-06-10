@@ -1,6 +1,6 @@
 import { CartItem } from "./cart";
 
-export type OrderStatus = "pending" | "confirmed" | "shipping" | "delivered" | "cancelled";
+export type OrderStatus = "pending" | "confirmed" | "shipping" | "delivered" | "cancelled" | "refunding" | "refunded";
 
 export interface Order {
   id: string;
@@ -22,4 +22,5 @@ export interface Order {
   vnp_ResponseCode?: string;
   trackingCode?: string;
   trackingUrl?: string;
+  refundRequestId?: string;
 }

@@ -39,6 +39,20 @@ export const ORDER_STATUS_META: Record<
     tone: "bg-red-50 text-red-700",
     successTone: "text-red-700",
   },
+  refunding: {
+    label: "Đang hoàn trả",
+    detail: "Yêu cầu hoàn trả đang được xử lý.",
+    icon: "assignment_return",
+    tone: "bg-orange-50 text-orange-700",
+    successTone: "text-orange-700",
+  },
+  refunded: {
+    label: "Đã hoàn trả",
+    detail: "Đơn hàng đã được hoàn trả thành công.",
+    icon: "check_circle",
+    tone: "bg-blue-50 text-blue-700",
+    successTone: "text-blue-700",
+  },
 };
 
 export const getOrderStatusMeta = (status: OrderStatus) => ORDER_STATUS_META[status];
