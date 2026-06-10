@@ -2004,28 +2004,6 @@ function ProfileContent() {
                             </div>
                           )}
 
-                          {/* Tracking Information for Buyer */}
-                          {order.trackingCode && (
-                            <div className="bg-[#e6f4ea]/40 rounded-xl p-3 border border-[#006c49]/10 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                              <div className="flex items-center gap-2">
-                                <span className="material-symbols-outlined text-[#006c49] text-xl">local_shipping</span>
-                                <div>
-                                  <p className="text-[10px] font-bold text-[#3c4a42]/50 uppercase">Mã vận đơn GHN</p>
-                                  <p className="text-xs font-bold text-[#006c49]">{order.trackingCode}</p>
-                                </div>
-                              </div>
-                              <a
-                                href={order.trackingUrl || `https://ghn.vn/blogs/trang-thai-don-hang?v=${order.trackingCode}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 rounded-lg bg-[#006c49] px-3 py-1.5 text-[10px] font-bold text-white transition hover:opacity-90 shadow-sm w-fit"
-                              >
-                                <span className="material-symbols-outlined text-sm">open_in_new</span>
-                                Theo dõi tại GHN
-                              </a>
-                            </div>
-                          )}
-
                           {/* Action Buttons */}
                           <div className="flex justify-end gap-2 border-t border-[#bbcabf]/10 pt-4">
                             {order.status === "delivered" && (
