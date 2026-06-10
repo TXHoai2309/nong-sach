@@ -367,15 +367,13 @@ export default function CheckoutPage() {
       await addOrder(newOrder);
 
       // Notify Seller
-      if (sellerId !== "admin") {
-        await addNotification({
-          userId: sellerId,
-          title: "Đơn hàng mới!",
-          message: `Bạn nhận được đơn hàng mới #${subOrderId} từ ${fullName.trim()}.`,
-          type: "new_order",
-          orderId: subOrderId,
-        });
-      }
+      await addNotification({
+        userId: sellerId,
+        title: "Đơn hàng mới!",
+        message: `Bạn nhận được đơn hàng mới #${subOrderId} từ ${fullName.trim()}.`,
+        type: "new_order",
+        orderId: subOrderId,
+      });
     }
 
     // Notify Buyer

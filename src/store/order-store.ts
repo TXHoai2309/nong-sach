@@ -287,14 +287,19 @@ export const useOrderStore = create<OrderState>()((set) => ({
     });
   },
 
-  subscribeToSellerOrders: (sellerId) => {
+  subscribeToSellerOrders: (userId) => {
     set({ isLoading: true });
-    const q = query(collection(db, "orders"), where("sellerId", "==", sellerId));
+    
+    // Include the user's UID, the platform "admin" ID, and all static shop IDs
+    const sellerIds = [userId, "admin", "vuon-sach-da-lat", "nong-trai-xanh", "rau-sach-organic", "moc-farm-da-lat"];
+    const q = query(collection(db, "orders"), where("sellerId", "in", sellerIds));
+    
     return onSnapshot(q, (snapshot) => {
       const list: Order[] = [];
       snapshot.forEach((docSnap) => {
         list.push({ id: docSnap.id, ...docSnap.data() } as Order);
       });
+      
       list.sort((a, b) => new Date(b.createdAt || "").getTime() - new Date(a.createdAt || "").getTime());
       set({ orders: list, isLoading: false });
     }, (error) => {

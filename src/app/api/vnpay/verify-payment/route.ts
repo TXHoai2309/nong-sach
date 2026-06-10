@@ -125,19 +125,17 @@ export async function POST(request: Request) {
         });
 
         // Add seller notification
-        if (sellerId !== "admin") {
-          const sellerNotiId = `NOTI-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-          await setDoc(doc(db, "notifications", sellerNotiId), {
-            id: sellerNotiId,
-            userId: sellerId,
-            title: "Đơn hàng mới!",
-            message: `Bạn nhận được đơn hàng mới #${subOrderId} từ ${pendingOrder.fullName}.`,
-            type: "new_order",
-            orderId: subOrderId,
-            isRead: false,
-            createdAt: new Date().toISOString(),
-          });
-        }
+        const sellerNotiId = `NOTI-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+        await setDoc(doc(db, "notifications", sellerNotiId), {
+          id: sellerNotiId,
+          userId: sellerId,
+          title: "Đơn hàng mới!",
+          message: `Bạn nhận được đơn hàng mới #${subOrderId} từ ${pendingOrder.fullName}.`,
+          type: "new_order",
+          orderId: subOrderId,
+          isRead: false,
+          createdAt: new Date().toISOString(),
+        });
       }
 
       // Add buyer notification
