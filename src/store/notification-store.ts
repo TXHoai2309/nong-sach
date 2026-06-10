@@ -62,7 +62,7 @@ export const useNotificationStore = create<NotificationState>()(
         return get().notifications.filter((n) => n.userId === userId && !n.isRead).length;
       },
       subscribeToUserNotifications: (userId) => {
-        const q = query(collection(db, "notifications"), where("userId", "==", userId));
+        const q = query(collection(db, "notifications"), where("userId", "in", [userId, "admin"]));
         return onSnapshot(
           q,
           (snapshot) => {
@@ -73,7 +73,7 @@ export const useNotificationStore = create<NotificationState>()(
             set((state) => ({
               notifications: [
                 ...remoteNotifications,
-                ...state.notifications.filter((n) => n.userId !== userId),
+                ...state.notifications.filter((n) => n.userId !== userId && n.userId !== "admin"),
               ],
             }));
           },

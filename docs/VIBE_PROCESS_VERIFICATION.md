@@ -1,10 +1,10 @@
 # 🛡️ VIBE PROCESS VERIFICATION
 
-> **Tài liệu chứng minh quy trình phát triển và kiểm định chất lượng sản phẩm (Plan — Doc — Build — Test) trước khi xuất xưởng (Ship) phiên bản NôngSạch MVP v0.6.8.**
+> **Tài liệu chứng minh quy trình phát triển và kiểm định chất lượng sản phẩm (Plan — Doc — Build — Test) trước khi xuất xưởng (Ship) phiên bản NôngSạch MVP v0.7.6.**
 > 
 > * **Dự án**: NôngSạch — Nền tảng giao dịch nông sản sạch
-> * **Phiên bản**: v0.6.8
-> * **Ngày xác nhận**: 09/06/2026
+> * **Phiên bản**: v0.7.6
+> * **Ngày xác nhận**: 10/06/2026
 > * **Quy trình áp dụng**: Vibe Coding Standard (Plan ➔ Doc ➔ Build ➔ Test)
 > * **Trạng thái**: ✅ **ĐÃ THÔNG QUA (PASSED) & SẴN SÀNG SHIP**
 
@@ -41,6 +41,11 @@ Trước khi thực hiện bất kỳ thay đổi nào trong mã nguồn, hệ t
   - **Kiểm duyệt chất lượng & Quy trình từ chối/gửi lại hồ sơ (Sprint 5.2)**: Xây dựng modal xem chi tiết hồ sơ `SellerDetailsModal` (bao gồm xem đầy đủ ảnh CCCD phóng to, thông tin nông trại và ngân hàng). Tích hợp chức năng từ chối kèm lý do, tự động gửi thông báo đến seller. Thiết kế cảnh báo đỏ hiển thị lý do từ chối trên hồ sơ seller và nút "Chỉnh sửa & gửi lại hồ sơ" điền sẵn thông tin cũ để người bán nộp lại.
   - **Quy trình phê duyệt sản phẩm tự đăng của Người bán (Sprint 5.3)**: Tích hợp thuộc tính `status` và `rejectionReason` vào kiểu dữ liệu sản phẩm. Mặc định ẩn các sản phẩm chưa duyệt (`pending` hoặc `rejected`) khỏi cửa hàng công khai và trang chi tiết sản phẩm. Bổ sung cột Trạng thái chi tiết (Đang bán / Chờ duyệt / Bị từ chối kèm lý do) tại Kênh người bán, và reset trạng thái về `pending` khi người bán cập nhật sản phẩm bị từ chối. Thiết kế danh sách sản phẩm chờ duyệt dạng tab tại Dashboard Admin kèm modal xem chi tiết đầy đủ ảnh/mô tả và các nút Duyệt/Từ chối nhập lý do, tự động gửi thông báo kết quả cho người bán.
   - **Admin xử lý báo cáo vi phạm & Lịch sử Hoạt động Admin (Sprint 5.4)**: Xây dựng tab Báo cáo trong hàng đợi kiểm duyệt để xử lý các khiếu nại shop/sản phẩm từ người dùng. Admin có thể thực hiện 4 hành động: Bỏ qua (Dismiss), Cảnh báo (Warn), Khóa tạm (Block), và Xóa vi phạm (Delete). Triển khai cơ chế lưu vết hoạt động `adminLogs` trên Firestore và hiển thị bảng Lịch sử Hoạt động ở cuối giao diện Admin Panel. Tích hợp nút "Mở khóa Shop" trong danh sách người dùng để phục hồi các tài khoản shop bị khóa tạm thời.
+  - **Tích hợp cổng thanh toán VNPay Sandbox & Tối ưu hóa thanh toán (Sprint 5.5)**: Thiết lập API Route tạo liên kết thanh toán VNPay Sandbox, API Route xác thực kết quả thanh toán, IPN Webhook tự động cập nhật đơn hàng và Landing page callback `/vnpay-return` xử lý UI. Tích hợp thanh toán bằng Thẻ Visa/Mastercard và Ví điện tử qua VNPay Sandbox, và hiển thị mã giao dịch VNPay ở trang success và profile.
+  - **Nhập mã vận đơn & Theo dõi đơn hàng GHN (Sprint 5.6)**: Cho phép người bán nhập mã vận đơn GHN trực tiếp trên card đơn hàng. Tự động tạo link tra cứu GHN và gửi thông báo Notification cho người mua. Hiển thị mã vận đơn và nút tra cứu tại trang Cá nhân và trang Hoàn tất đơn hàng.
+  - **Bảo mật Quản trị & Tối ưu Dashboard (Sprint 5.7)**: Thiết lập khóa quyền Admin duy nhất cho `admin@nongsach.vn`, vô hiệu hóa thăng cấp Admin cho các tài khoản khác. Loại bỏ các chỉ số bán hàng (doanh thu, đơn hàng, biểu đồ) khỏi trang Admin để tập trung vào quản lý nhân sự và hệ thống.
+  - **Nhập mã vận đơn & Theo dõi đơn hàng GHN (Sprint 5.8)**: Cơ chế cập nhật thời gian thực bằng Firestore onSnapshot, tích hợp Component Timeline hợp nhất cho trang Cá nhân và Hoàn tất đơn hàng.
+  - **Hệ thống Yêu cầu Hoàn trả Đơn hàng (Sprint 5.9)**: Cho phép người mua gửi yêu cầu hoàn trả kèm lý do và ảnh minh chứng cho đơn hàng `delivered`. Tự động lưu vào collection `refundRequests` và thông báo cho Seller/Admin.
 
 ---
 
@@ -184,12 +189,22 @@ Các ảnh chụp màn hình và video kiểm thử được lưu trữ trực t
 | **TC-47: Ẩn shop/sản phẩm bị khóa & Chặn truy cập** | Truy cập cửa hàng công khai và thử vào trực tiếp URL chi tiết của sản phẩm bị khóa hoặc thuộc shop bị khóa. | Storefront không liệt kê sản phẩm bị khóa; khi vào link trực tiếp hiển thị thông báo "Không tìm thấy sản phẩm" (hoặc Not Found) đối với người mua thông thường. | ✅ Pass |
 | **TC-48: Mở khóa Shop của Admin** | Nhấn nút "Mở khóa Shop" đối với tài khoản shop đang có trạng thái `blocked` trong bảng người dùng Admin. | Trạng thái shop phục hồi về `approved`, toàn bộ sản phẩm của shop tự động mở khóa (hoạt động bình thường) và gửi thông báo chuông cho seller. | ✅ Pass |
 | **TC-49: Lịch sử hoạt động Admin (Audit Logs)** | Thực hiện các thao tác quản trị (Duyệt, Từ chối, Khóa, Mở khóa) rồi xem bảng Lịch sử ở cuối trang. | Bản ghi thao tác hiển thị đầy đủ thông tin: Người thực hiện (admin), hành động, đối tượng bị ảnh hưởng, ghi chú chi tiết và thời gian thực hiện. | ✅ Pass |
+| **TC-50: Thanh toán VNPay thành công** | Chọn VNPay Sandbox/Visa/Ví điện tử, đặt hàng, nhập thẻ test NCB và OTP 123456 trên cổng VNPay. | Trình duyệt chuyển hướng về `/vnpay-return` xử lý xác thực chữ ký bảo mật thành công, xóa giỏ hàng, tạo đơn hàng trong Firestore và hiển thị mã giao dịch ở trang thành công `/checkout/success`. | ✅ Pass |
+| **TC-51: Hủy thanh toán VNPay** | Trên cổng thanh toán VNPay, click Hủy giao dịch. | Trình duyệt chuyển hướng về `/vnpay-return` hiển thị thông báo hủy, giỏ hàng được giữ nguyên và không có đơn hàng nào được tạo trong Firestore. | ✅ Pass |
+| **TC-52: Webhook IPN VNPay** | Thực hiện thanh toán và tắt trình duyệt trước khi redirect, hệ thống nhận IPN từ VNPay server. | Webhook `/api/vnpay/ipn` tự động xác thực chữ ký và số tiền, hoàn tất tạo đơn hàng trong Firestore, gửi Notification chuông realtime cho cả người mua và người bán. | ✅ Pass |
+| **TC-53: Nhập mã vận đơn Seller** | Người bán nhập mã `GHN123` vào ô mã vận đơn trên card đơn hàng và nhấn "Lưu mã". | Mã được lưu vào Firestore, hiển thị ngay trên UI người bán và hiện thông báo thành công. | ✅ Pass |
+| **TC-54: Theo dõi đơn hàng Buyer** | Người mua nhận thông báo mã vận đơn mới, click xem đơn hàng. | Thẻ đơn hàng hiển thị mã `GHN123` và nút "Theo dõi tại GHN". Click nút mở đúng link tra cứu của GHN. | ✅ Pass |
+| **TC-55: Bảo vệ Master Admin** | Thử tìm tài khoản `admin@nongsach.vn` trong bảng quản lý người dùng và thay đổi quyền. | Hệ thống hiển thị nhãn "Không được chỉnh sửa" và ẩn các nút thao tác cho tài khoản này. | ✅ Pass |
+| **TC-56: Chặn cấp quyền Admin** | Thử nâng cấp một tài khoản Buyer bất kỳ lên Admin từ bảng hành động. | Nút "Lên Admin" đã bị xóa hoàn toàn. Hàm `handleChangeRole` ném cảnh báo nếu cố tình truyền tham số admin. | ✅ Pass |
+| **TC-57: Tối ưu Dashboard Admin** | Truy cập trang Dashboard Admin và kiểm tra các thành phần chỉ số/biểu đồ. | Các thẻ doanh thu/đơn hàng và biểu đồ hiệu suất đã được gỡ bỏ. Dashboard hiển thị sạch sẽ 2 thẻ KPI về nhân sự. | ✅ Pass |
+| **TC-58: Gửi yêu cầu hoàn trả** | Người mua chọn lý do, nhập mô tả và tải 3 ảnh minh chứng trong modal hoàn trả. | Yêu cầu được lưu vào Firestore collection `refundRequests`. Trạng thái đơn hàng chuyển sang `refunding`. | ✅ Pass |
+| **TC-59: Thông báo yêu cầu hoàn trả** | Sau khi người mua gửi yêu cầu hoàn trả thành công. | Người bán nhận được thông báo chuông về yêu cầu hoàn trả mới của mã đơn hàng đó để kịp thời xử lý. | ✅ Pass |
 
 ---
 
 ## 5. Kết luận nghiệm thu
 
-Mọi hoạt động phát triển của phiên bản MVP v0.6.8 đều tuân thủ chặt chẽ quy trình **PLAN - DOC - BUILD - TEST**. Các tệp tin tài liệu được đồng bộ hóa hoàn toàn, mã nguồn được build thành công không lỗi, và các tính năng tương tác được kiểm thử trực quan trên trình duyệt trước khi giao.
+Mọi hoạt động phát triển của phiên bản MVP v0.7.0 đều tuân thủ chặt chẽ quy trình **PLAN - DOC - BUILD - TEST**. Các tệp tin tài liệu được đồng bộ hóa hoàn toàn, mã nguồn được build thành công không lỗi, và các tính năng tương tác được kiểm thử trực quan trên trình duyệt trước khi giao.
 
 Dự án đã sẵn sàng triển khai chính thức!
 

@@ -4,6 +4,140 @@ All notable changes to the **NôngSạch** project will be documented in this fi
 
 The format is based on **Keep a Changelog** and this project adheres to **Semantic Versioning**.
 
+## [0.7.6] - 2026-06-10
+
+### Phân xử Hoàn trả Đơn hàng (Admin Refund Mediation)
+
+### Added
+* **Tab Hoàn trả tại Admin Dashboard**: Admin có thể xem danh sách các yêu cầu hoàn trả đang chờ xử lý (`pending`) trực tiếp trong hàng đợi kiểm duyệt (Approvals Queue).
+* **Modal Phân xử Hoàn trả**: Giao diện chi tiết cho Admin xem xét lý do, mô tả và bằng chứng hình ảnh do người mua cung cấp, đồng thời có thông tin người bán liên quan.
+* **Quyết định phân xử (Mediation)**: 
+  - Admin có quyền can thiệp vào tranh chấp bằng cách **"Chấp nhận hoàn trả"** hoặc **"Từ chối"** yêu cầu hoàn trả.
+  - Yêu cầu nhập ghi chú quyết định từ Admin.
+* **Thông báo Phân xử**: Hệ thống tự động gửi Notification thông báo kết quả (kèm ghi chú của Admin) cho **cả Người mua và Người bán** để đảm bảo tính minh bạch.
+* **Log kiểm toán**: Hành động phân xử hoàn trả của Admin được tự động lưu vào bộ sưu tập `adminLogs` trên Firestore.
+
+### Changed
+* Cập nhật `order-store.ts` với hàm `adminMediateRefund` để xử lý logic backend, thay đổi trạng thái hoàn trả và ghi log.
+
+---
+
+## [0.7.5] - 2026-06-10
+
+### Hoàn thiện luồng Hoàn trả Đơn hàng (End-to-End Refund Processing Flow)
+
+### Added
+* **Giao diện Xử lý hoàn trả cho Người bán**: Cho phép Người bán xem chi tiết yêu cầu hoàn trả (lý do, mô tả, ảnh minh chứng) và thực hiện "Chấp nhận" hoặc "Từ chối".
+* **Logic xử lý Dữ liệu Hoàn trả**:
+  - `getRefundRequest`: Tải thông tin chi tiết yêu cầu hoàn trả từ Firestore.
+  - `processRefund`: Cập nhật trạng thái yêu cầu hoàn trả và tự động điều chỉnh trạng thái đơn hàng tương ứng (`refunded` nếu chấp nhận, `delivered` nếu từ chối).
+* **Thông báo kết quả cho Người mua**: Tự động gửi thông báo thời gian thực kèm ghi chú của người bán khi yêu cầu được xử lý.
+
+### Changed
+* **Tối ưu hóa Kênh người bán**: Bổ sung nút thao tác nhanh "Xử lý hoàn trả" trên card đơn hàng có trạng thái `refunding`.
+
+### Fixed
+* **Lỗi logic Yêu cầu hoàn trả**: Khắc phục lỗi thiếu hàm xử lý ảnh và submit form khiến người dùng không thể gửi yêu cầu ở phiên bản trước.
+
+---
+
+## [0.7.4] - 2026-06-10
+
+### Hệ thống Yêu cầu Hoàn trả Đơn hàng (Order Refund Request System - Buyer Side)
+
+### Added
+* **Tính năng Yêu cầu hoàn trả cho người mua**: Cho phép người mua gửi yêu cầu hoàn trả cho các đơn hàng đã được giao (`delivered`) kèm tối đa 3 ảnh minh chứng.
+* **Thông báo cho Người bán**: Tự động gửi thông báo thời gian thực đến Người bán ngay khi có yêu cầu hoàn trả mới.
+
+---
+
+## [0.7.3] - 2026-06-10
+
+### Theo dõi Đơn hàng Thời gian thực & Timeline hợp nhất (Real-time Order Tracking & Unified Timeline)
+
+### Added
+* **Cơ chế cập nhật Thời gian thực (Real-time Updates)**: Tích hợp Firestore `onSnapshot` vào `OrderStore` và trang Cá nhân, giúp đồng bộ trạng thái đơn hàng và mã vận đơn ngay lập tức khi người bán thay đổi dữ liệu.
+* **Component Timeline hợp nhất (`OrderTrackingTimeline`)**: Xây dựng thành phần giao diện theo dõi tiến trình 4 bước (Đặt hàng, Xác nhận, Đang giao, Đã nhận) chuyên nghiệp và trực quan.
+* **Giao diện Trạng thái Hủy**: Hiển thị thông báo và Timeline đặc biệt dành riêng cho các đơn hàng bị hủy.
+
+### Changed
+* **Hợp nhất trải nghiệm Theo dõi**: 
+  - Thay thế hệ thống Stepper cũ tại trang Hoàn tất đơn hàng (`/checkout/success`) bằng `OrderTrackingTimeline` thời gian thực.
+  - Tích hợp thông tin mã vận đơn GHN và link tra cứu trực tiếp vào bên dưới thanh Timeline để tạo luồng thông tin liền mạch.
+* **Tối ưu hóa Profile**: Cập nhật tab Đơn hàng để sử dụng subscription thời gian thực, đảm bảo người mua nhận được thông tin vận chuyển mới nhất mà không cần tải lại trang.
+
+---
+
+## [0.7.2] - 2026-06-10
+
+### Bảo mật quyền Quản trị & Tối ưu hóa Dashboard Admin (Admin Security Lockdown & Dashboard Optimization)
+
+### Added
+* **Cơ chế khóa quyền Quản trị (Admin Role Lockdown)**: Thiết lập quy tắc bảo mật chỉ cho phép duy nhất tài khoản `admin@nongsach.vn` giữ vai trò Admin hệ thống.
+* **Bảo vệ tài khoản Master Admin**: Tài khoản admin chính được đánh dấu "Không được chỉnh sửa" trong danh sách quản lý người dùng để tránh các thay đổi vô ý.
+
+### Changed
+* **Vô hiệu hóa thăng cấp Admin**: Loại bỏ hoàn toàn tính năng cấp quyền Admin cho người dùng khác từ giao diện quản trị và logic xử lý backend (`auth-store.ts`).
+* **Tối ưu hóa Dashboard tập trung vào Quản lý User**:
+  - Loại bỏ các chỉ số bán hàng (Doanh thu, Đơn hàng hôm nay) khỏi Dashboard Admin để tập trung hoàn toàn vào nhiệm vụ quản lý người dùng và phê duyệt chất lượng.
+  - Thu gọn bảng chỉ số KPI chỉ còn: *Tổng người dùng* và *Số lượng Seller chờ duyệt*.
+* **Cải thiện luồng truy cập Admin**: Thêm lại lối tắt "Trang quản trị" trên Header storefront cho người dùng Admin để chuyển đổi nhanh giữa giao diện người dùng và quản trị.
+
+### Removed
+* **Gỡ bỏ Biểu đồ Hiệu suất Nền tảng (SVG Chart)**: Xóa bỏ biểu đồ doanh thu và đơn hàng cùng các logic tính toán dữ liệu liên quan tại trang quản trị để tối ưu hóa hiệu năng tải trang.
+
+---
+
+## [0.7.1] - 2026-06-10
+
+### Nhập mã vận đơn & Theo dõi đơn hàng GHN (Tracking Code Integration & GHN Tracking)
+
+### Added
+* **Tính năng nhập mã vận đơn cho người bán**: Cho phép người bán nhập và cập nhật mã vận đơn GHN trực tiếp trên thẻ đơn hàng tại Kênh người bán.
+* **Tự động tạo link tra cứu GHN**: Hệ thống tự động chuyển đổi mã vận đơn thành đường dẫn tra cứu trực tuyến tại GHN (`https://ghn.vn/blogs/trang-thai-don-hang?v=...`).
+* **Thông báo cập nhật mã vận đơn**: Tự động gửi thông báo thời gian thực đến người mua khi người bán cập nhật mã vận đơn, kèm theo mã và hướng dẫn tra cứu.
+
+### Changed
+* **Hiển thị thông tin vận chuyển cho người mua**: 
+  - Cập nhật thẻ đơn hàng trong trang Cá nhân (`/profile`) để hiển thị mã vận đơn và nút "Theo dõi tại GHN".
+  - Nâng cấp trang Hoàn tất đơn hàng (`/checkout/success`) để hiển thị thông tin vận đơn và tích hợp nút tra cứu trực tiếp vào hành động "Theo dõi đơn hàng".
+* **Mở rộng Order Store**: Thêm action `updateTrackingCode` hỗ trợ cập nhật dữ liệu đồng bộ trên Firestore và local state.
+
+---
+
+## [0.7.0] - 2026-06-10
+
+### Tích hợp cổng thanh toán VNPay Sandbox & Tối ưu hóa luồng Đơn hàng (VNPay Sandbox Payment Gateway Integration & Order Workflow Optimization)
+
+### Added
+* **Tích hợp cổng thanh toán VNPay Sandbox**: Hỗ trợ 3 phương thức thanh toán trực tuyến qua cổng VNPay Sandbox:
+  - *Thanh toán online qua VNPay (vnpay)*: Cho phép người dùng quét mã QR, thanh toán bằng thẻ ATM nội địa hoặc thẻ quốc tế trực tiếp trên cổng VNPay.
+  - *Thẻ Visa / Mastercard (credit)*: Chuyển hướng trực tiếp đến VNPay Sandbox với tuỳ chọn thẻ quốc tế (`vnp_BankCode: "INTCARD"`).
+  - *Ví điện tử (wallet)*: Chuyển hướng trực tiếp đến VNPay Sandbox với tuỳ chọn thanh toán quét mã QR (`vnp_BankCode: "VNPAYQR"`).
+* **Cơ chế thanh toán 2 bước an toàn (Two-Step Order Placement)**:
+  - Khi chọn phương thức thanh toán online (VNPay, Credit, Wallet), thông tin đơn hàng tạm thời được lưu trong collection `"pending_orders"` trên Firestore với trạng thái `"pending"`.
+  - Đơn hàng chính thức trong collection `"orders"` chỉ được tạo sau khi thanh toán thành công (nhận kết quả response code `"00"`), đảm bảo **không tạo đơn hàng khi thanh toán thất bại hoặc bị hủy**.
+* **Đường dẫn Callback & xử lý kết quả (`src/app/checkout/vnpay-return/page.tsx`)**:
+  - Giao diện Landing page hiển thị trạng thái đang xử lý xác thực, tự động gọi API xác thực chữ ký bảo mật từ server.
+  - Nếu thành công: tự động xóa sản phẩm đã mua khỏi giỏ hàng (`removePurchasedItems`), tạo đơn hàng và chuyển hướng sang trang thành công `/checkout/success`.
+  - Nếu bị hủy (Response code `"24"`): hiển thị màn hình thông báo hủy, giữ nguyên giỏ hàng để người dùng thao tác lại.
+  - Nếu lỗi khác: hiển thị màn hình lỗi thanh toán thất bại, giữ nguyên giỏ hàng.
+* **Server-side API Routes cho VNPay**:
+  - `/api/vnpay/create-payment`: Tạo URL thanh toán VNPay bằng thuật toán ký bảo mật HMAC-SHA512 của danh sách tham số đã được sắp xếp theo bảng chữ cái.
+  - `/api/vnpay/verify-payment`: Xác thực mã Hash chữ ký trả về từ VNPay, xử lý lưu đơn hàng chính thức lên Firestore và tạo thông báo (Notifications) cho người mua và người bán.
+  - `/api/vnpay/ipn`: Webhook xác nhận giao dịch tự động server-to-server (Instant Payment Notification) để đảm bảo đồng bộ trạng thái đơn hàng khi người dùng đóng trình duyệt đột ngột.
+
+### Changed
+* **Cập nhật trang thanh toán (`src/app/checkout/page.tsx`)**: Tích hợp các tùy chọn thanh toán trực tuyến vào menu và chuyển hướng sang API khởi tạo thanh toán VNPay.
+* **Trang xác nhận thành công (`src/app/checkout/success/page.tsx`)**: Hiển thị nhãn thanh toán trực tuyến phù hợp và kết xuất trực tiếp Mã giao dịch VNPay (`vnp_TransactionNo`) nếu có.
+* **Trang thông tin cá nhân (`src/app/profile/page.tsx`)**: Cập nhật lịch sử đơn hàng để hiển thị nhãn phương thức thanh toán tương ứng và mã giao dịch VNPay.
+* **Cấu trúc dữ liệu đơn hàng (`src/types/order.ts`)**: Mở rộng thuộc tính `payment_status`, `vnp_TransactionNo`, và `vnp_ResponseCode` trong interface `Order`.
+
+### Verification
+* **Type Safety & Build**: Chạy lệnh `npm run build` thành công, các kiểm tra kiểu TypeScript của route API và frontend đều vượt qua không lỗi.
+
+---
+
 ## [0.6.8] - 2026-06-09
 
 ### Admin xử lý báo cáo vi phạm, Lịch sử Hoạt động & Mở khóa Shop (Admin Violation Reports Handling, Audit Logs & Shop Unblocking)

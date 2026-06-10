@@ -101,7 +101,7 @@ export default function CheckoutPage() {
   const [address, setAddress] = useState("");
   const [note, setNote] = useState("");
   const [shippingMethod, setShippingMethod] = useState<"standard" | "fast" | "pickup">("standard");
-  const [paymentMethod, setPaymentMethod] = useState<"cod" | "bank" | "credit" | "wallet">("cod");
+  const [paymentMethod, setPaymentMethod] = useState<"cod" | "bank" | "credit" | "wallet" | "vnpay">("cod");
   const [errors, setErrors] = useState<FormErrors>({});
 
   const [showAddressForm, setShowAddressForm] = useState(true);
@@ -295,6 +295,43 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (["vnpay", "credit", "wallet"].includes(paymentMethod)) {
+      try {
+        const response = await fetch("/api/vnpay/create-payment", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: currentUser?.id || "guest",
+            fullName: fullName.trim(),
+            phone: phone.trim(),
+            email: email.trim(),
+            address: fullAddress,
+            note: note.trim(),
+            items: selectedItems,
+            totalAmount: total,
+          }),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || "Không thể khởi tạo thanh toán VNPay");
+        }
+
+        if (data.paymentUrl) {
+          window.location.href = data.paymentUrl;
+          return;
+        } else {
+          throw new Error("Không nhận được liên kết thanh toán từ máy chủ");
+        }
+      } catch (err: any) {
+        console.error("Lỗi VNPay checkout:", err);
+        showToast(err.message || "Đã xảy ra lỗi khi kết nối với cổng thanh toán VNPay.", "error");
+        return;
+      }
+    }
+
     // Group selected items by sellerId
     const itemsBySeller = selectedItems.reduce((acc, item) => {
       const sellerId = item.sellerId || "admin";
@@ -330,15 +367,13 @@ export default function CheckoutPage() {
       await addOrder(newOrder);
 
       // Notify Seller
-      if (sellerId !== "admin") {
-        await addNotification({
-          userId: sellerId,
-          title: "Đơn hàng mới!",
-          message: `Bạn nhận được đơn hàng mới #${subOrderId} từ ${fullName.trim()}.`,
-          type: "new_order",
-          orderId: subOrderId,
-        });
-      }
+      await addNotification({
+        userId: sellerId,
+        title: "Đơn hàng mới!",
+        message: `Bạn nhận được đơn hàng mới #${subOrderId} từ ${fullName.trim()}.`,
+        type: "new_order",
+        orderId: subOrderId,
+      });
     }
 
     // Notify Buyer
@@ -664,11 +699,12 @@ export default function CheckoutPage() {
                   <div className="relative">
                     <select
                       value={paymentMethod}
-                      onChange={(e) => setPaymentMethod(e.target.value as "cod" | "bank" | "credit" | "wallet")}
+                      onChange={(e) => setPaymentMethod(e.target.value as "cod" | "bank" | "credit" | "wallet" | "vnpay")}
                       className={`${inputClass()} appearance-none pr-10`}
                     >
                       <option value="cod">Thanh toán khi nhận hàng (COD)</option>
                       <option value="bank">Chuyển khoản ngân hàng</option>
+                      <option value="vnpay">Thanh toán online qua VNPay (Sandbox)</option>
                       <option value="credit">Thẻ Visa / Mastercard</option>
                       <option value="wallet">Ví điện tử</option>
                     </select>

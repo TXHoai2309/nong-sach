@@ -1,7 +1,7 @@
 # 🌿 NôngSạch Architecture
 
 > Architecture Document
-> Version: v1.2.7
+> Version: v1.3.0
 > Project: NôngSạch — Nền tảng giao dịch nông sản sạch
 
 ---
@@ -60,18 +60,15 @@ Mục tiêu của kiến trúc MVP:
 └─────────────────────┘
 ```
 
-## Future Architecture (Phase 2)
+## Current Core Architecture
 
 ```text
-Next.js
+Next.js 16 (App Router)
    │
-   ├── Firebase Auth
-   │
-   ├── Cloud Firestore
-   │
-   ├── Firebase Storage
-   │
-   └── VNPay Integration
+   ├── Cloud Firestore (Database & Real-time)
+   ├── Firebase Storage (Product & CCCD Images)
+   ├── Zustand + Persist (Client Session & Cart)
+   └── VNPay Sandbox (Payment Gateway)
 ```
 
 ---
@@ -227,15 +224,27 @@ interface CartItem {
 
 ```ts
 interface Order {
-  orderId: string
-  customerName: string
-  phone: string
-  address: string
-  note?: string
-  items: CartItem[]
-  total: number
-  createdAt: Date
+  id: string;
+  userId: string;
+  sellerId?: string;
+  shopName?: string;
+  fullName: string;
+  phone: string;
+  email?: string;
+  address: string;
+  note?: string;
+  items: CartItem[];
+  totalAmount: number;
+  status: OrderStatus;
+  paymentMethod: string;
+  createdAt: string;
+  payment_status?: string;
+  vnp_TransactionNo?: string;
+  vnp_ResponseCode?: string;
+  trackingCode?: string;
+  trackingUrl?: string;
 }
+
 ```
 
 ## Shop
@@ -372,6 +381,38 @@ resolveReport(reportId: string, status: 'resolved' | 'dismissed', action: string
 * Tích hợp lưu trữ trực tiếp trên Firestore trong collection `"reports"`.
 * **Tránh lỗi undefined trên Firestore**: Trước khi ghi dữ liệu lên Firestore, tự động lọc sạch các trường có giá trị `undefined` bằng `Object.fromEntries(Object.entries(data).filter(([_, v]) => v !== undefined))` để đảm bảo an toàn truy vấn và ngăn chặn runtime exceptions của Firestore.
 * Khi Admin xử lý báo cáo, ghi nhận kết quả hành động và tự động cập nhật trạng thái thực tế của đối tượng bị báo cáo (Cửa hàng/Sản phẩm).
+
+---
+
+## Order Store
+
+File:
+
+```text
+src/store/order-store.ts
+```
+
+### State
+
+```ts
+orders: Order[]
+isLoading: boolean
+```
+
+### Actions
+
+```ts
+addOrder(order: Order)
+updateOrderStatus(orderId: string, status: OrderStatus)
+updateTrackingCode(orderId: string, trackingCode: string)
+fetchOrdersByUserId(userId: string)
+fetchOrdersBySellerId(sellerId: string)
+```
+
+### Business Rules
+
+* Quản lý trạng thái đơn hàng và lịch sử mua sắm/bán hàng trên Firestore.
+* **Cập nhật mã vận đơn**: Cho phép người bán nhập mã vận đơn GHN cho các đơn hàng đang xử lý. Hệ thống tự động tạo link tra cứu GHN và gửi thông báo cho người mua.
 
 ---
 
@@ -626,7 +667,7 @@ Admin Dashboard Queue (Duyệt Sản Phẩm Tab)
 | profile/page.tsx           | Client | Tab navigation, Profile & Address updates, Seller Registration Warning Banner & Resubmission form handling |
 | app/shop/[id]/page.tsx     | Client | Shop Details, Follow and Products Filter & Sort |
 | app/admin/layout.tsx       | Client | Admin Session & Sidebar Layout |
-| app/admin/page.tsx         | Client | Dashboard stats, Approvals Queue with Detail Modal (CCCD Zoom), Rejection modal, and custom SVG line chart |
+| app/admin/page.tsx         | Client | Dashboard stats, Approvals Queue with Detail Modal (CCCD Zoom), and Rejection modal |
 
 ---
 
@@ -803,9 +844,9 @@ adminLogs
 
 ## Payment Gateway
 
-* VNPay
-* MoMo
-* ZaloPay
+* VNPay (Đã tích hợp bản Sandbox)
+* MoMo (Định hướng tương lai)
+* ZaloPay (Định hướng tương lai)
 
 ## Admin Dashboard
 
@@ -831,9 +872,16 @@ NEXT_PUBLIC_FIREBASE_PROJECT_ID=
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
 NEXT_PUBLIC_FIREBASE_APP_ID=
+NEXT_PUBLIC_FIREBASE_DATABASE_URL=
+
+# VNPay Sandbox credentials
+VNP_TMNCODE=
+VNP_HASHSECRET=
+VNP_RETURNURL=
 ```
 
 Lưu ý:
 
-MVP hiện tại chưa sử dụng Firebase. Các biến môi trường chỉ cần khi triển khai Phase 2.
+Dự án hiện đã tích hợp hoàn toàn cơ sở dữ liệu Firestore, Firebase Storage và cổng thanh toán VNPay Sandbox. Bạn cần cấu hình đầy đủ các biến môi trường trên để các chức năng này hoạt động ổn định.
+
       

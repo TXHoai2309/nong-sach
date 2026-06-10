@@ -4,22 +4,25 @@ import { useEffect, useState, useMemo, type FormEvent, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { collection, doc, getDocs, query, where } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import { formatCurrency } from "@/lib/format";
 import { getOrderStatusMeta } from "@/lib/order-status";
-import { Order } from "@/types/order";
+import { Order, OrderStatus } from "@/types/order";
+import { RefundRequest } from "@/types/refund";
 import { useAuthStore } from "@/store/auth-store";
 import { useCartStore } from "@/store/cart-store";
 import { useOrderStore } from "@/store/order-store";
 import { useNotificationStore } from "@/store/notification-store";
 import { Notification } from "@/types/notification";
-import { OrderStatus } from "@/types/order";
 import { Product, ProductCategory } from "@/types/product";
 import { UserAddress, User } from "@/types/user";
 import CoverImageCropper from "@/components/ui/CoverImageCropper";
 import { getAllProducts, addProduct, deleteProduct } from "@/lib/products";
 import { addReview, checkReviewedItems, getBaseProductId, getReviewsByOrderId } from "@/lib/reviews";
 import { Review } from "@/types/review";
+import { OrderTrackingTimeline } from "@/components/order/OrderTrackingTimeline";
 
 const PROVINCES_API = "https://provinces.open-api.vn/api/v1/?depth=2";
 
@@ -140,8 +143,12 @@ function ProfileContent() {
   const { addToCart } = useCartStore();
   const orders = useOrderStore((state) => state.orders);
   const updateOrderStatus = useOrderStore((state) => state.updateOrderStatus);
-  const fetchOrdersByUserId = useOrderStore((state) => state.fetchOrdersByUserId);
-  const fetchOrdersBySellerId = useOrderStore((state) => state.fetchOrdersBySellerId);
+  const updateTrackingCode = useOrderStore((state) => state.updateTrackingCode);
+  const requestRefund = useOrderStore((state) => state.requestRefund);
+  const getRefundRequest = useOrderStore((state) => state.getRefundRequest);
+  const processRefund = useOrderStore((state) => state.processRefund);
+  const subscribeToUserOrders = useOrderStore((state) => state.subscribeToUserOrders);
+  const subscribeToSellerOrders = useOrderStore((state) => state.subscribeToSellerOrders);
   const isOrdersLoading = useOrderStore((state) => state.isLoading);
   const notifications = useNotificationStore((state) => state.notifications);
   const markAsRead = useNotificationStore((state) => state.markAsRead);
@@ -241,6 +248,20 @@ function ProfileContent() {
   const [showCurrentPass, setShowCurrentPass] = useState(false);
   const [showNewPass, setShowNewPass] = useState(false);
 
+  // Refund states
+  const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
+  const [refundingOrder, setRefundingOrder] = useState<Order | null>(null);
+  const [refundReason, setRefundReason] = useState("");
+  const [refundDesc, setRefundDesc] = useState("");
+  const [refundImages, setRefundImages] = useState<string[]>([]);
+  const [isSubmittingRefund, setIsSubmittingRefund] = useState(false);
+
+  // Seller Refund Process states
+  const [isSellerRefundModalOpen, setIsSellerRefundModalOpen] = useState(false);
+  const [activeRefundRequest, setActiveRefundRequest] = useState<RefundRequest | null>(null);
+  const [processNote, setProcessNote] = useState("");
+  const [isProcessingRefund, setIsProcessingRefund] = useState(false);
+
   // Address Dialog/Form State
   const [isAddressFormOpen, setIsAddressFormOpen] = useState(false);
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
@@ -260,6 +281,7 @@ function ProfileContent() {
   // Order filter
   const [orderFilter, setOrderFilter] = useState<"all" | "processing" | "completed">("all");
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+  const [trackingInputs, setTrackingInputs] = useState<Record<string, string>>({});
 
   // Review states
   const [reviewedItemsMap, setReviewedItemsMap] = useState<Record<string, boolean>>({});
@@ -384,16 +406,18 @@ function ProfileContent() {
   useEffect(() => {
     if (!mounted || !currentUser) return;
     if (activeTab === "orders") {
-      fetchOrdersByUserId(currentUser.id);
+      const unsubscribe = subscribeToUserOrders(currentUser.id);
+      return () => unsubscribe();
     }
-  }, [mounted, activeTab, currentUser?.id, fetchOrdersByUserId]);
+  }, [mounted, activeTab, currentUser?.id, subscribeToUserOrders]);
 
   useEffect(() => {
     if (!mounted || !currentUser) return;
     if (activeTab === "seller" && sellerSubTab === "orders") {
-      fetchOrdersBySellerId(currentUser.id);
+      const unsubscribe = subscribeToSellerOrders(currentUser.id);
+      return () => unsubscribe();
     }
-  }, [mounted, activeTab, sellerSubTab, currentUser?.id, fetchOrdersBySellerId]);
+  }, [mounted, activeTab, sellerSubTab, currentUser?.id, subscribeToSellerOrders]);
 
   useEffect(() => {
     if (activeTab !== "seller" || sellerSubTab !== "orders" || !focusedSellerOrderId) return;
@@ -875,6 +899,154 @@ function ProfileContent() {
     });
     
     showToast(`Đã cập nhật đơn hàng: ${statusMeta.label}`);
+  };
+
+  const handleUpdateTrackingCode = async (orderId: string, userId: string) => {
+    const code = trackingInputs[orderId];
+    if (!code || !code.trim()) {
+      showToast("Vui lòng nhập mã vận đơn", "error");
+      return;
+    }
+
+    await updateTrackingCode(orderId, code.trim());
+    
+    const trackingUrl = `https://ghn.vn/blogs/trang-thai-don-hang?v=${code.trim()}`;
+    await addNotification({
+      userId,
+      title: "Cập nhật mã vận đơn",
+      message: `Đơn hàng #${orderId} đã có mã vận đơn: ${code.trim()}. Bạn có thể theo dõi tại GHN.`,
+      type: "order_update",
+      orderId,
+    });
+
+    showToast("Đã cập nhật mã vận đơn thành công!");
+    // Clear input for this order
+    setTrackingInputs(prev => {
+      const next = { ...prev };
+      delete next[orderId];
+      return next;
+    });
+  };
+
+  const handleRefundImagesUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const remainingCount = 3 - refundImages.length;
+    if (remainingCount <= 0) {
+      showToast("Tối đa 3 ảnh minh chứng", "error");
+      e.target.value = "";
+      return;
+    }
+
+    const filesArray = Array.from(files).slice(0, remainingCount);
+    void (async () => {
+      for (const file of filesArray) {
+        try {
+          const base64 = await readFileAsDataUrl(file);
+          const compressed = await compressImage(base64, 800, 800, 0.8, "image/webp");
+          setRefundImages((prev) => (prev.length >= 3 ? prev : [...prev, compressed]));
+        } catch {
+          showToast("Có lỗi khi xử lý ảnh minh chứng", "error");
+        }
+      }
+    })();
+    e.target.value = "";
+  };
+
+  const handleOpenProcessRefund = async (order: Order) => {
+    if (!order.refundRequestId) return;
+    try {
+      const request = await getRefundRequest(order.refundRequestId);
+      if (request) {
+        setActiveRefundRequest(request);
+        setRefundingOrder(order);
+        setProcessNote("");
+        setIsSellerRefundModalOpen(true);
+      } else {
+        showToast("Không tìm thấy thông tin yêu cầu hoàn trả", "error");
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("Lỗi khi tải thông tin hoàn trả", "error");
+    }
+  };
+
+  const handleProcessRefund = async (status: "approved" | "rejected") => {
+    if (!refundingOrder || !activeRefundRequest) return;
+    
+    setIsProcessingRefund(true);
+    try {
+      await processRefund(refundingOrder.id, activeRefundRequest.id, status, processNote.trim());
+      
+      const statusLabel = status === "approved" ? "chấp nhận" : "từ chối";
+      await addNotification({
+        userId: refundingOrder.userId,
+        title: `Yêu cầu hoàn trả đã được ${statusLabel}`,
+        message: `Người bán đã ${statusLabel} yêu cầu hoàn trả cho đơn hàng #${refundingOrder.id}. ${processNote ? `Ghi chú: ${processNote.trim()}` : ""}`,
+        type: "order_update",
+        orderId: refundingOrder.id,
+      });
+
+      showToast(`Đã ${statusLabel} yêu cầu hoàn trả thành công!`);
+      setIsSellerRefundModalOpen(false);
+      setActiveRefundRequest(null);
+      setRefundingOrder(null);
+      setProcessNote("");
+    } catch (err) {
+      console.error(err);
+      showToast("Lỗi khi xử lý yêu cầu hoàn trả", "error");
+    } finally {
+      setIsProcessingRefund(false);
+    }
+  };
+
+  const handleRefundSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!currentUser || !refundingOrder) return;
+    if (!refundReason) {
+      showToast("Vui lòng chọn lý do hoàn trả", "error");
+      return;
+    }
+    if (!refundDesc.trim()) {
+      showToast("Vui lòng nhập mô tả chi tiết", "error");
+      return;
+    }
+
+    setIsSubmittingRefund(true);
+    try {
+      await requestRefund({
+        orderId: refundingOrder.id,
+        userId: currentUser.id,
+        sellerId: refundingOrder.sellerId || "",
+        reason: refundReason,
+        description: refundDesc.trim(),
+        images: refundImages,
+      });
+
+      // Notify Seller
+      if (refundingOrder.sellerId) {
+        await addNotification({
+          userId: refundingOrder.sellerId,
+          title: "Yêu cầu hoàn trả mới",
+          message: `Khách hàng yêu cầu hoàn trả cho đơn hàng #${refundingOrder.id}. Lý do: ${refundReason}`,
+          type: "order_update",
+          orderId: refundingOrder.id,
+        });
+      }
+
+      showToast("Đã gửi yêu cầu hoàn trả thành công!");
+      setIsRefundModalOpen(false);
+      setRefundingOrder(null);
+      setRefundReason("");
+      setRefundDesc("");
+      setRefundImages([]);
+    } catch (err) {
+      console.error(err);
+      showToast("Lỗi khi gửi yêu cầu hoàn trả", "error");
+    } finally {
+      setIsSubmittingRefund(false);
+    }
   };
 
   const handleEditProduct = (p: ShopProduct) => {
@@ -1706,6 +1878,9 @@ function ProfileContent() {
                             </div>
                           </div>
 
+                          {/* Order Tracking Timeline for Buyer */}
+                          <OrderTrackingTimeline order={order} />
+
                           {/* Expanded Details section */}
                           {isExpanded && (
                             <div className="bg-[#f9f9ff] rounded-xl p-4 border border-[#bbcabf]/15 mb-4 text-xs space-y-2 text-[#3c4a42]/80">
@@ -1713,8 +1888,15 @@ function ProfileContent() {
                               <p><strong className="text-[#3c4a42]">Số điện thoại:</strong> {order.phone}</p>
                               <p><strong className="text-[#3c4a42]">Địa chỉ giao hàng:</strong> {order.address}</p>
                               <p><strong className="text-[#3c4a42]">Phương thức thanh toán:</strong> {
-                                order.paymentMethod === "cod" ? "Thanh toán khi nhận hàng (COD)" : "Chuyển khoản ngân hàng"
+                                order.paymentMethod === "cod" ? "Thanh toán khi nhận hàng (COD)" :
+                                order.paymentMethod === "bank" ? "Chuyển khoản ngân hàng" :
+                                order.paymentMethod === "vnpay" ? "Thanh toán online qua VNPay" :
+                                order.paymentMethod === "credit" ? "Thẻ Visa / Mastercard" :
+                                order.paymentMethod === "wallet" ? "Ví điện tử" : order.paymentMethod
                               }</p>
+                              {order.vnp_TransactionNo && (
+                                <p><strong className="text-[#3c4a42]">Mã giao dịch VNPay:</strong> {order.vnp_TransactionNo}</p>
+                              )}
                               
                               {/* Order items detail list */}
                               <div className="border-t border-[#bbcabf]/15 pt-3 mt-3">
@@ -1824,6 +2006,17 @@ function ProfileContent() {
 
                           {/* Action Buttons */}
                           <div className="flex justify-end gap-2 border-t border-[#bbcabf]/10 pt-4">
+                            {order.status === "delivered" && (
+                              <button
+                                onClick={() => {
+                                  setRefundingOrder(order);
+                                  setIsRefundModalOpen(true);
+                                }}
+                                className="rounded-full border border-red-200 bg-red-50 px-5 py-2 text-xs font-bold text-red-600 transition hover:bg-red-100"
+                              >
+                                Yêu cầu hoàn trả
+                              </button>
+                            )}
                             <button
                               onClick={() => setExpandedOrderId(isExpanded ? null : order.id)}
                               className="rounded-full border border-[#bbcabf] px-5 py-2 text-xs font-bold text-[#3c4a42] transition hover:bg-[#f4f6fa]"
@@ -3409,6 +3602,33 @@ function ProfileContent() {
                                   </div>
                                 </div>
 
+                                {/* Tracking Code Input for Seller */}
+                                {(order.status === "confirmed" || order.status === "shipping") && (
+                                  <div className="space-y-2 pt-2 border-t border-[#bbcabf]/10">
+                                    <p className="text-[10px] font-bold text-[#3c4a42]/50 uppercase">Mã vận đơn GHN</p>
+                                    <div className="flex gap-2">
+                                      <input
+                                        type="text"
+                                        placeholder={order.trackingCode || "Nhập mã vận đơn..."}
+                                        value={trackingInputs[order.id] || ""}
+                                        onChange={(e) => setTrackingInputs(prev => ({ ...prev, [order.id]: e.target.value }))}
+                                        className="flex-1 rounded-xl border-none bg-[#f4f6fa] px-3 py-2 text-xs text-[#3c4a42] outline-none focus:ring-2 focus:ring-[#006c49]"
+                                      />
+                                      <button
+                                        onClick={() => handleUpdateTrackingCode(order.id, order.userId)}
+                                        className="px-4 bg-[#006c49] text-white text-[10px] font-bold py-2 rounded-xl hover:opacity-90 transition-all shadow-sm"
+                                      >
+                                        {order.trackingCode ? "Cập nhật" : "Lưu mã"}
+                                      </button>
+                                    </div>
+                                    {order.trackingCode && (
+                                      <p className="text-[10px] font-medium text-[#006c49]">
+                                        Hiện tại: <span className="font-bold">{order.trackingCode}</span>
+                                      </p>
+                                    )}
+                                  </div>
+                                )}
+
                                 <div className="flex flex-wrap gap-2 pt-1">
                                   {order.status === "pending" && (
                                     <button
@@ -3437,7 +3657,16 @@ function ProfileContent() {
                                       Hoàn tất giao
                                     </button>
                                   )}
-                                  {order.status !== "delivered" && order.status !== "cancelled" && (
+                                  {order.status === "refunding" && (
+                                    <button
+                                      onClick={() => handleOpenProcessRefund(order)}
+                                      className="flex-1 bg-orange-600 text-white text-[10px] font-bold py-2 rounded-xl hover:opacity-90 transition-all flex items-center justify-center gap-1.5"
+                                    >
+                                      <span className="material-symbols-outlined text-sm">assignment_return</span>
+                                      Xử lý hoàn trả
+                                    </button>
+                                  )}
+                                  {order.status !== "delivered" && order.status !== "cancelled" && order.status !== "refunding" && order.status !== "refunded" && (
                                     <button
                                       onClick={() => handleUpdateOrderStatus(order.id, "cancelled", order.userId)}
                                       className="px-4 bg-red-50 text-red-600 text-[10px] font-bold py-2 rounded-xl hover:bg-red-100 transition-all flex items-center gap-1.5"
@@ -4322,6 +4551,232 @@ function ProfileContent() {
         </div>
       </div>
     )}
+      {/* ── Refund Request Modal ───────────────────────────────────────────── */}
+      {isRefundModalOpen && refundingOrder && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsRefundModalOpen(false)} />
+          <div className="relative w-full max-w-[500px] max-h-[92vh] overflow-hidden rounded-3xl bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+              <h2 className="text-lg font-bold text-[#3c4a42] flex items-center gap-2">
+                <span className="material-symbols-outlined text-red-500">assignment_return</span>
+                Yêu cầu hoàn trả
+              </h2>
+              <button 
+                onClick={() => setIsRefundModalOpen(false)} 
+                className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-all cursor-pointer border-none"
+              >
+                <span className="material-symbols-outlined text-sm text-slate-600">close</span>
+              </button>
+            </div>
+
+            <form onSubmit={handleRefundSubmit} className="max-h-[calc(92vh-76px)] overflow-y-auto p-6 space-y-5">
+              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 mb-4">
+                <p className="text-xs font-bold text-[#3c4a42]/60 uppercase tracking-tight">Đang yêu cầu cho đơn hàng</p>
+                <p className="font-bold text-[#3c4a42]">#{refundingOrder.id}</p>
+              </div>
+
+              {/* Refund Reason */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-[#3c4a42]/70 uppercase tracking-wider">Lý do hoàn trả *</label>
+                <select
+                  value={refundReason}
+                  onChange={(e) => setRefundReason(e.target.value)}
+                  required
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-2xl text-sm outline-none focus:border-[#006c49] bg-slate-50 text-[#3c4a42]"
+                >
+                  <option value="">-- Chọn lý do --</option>
+                  <option value="Sản phẩm không đúng mô tả">Sản phẩm không đúng mô tả</option>
+                  <option value="Sản phẩm bị hư hỏng/dập nát">Sản phẩm bị hư hỏng/dập nát</option>
+                  <option value="Giao sai sản phẩm">Giao sai sản phẩm</option>
+                  <option value="Sản phẩm hết hạn sử dụng">Sản phẩm hết hạn sử dụng</option>
+                  <option value="Lý do khác">Lý do khác</option>
+                </select>
+              </div>
+
+              {/* Description */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-[#3c4a42]/70 uppercase tracking-wider">Mô tả chi tiết *</label>
+                <textarea
+                  value={refundDesc}
+                  onChange={(e) => setRefundDesc(e.target.value)}
+                  rows={4}
+                  required
+                  className="w-full px-4 py-3 border border-slate-200 rounded-2xl text-sm outline-none focus:border-[#006c49] transition-all resize-none bg-slate-50 text-[#3c4a42]"
+                  placeholder="Vui lòng mô tả chi tiết vấn đề bạn gặp phải..."
+                />
+              </div>
+
+              {/* Proof Images */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-[#3c4a42]/70 uppercase tracking-wider">Ảnh minh chứng *</label>
+                  <span className="text-[11px] font-bold text-[#3c4a42]/45">{refundImages.length}/3 ảnh</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {refundImages.map((image, index) => (
+                    <div key={index} className="relative h-20 w-20 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+                      <Image
+                        src={image}
+                        alt={`Minh chứng ${index + 1}`}
+                        fill
+                        sizes="80px"
+                        unoptimized
+                        className="object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setRefundImages(prev => prev.filter((_, idx) => idx !== index))}
+                        className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white transition hover:bg-black/75"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">close</span>
+                      </button>
+                    </div>
+                  ))}
+
+                  {refundImages.length < 3 && (
+                    <label className="flex h-20 w-20 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#bbcabf]/70 bg-slate-50 text-[#006c49] transition hover:bg-[#006c49]/5">
+                      <span className="material-symbols-outlined text-[22px]">add_a_photo</span>
+                      <span className="mt-1 text-[10px] font-extrabold">Thêm ảnh</span>
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handleRefundImagesUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsRefundModalOpen(false)}
+                  className="flex-1 px-6 py-2.5 rounded-full border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all cursor-pointer"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingRefund}
+                  className="flex-1 px-6 py-2.5 rounded-full bg-red-600 text-white text-sm font-bold hover:bg-red-700 transition-all disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer border-none shadow-md shadow-red-200"
+                >
+                  {isSubmittingRefund ? (
+                    <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <span className="material-symbols-outlined text-sm">send</span>
+                  )}
+                  Gửi yêu cầu
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Seller Refund Process Modal ────────────────────────────────────── */}
+      {isSellerRefundModalOpen && activeRefundRequest && refundingOrder && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsSellerRefundModalOpen(false)} />
+          <div className="relative w-full max-w-[550px] max-h-[92vh] overflow-hidden rounded-3xl bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+              <h2 className="text-lg font-bold text-[#3c4a42] flex items-center gap-2">
+                <span className="material-symbols-outlined text-orange-600">gavel</span>
+                Xử lý yêu cầu hoàn trả
+              </h2>
+              <button 
+                onClick={() => setIsSellerRefundModalOpen(false)} 
+                className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-all cursor-pointer border-none"
+              >
+                <span className="material-symbols-outlined text-sm text-slate-600">close</span>
+              </button>
+            </div>
+
+            <div className="max-h-[calc(92vh-76px)] overflow-y-auto p-6 space-y-6">
+              {/* Buyer Info Summary */}
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[10px] font-bold text-[#3c4a42]/50 uppercase tracking-tight">Mã đơn hàng</p>
+                  <p className="text-sm font-bold text-[#3c4a42]">#{refundingOrder.id}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-[#3c4a42]/50 uppercase tracking-tight">Người mua</p>
+                  <p className="text-sm font-bold text-[#3c4a42]">{refundingOrder.fullName}</p>
+                </div>
+              </div>
+
+              {/* Request Details */}
+              <div className="space-y-4">
+                <div>
+                  <p className="text-[10px] font-bold text-orange-600 uppercase tracking-wider mb-1">Lý do từ khách hàng</p>
+                  <p className="text-sm font-bold text-[#3c4a42]">{activeRefundRequest.reason}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-[#3c4a42]/60 uppercase tracking-wider mb-1">Mô tả chi tiết</p>
+                  <p className="text-xs text-[#3c4a42]/80 leading-relaxed bg-white border border-slate-100 p-3 rounded-xl italic">
+                    &quot;{activeRefundRequest.description}&quot;
+                  </p>
+                </div>
+              </div>
+
+              {/* Proof Images */}
+              {activeRefundRequest.images && activeRefundRequest.images.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-[10px] font-bold text-[#3c4a42]/60 uppercase tracking-wider">Ảnh minh chứng</p>
+                  <div className="flex flex-wrap gap-2">
+                    {activeRefundRequest.images.map((img, idx) => (
+                      <div key={idx} className="relative h-24 w-24 rounded-xl overflow-hidden border border-slate-200">
+                        <Image src={img} alt="Proof" fill className="object-cover" sizes="96px" unoptimized />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Seller Response Note */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-[#3c4a42]/70 uppercase tracking-wider">Phản hồi của bạn (Ghi chú)</label>
+                <textarea
+                  value={processNote}
+                  onChange={(e) => setProcessNote(e.target.value)}
+                  placeholder="Nhập lý do chấp nhận hoặc từ chối để khách hàng được biết..."
+                  rows={3}
+                  className="w-full px-4 py-3 border border-slate-200 rounded-2xl text-sm outline-none focus:border-[#006c49] transition-all resize-none bg-slate-50 text-[#3c4a42]"
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => handleProcessRefund("rejected")}
+                  disabled={isProcessingRefund}
+                  className="flex-1 px-4 py-3 rounded-full border border-red-200 text-red-600 text-xs font-bold hover:bg-red-50 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <span className="material-symbols-outlined text-sm">cancel</span>
+                  Từ chối
+                </button>
+                <button
+                  onClick={() => handleProcessRefund("approved")}
+                  disabled={isProcessingRefund}
+                  className="flex-1 px-4 py-3 rounded-full bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-all shadow-md shadow-emerald-200 cursor-pointer flex items-center justify-center gap-1.5 border-none"
+                >
+                  <span className="material-symbols-outlined text-sm">check_circle</span>
+                  Chấp nhận hoàn trả
+                </button>
+              </div>
+
+              {isProcessingRefund && (
+                <div className="flex items-center justify-center gap-2 text-[10px] font-bold text-[#006c49] animate-pulse">
+                  <span className="w-3 h-3 border-2 border-[#006c49]/30 border-t-[#006c49] rounded-full animate-spin" />
+                  Đang xử lý yêu cầu...
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

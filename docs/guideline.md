@@ -71,10 +71,30 @@ Tại trang chi tiết cửa hàng (`/shop/[id]`), người dùng có thể:
    - Địa chỉ cụ thể
    - Ghi chú đơn hàng nếu cần
 2. Chọn phương thức giao hàng.
-3. Chọn phương thức thanh toán.
+3. Chọn phương thức thanh toán. Hệ thống hỗ trợ 4 phương thức:
+   - **Chuyển khoản Vietcombank**: Thanh toán thủ công qua QR Vietcombank sau khi đặt hàng.
+   - **Thanh toán qua VNPay** (`vnpay`): Chuyển hướng sang cổng VNPay để quét mã QR hoặc thanh toán thẻ ATM nội địa.
+   - **Thẻ Visa / Mastercard** (`credit`): Chuyển hướng trực tiếp đến cổng VNPay với tùy chọn thẻ quốc tế.
+   - **Ví điện tử** (`wallet`): Chuyển hướng đến cổng VNPay với tùy chọn quét mã QR ví điện tử.
 4. Kiểm tra lại tóm tắt đơn hàng ở cột bên phải.
 5. Bấm `Đặt hàng ngay`.
-6. Sau khi đặt hàng thành công, hệ thống chuyển sang trang hoàn tất đơn hàng.
+
+**Luồng thanh toán online (VNPay / Visa / Ví điện tử):**
+
+   a. Hệ thống lưu thông tin đơn hàng tạm vào Firestore (`pending_orders`) với trạng thái `"pending"` và chuyển hướng trình duyệt tới cổng thanh toán VNPay Sandbox.
+
+   b. Trên cổng VNPay, người dùng nhập thông tin thẻ hoặc quét mã QR để thanh toán.
+
+   c. Sau khi thanh toán, VNPay chuyển hướng về `/checkout/vnpay-return`:
+      - **Thành công** (Response code `00`): Hệ thống xác thực chữ ký bảo mật, xóa các sản phẩm đã mua khỏi giỏ hàng, tạo đơn hàng chính thức trong Firestore và chuyển sang trang thành công `/checkout/success` hiển thị mã giao dịch VNPay.
+      - **Hủy giao dịch** (Response code `24`): Hiển thị thông báo giao dịch bị hủy, giỏ hàng được giữ nguyên.
+      - **Thất bại** (các mã lỗi khác): Hiển thị thông báo lỗi, đơn hàng không được tạo, giỏ hàng được giữ nguyên.
+
+   d. Song song, VNPay gửi thông báo IPN (Instant Payment Notification) server-to-server về `/api/vnpay/ipn` để đảm bảo đồng bộ trạng thái đơn hàng kể cả khi người dùng đóng trình duyệt đột ngột.
+
+**Luồng thanh toán thủ công (Chuyển khoản Vietcombank):**
+
+   Đặt hàng thành công ngay lập tức — hệ thống tạo đơn hàng và chuyển sang trang `/checkout/success` hiển thị mã QR Vietcombank để người dùng chuyển khoản.
 
 Lưu ý: Danh sách tỉnh/thành phố và quận/huyện được lấy từ API `provinces.open-api.vn`. Nếu API lỗi mạng, ứng dụng dùng dữ liệu dự phòng để người dùng vẫn có thể đặt hàng.
 
@@ -243,7 +263,7 @@ Quy trình tổng thể dự kiến:
 Ghi chú triển khai sau MVP:
 
 - Cần migrate dữ liệu tài khoản và sản phẩm sang Cloud Firestore và Firebase Auth.
-- Cần tích hợp cổng thanh toán trực tuyến (VNPay, MoMo, ZaloPay).
+- Cổng thanh toán VNPay Sandbox đã hoàn thành tích hợp. Cần bổ sung thêm MoMo, ZaloPay ở Phase 2.
 - Cần có hệ thống trạng thái đơn hàng đầy đủ: chờ xác nhận, đang xử lý, đang giao, đã giao, hoàn tất, đã hủy.
 - Cần có chức năng đánh giá và nhận xét sản phẩm sau khi đơn hàng hoàn tất.
 
@@ -259,15 +279,9 @@ Trang quản trị hệ thống cung cấp giao diện riêng tư, bảo mật d
   - Nếu cố tình truy cập bằng tài khoản buyer hoặc chưa đăng nhập, Next.js Edge Middleware sẽ tự động chặn và chuyển hướng về trang chủ `/` hoặc trang đăng nhập.
 
 ### 2. Các chức năng chính
-- **Bảng chỉ số tổng quan (KPI)**: Hiển thị 4 thẻ thông tin được truy vấn thời gian thực từ Firestore:
+- **Bảng chỉ số tổng quan (KPI)**: Hiển thị các thẻ thông tin được truy vấn thời gian thực từ Firestore:
   1. **Tổng người dùng**: Tổng số lượng tài khoản đăng ký trên hệ thống.
   2. **Seller chờ**: Số hồ sơ nông dân xin đăng ký người bán đang ở trạng thái chờ duyệt.
-  3. **Đơn hôm nay**: Số lượng đơn hàng phát sinh trong ngày hôm nay.
-  4. **Doanh thu**: Tổng số tiền thu được từ tất cả đơn hàng đã giao hoặc đang xử lý (không tính các đơn hàng bị hủy `"cancelled"`).
-- **Biểu đồ hiệu suất nền tảng**:
-  - **Lọc thời gian**: Admin có thể chọn xem báo cáo theo chu kỳ **7 ngày** hoặc **30 ngày** qua các nút bấm tương ứng.
-  - **Chuyển đổi chỉ số**: Cho phép lựa chọn xem theo **Doanh thu** (thể hiện bằng đường màu xanh lá cây, thang đo VND viết tắt dạng M/K) hoặc **Số đơn hàng** (thể hiện bằng đường màu xanh dương, thang đo số nguyên đơn hàng).
-  - **Tooltip tương tác**: Khi di chuột qua các mốc điểm của biểu đồ, hệ thống sẽ hiện đường nét đứt định vị dọc và một tooltip nổi màu tối hiển thị chính xác ngày tháng cùng số liệu doanh thu & số đơn hàng của ngày đó.
 - **Hàng đợi kiểm duyệt (Approvals Queue)**:
   - Tích hợp hệ thống tab chuyển đổi linh hoạt: **Người Bán**, **Sản Phẩm** và **Báo Cáo**.
   - **Người Bán**:
@@ -290,9 +304,143 @@ Trang quản trị hệ thống cung cấp giao diện riêng tư, bảo mật d
       4. **Xóa vi phạm**: Xóa sản phẩm khỏi Firestore; hoặc thu hồi quyền bán hàng của shop (về `role = "buyer"`, `sellerStatus = "rejected"`) và xóa toàn bộ sản phẩm của shop khỏi Firestore.
 - **Danh sách người dùng & Phân quyền**:
   - Liệt kê toàn bộ người dùng đã đăng ký tài khoản trên hệ thống.
-  - Cho phép Admin trực tiếp đổi vai trò của bất kỳ tài khoản nào: click **"Lên Admin"** để phong quyền quản trị, click **"Lên Shop (Seller)"** để cấp quyền bán hàng nhanh, hoặc click **"Bỏ Shop (Buyer)"** để thu hồi quyền bán hàng về tài khoản mua thông thường.
+  - **Quy tắc Quản trị**: Hệ thống chỉ chấp nhận duy nhất tài khoản `admin@nongsach.vn` giữ vai trò Admin. Tính năng nâng cấp các tài khoản khác lên Admin đã bị vô hiệu hóa để bảo vệ tính toàn vẹn của hệ thống.
+  - Cho phép Admin trực tiếp đổi vai trò của các tài khoản khác: click **"Lên Shop (Seller)"** để cấp quyền bán hàng nhanh, hoặc click **"Bỏ Shop (Buyer)"** để thu hồi quyền bán hàng về tài khoản mua thông thường.
   - **Mở khóa Shop**: Nếu shop đang bị khóa tạm thời (`sellerStatus === "blocked"`), hiển thị badge cảnh báo màu đỏ và nút hành động chuyển thành **"Mở khóa Shop"**. Khi nhấn, tài khoản sẽ được chuyển lại trạng thái hoạt động bình thường, mở khóa toàn bộ sản phẩm và gửi thông báo vui cho seller.
 - **Lịch sử hoạt động Admin (Admin Activity Logs)**:
   - Bảng danh sách đặt ở cuối trang Admin Panel, hiển thị toàn bộ lịch sử các thao tác kiểm duyệt của Admin (Xóa, Khóa, Cảnh báo, Bỏ qua, Mở khóa) được đồng bộ từ Firestore theo thời gian thực.
 - **Đăng xuất**: Cung cấp nút đăng xuất riêng biệt ở cuối Sidebar để kết thúc phiên làm việc an toàn của Admin.
 
+## 19. Cấu hình & Kiểm thử VNPay Sandbox
+
+Phần này hướng dẫn cấu hình môi trường và kiểm thử tích hợp thanh toán VNPay Sandbox trên máy local.
+
+### 19.1. Đăng ký tài khoản Sandbox
+
+1. Truy cập `https://sandbox.vnpayment.vn/devreg` và đăng ký một tài khoản Merchant mới.
+2. Sau khi đăng ký, VNPay cung cấp cho bạn:
+   - **Terminal ID (TmnCode)**: Mã merchant định danh.
+   - **Secret Key (HashSecret)**: Khóa bí mật để ký bảo mật HMAC-SHA512.
+
+> **Lưu ý**: Merchant ID mặc định `2QXGZSTR` trong tài liệu demo thường bị VNPay vô hiệu hóa theo thời gian. Bắt buộc phải đăng ký tài khoản Sandbox riêng để có khóa hoạt động ổn định.
+
+### 19.2. Cấu hình `.env.local`
+
+Tạo hoặc chỉnh sửa file `.env.local` ở thư mục gốc dự án với các giá trị sau:
+
+```env
+# VNPay Sandbox
+VNP_TMNCODE=<Terminal_ID_của_bạn>
+VNP_HASHSECRET=<Secret_Key_của_bạn>
+VNP_RETURNURL=http://localhost:3000/checkout/vnpay-return
+```
+
+Khởi động lại dev server sau khi lưu file:
+
+```text
+npm run dev
+```
+
+### 19.3. Kiểm thử 3 kịch bản giao dịch
+
+#### Kịch bản 1 — Thanh toán thành công
+
+1. Thêm sản phẩm vào giỏ hàng và vào trang Thanh toán.
+2. Chọn phương thức **"Thanh toán qua VNPay"**, điền thông tin giao hàng và bấm `Đặt hàng ngay`.
+3. Trên cổng VNPay Sandbox, chọn ngân hàng **NCB** và nhập thông tin thẻ test:
+
+```text
+Số thẻ   : 9704198526191432198
+Tên chủ thẻ: NGUYEN VAN A
+Ngày hết hạn: 07/15
+OTP      : 123456
+```
+
+4. Bấm **Thanh toán**. Kết quả mong đợi:
+   - Trình duyệt chuyển về `/checkout/vnpay-return` → xử lý xác thực → chuyển sang `/checkout/success`.
+   - Trang thành công hiển thị **Mã giao dịch VNPay** (`vnp_TransactionNo`).
+   - Giỏ hàng được xóa sạch.
+   - Đơn hàng xuất hiện trong tab **Đơn hàng của tôi** tại `/profile`.
+
+#### Kịch bản 2 — Hủy giao dịch
+
+1. Thực hiện tương tự bước 1–2 ở trên.
+2. Trên cổng VNPay Sandbox, **bấm nút Hủy** thay vì nhập thẻ.
+3. Kết quả mong đợi:
+   - Trình duyệt chuyển về `/checkout/vnpay-return` hiển thị thông báo **"Giao dịch đã bị hủy"**.
+   - Giỏ hàng **được giữ nguyên**, không mất sản phẩm.
+   - Không có đơn hàng nào được tạo trong Firestore.
+
+#### Kịch bản 3 — Thanh toán thất bại
+
+1. Thực hiện tương tự bước 1–2 ở trên.
+2. Trên cổng VNPay Sandbox, nhập thông tin thẻ **sai** (sai số thẻ hoặc OTP).
+3. Kết quả mong đợi:
+   - VNPay trả về mã lỗi khác `00`.
+   - Trang `/checkout/vnpay-return` hiển thị thông báo **lỗi thanh toán**.
+   - Giỏ hàng **được giữ nguyên**.
+   - Không có đơn hàng nào được tạo.
+
+### 19.4. Kiểm tra thẻ Visa/Mastercard và Ví điện tử
+
+- **Visa/Mastercard**: Chọn phương thức **"Thẻ Visa / Mastercard"** ở trang Checkout. VNPay Sandbox sẽ chuyển thẳng đến trang nhập thông tin thẻ quốc tế (dùng thẻ test của VNPay Sandbox cho thẻ quốc tế).
+- **Ví điện tử**: Chọn phương thức **"Ví điện tử"** ở trang Checkout. VNPay Sandbox hiển thị giao diện quét mã QR.
+
+### 19.5. Xem kết quả trên Firestore
+
+Sau khi thanh toán thành công, kiểm tra Firestore:
+
+- Collection `orders`: Đơn hàng mới được tạo với `payment_status: "paid"`, `vnp_TransactionNo` và `vnp_ResponseCode: "00"`.
+- Collection `pending_orders`: Document tạm thời đã bị xóa sau khi xử lý thành công.
+- Collection `notifications`: Thông báo chuông được gửi đến cả người mua và người bán liên quan.
+
+## 20. Hướng dẫn Nhập mã vận đơn & Theo dõi đơn hàng
+
+Tính năng này cho phép người bán cung cấp thông tin vận chuyển và người mua có thể theo dõi hành trình đơn hàng trực tiếp qua GHN.
+
+### 20.1. Đối với Người bán (Seller)
+
+1. Truy cập **Kênh người bán** > **Đơn hàng của shop**.
+2. Tìm đơn hàng ở trạng thái **Đã xác nhận** hoặc **Đang giao**.
+3. Tại card đơn hàng, nhập mã vận đơn vào ô **"Nhập mã vận đơn..."** (Ví dụ: `GHN123456`).
+4. Bấm nút **"Lưu mã"** (hoặc **"Cập nhật"** nếu muốn đổi mã khác).
+5. Hệ thống sẽ lưu mã vào Firestore và tự động gửi thông báo đến người mua.
+
+### 20.2. Đối với Người mua (Buyer)
+
+1. Nhận thông báo qua biểu tượng chuông: *"Đơn hàng #... đã có mã vận đơn: GHN123456. Bạn có thể theo dõi tại GHN."*
+2. Vào **Trang cá nhân** > **Đơn hàng của tôi**.
+3. Tại thẻ đơn hàng tương ứng, bạn sẽ thấy mục **"Mã vận đơn GHN"**.
+4. Bấm nút **"Theo dõi tại GHN"** để mở trang tra cứu vận đơn chính thức của Giao Hàng Nhanh với mã đã được điền sẵn.
+5. Bạn cũng có thể xem thông tin này tại trang **Hoàn tất đơn hàng** ngay sau khi người bán cập nhật mã.
+
+## 21. Hướng dẫn Yêu cầu Hoàn trả Đơn hàng
+
+Tính năng này cho phép người mua gửi yêu cầu hoàn trả nếu sản phẩm nhận được không đúng như mô tả hoặc bị hư hỏng.
+
+### 21.1. Đối với Người mua (Buyer)
+
+1. Truy cập **Trang cá nhân** > **Đơn hàng của tôi**.
+2. Tìm đơn hàng ở trạng thái **Đã giao**.
+3. Bấm nút **"Yêu cầu hoàn trả"** trên thẻ đơn hàng.
+4. Trong hộp thoại hiện ra:
+   - Chọn **Lý do hoàn trả** (Sản phẩm không đúng mô tả, hư hỏng, giao sai,...).
+   - Nhập **Mô tả chi tiết** về vấn đề.
+   - Tải lên tối đa **3 ảnh minh chứng** thực tế.
+5. Bấm **"Gửi yêu cầu"**. Hệ thống sẽ đổi trạng thái đơn hàng sang **Đang hoàn trả** và thông báo cho người bán.
+
+### 21.2. Đối với Người bán (Seller)
+
+1. Nhận thông báo chuông về yêu cầu hoàn trả mới từ khách hàng.
+2. Truy cập **Kênh người bán** > **Đơn hàng của shop**.
+3. Các đơn hàng có yêu cầu hoàn trả sẽ ở trạng thái **Đang hoàn trả**. Bấm nút **"Xử lý hoàn trả"** trên thẻ đơn hàng.
+4. Một hộp thoại sẽ hiện ra hiển thị chi tiết:
+   - Lý do và mô tả từ khách hàng.
+   - Các ảnh minh chứng khách hàng cung cấp.
+5. Xem xét thông tin và nhập **Phản hồi của bạn (Ghi chú)** để giải thích quyết định của mình cho khách hàng.
+6. Bấm **"Từ chối"** hoặc **"Chấp nhận hoàn trả"**.
+   - Nếu chấp nhận: Đơn hàng chuyển sang trạng thái **Đã hoàn trả**.
+   - Nếu từ chối: Đơn hàng quay lại trạng thái **Đã giao**.
+7. Hệ thống sẽ tự động gửi thông báo kết quả kèm ghi chú của bạn cho người mua.
+
+*Lưu ý: Quản trị viên (Admin) chỉ quản lý tài khoản và sức khỏe hệ thống, không can thiệp vào các giao dịch hoàn trả cá nhân giữa người mua và người bán.*

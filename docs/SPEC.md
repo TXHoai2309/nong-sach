@@ -5,16 +5,17 @@
 | Thông tin         | Chi tiết                                    |
 | ----------------- | ------------------------------------------- |
 | Tên dự án         | NôngSạch — Nền tảng giao dịch nông sản sạch |
-| Phiên bản         | MVP v0.6.8 (Sprint 5.4)                     |
+| Phiên bản         | MVP v0.7.4 (Sprint 5.9)                     |
 | Ngày tạo          | 03/06/2026                                  |
-| Cập nhật lần cuối | 09/06/2026                                  |
+| Cập nhật lần cuối | 10/06/2026                                  |
 | Nhóm              | NôngSạch Team                               |
 | Môn học           | Vibe Coding Thực Chiến — Buổi 3             |
-| Trạng thái        | ✅ Hoàn thành Sprint 1 đến Sprint 5.4 |
+| Trạng thái        | ✅ Hoàn thành Sprint 1 đến Sprint 5.9 |
 
 ---
 
 # 1. Tổng quan sản phẩm
+
 
 NôngSạch là nền tảng thương mại điện tử B2C kết nối trực tiếp nông dân Việt Nam với người tiêu dùng, tập trung vào nông sản sạch và hữu cơ. Sứ mệnh của nền tảng là loại bỏ các khâu trung gian không cần thiết, giúp người tiêu dùng tiếp cận thực phẩm an toàn với giá hợp lý, đồng thời tăng thu nhập cho nông dân Việt Nam.
 
@@ -75,17 +76,20 @@ Người tiêu dùng ngày càng lo ngại về an toàn thực phẩm, đặc b
 | F-19 | Hệ thống thông báo    | Thông báo thời gian thực cho người mua và người bán về các sự kiện đơn hàng và hệ thống | P1      | ✅ Done     |
 | F-20 | Ổn định Profile & Báo cáo shop | Sửa lỗi runtime Profile, đảm bảo modal Báo cáo shop hiển thị đúng và lint/type toàn project không còn error | P0      | ✅ Done     |
 | F-21 | Trang quản trị & Phân quyền Admin | Trang quản trị `/admin` bảo mật bằng Middleware, xem stats và duyệt người bán | P1      | ✅ Done     |
-| F-22 | Dashboard KPI & Biểu đồ SVG Line | Báo cáo thực tế từ Firestore và biểu đồ SVG tương tác lọc 7/30 ngày | P1      | ✅ Done     |
+| F-22 | Dashboard KPI | Thống kê số lượng người dùng và người bán chờ duyệt từ Firestore | P1      | ✅ Done     |
 | F-23 | Quy trình duyệt/từ chối hồ sơ | Modal xem chi tiết hồ sơ (zoom CCCD), từ chối kèm lý do và quy trình nộp lại | P1      | ✅ Done     |
 | F-24 | Quy trình duyệt/từ chối sản phẩm | Admin duyệt sản phẩm pending -> active hoặc từ chối kèm lý do và gửi thông báo | P1      | ✅ Done     |
 | F-25 | Xử lý báo cáo vi phạm | Quyết định xử lý của Admin (Bỏ qua/Cảnh báo/Khóa tạm/Xóa đối tượng) và ghi log kiểm toán Firestore | P1      | ✅ Done     |
+| F-26 | Nhập mã vận đơn & Theo dõi đơn hàng | Người bán nhập mã GHN, hệ thống tự tạo link tra cứu và thông báo cho người mua | P1      | ✅ Done     |
+| F-27 | Yêu cầu hoàn trả đơn hàng | Người mua gửi yêu cầu hoàn trả kèm lý do và ảnh minh chứng cho đơn hàng đã giao | P1      | ✅ Done     |
+| F-28 | Phân xử hoàn trả (Admin Mediation) | Admin phân xử yêu cầu hoàn trả (Chấp nhận/Từ chối), ghi log và thông báo 2 bên | P1      | ✅ Done     |
 
 
 > **Ghi chú cho team:** F-09 hiện đã có giao diện hoàn chỉnh theo Stitch HTML tại route `/contact`. Form liên hệ đang ở mức UI/UX MVP; nếu cần gửi dữ liệu thật, cần bổ sung API/Firebase handler ở Phase 2. Kênh bán hàng (F-11), Quản lý sản phẩm (F-12) và Trang chi tiết shop (F-14) hiện được lưu động tại `localStorage` phía client của từng người dùng để mô phỏng tính năng thực tế.
 
 ## 2.2. Ngoài phạm vi MVP
 
-* Thanh toán online (VNPay, MoMo, ZaloPay, Stripe)
+* Thanh toán online (MoMo, ZaloPay, Stripe) (VNPay Sandbox đã hoàn thành)
 * Hệ thống đánh giá và nhận xét sản phẩm
 * Chat trực tiếp với nông dân
 * Multi-vendor marketplace
@@ -327,16 +331,9 @@ Quy trình dưới đây là định hướng phát triển sau MVP, khi hệ th
   - Sidebar bên trái hiển thị tên NôngSạch Admin, mục "Tổng quan", thông tin Admin đăng nhập (tên, email) và nút Đăng xuất.
   - Main panel bên phải hiển thị Header có tiêu đề, nút "Xem cửa hàng" trỏ về trang chủ.
 * **Bảng thống kê nhanh (KPI)**:
-  - Hiển thị đúng dữ liệu thực tế truy vấn từ Firestore gồm 4 thẻ:
+  - Hiển thị đúng dữ liệu thực tế truy vấn từ Firestore gồm 2 thẻ:
     1. **Tổng người dùng**: Tổng số tài khoản trên hệ thống.
     2. **Seller chờ**: Số hồ sơ đăng ký người bán đang chờ duyệt (`sellerStatus === "pending"`).
-    3. **Đơn hôm nay**: Đếm số đơn hàng được tạo trong ngày hôm nay ở múi giờ local của trình duyệt.
-    4. **Doanh thu**: Tổng doanh thu thực tế (tổng tiền các đơn hàng ngoại trừ các đơn bị huỷ `"cancelled"`), được định dạng tiền tệ VND chuẩn.
-* **Biểu đồ hiệu suất nền tảng (SVG Line Chart)**:
-  - Biểu đồ line vẽ bằng SVG tuỳ biến, tự động co giãn (responsive ratio `800/350`) và có gradient màu bên dưới đường vẽ.
-  - Cho phép người dùng **lọc khoảng thời gian**: chuyển đổi giữa 7 ngày qua và 30 ngày qua. Ở chế độ 30 ngày, các nhãn ngày trên trục X tự động giãn cách cách nhau 5 ngày để không đè chữ.
-  - Cho phép **chuyển đổi chỉ số hiển thị** (Metric Toggle): chọn xem theo "Doanh thu" (VND, màu xanh lá) hoặc "Số đơn hàng" (màu xanh dương).
-  - Tích hợp **hiệu ứng tương tác**: Khi di chuột lên biểu đồ, hiển thị đường dẫn dọc nét đứt và vòng tròn chỉ điểm tại ngày gần nhất. Hiển thị tooltip dạng HTML nổi lơ lửng ngay phía trên điểm dữ liệu với đầy đủ thông tin: Ngày (dạng `DD/MM/YYYY`), Doanh thu (VND), và Số đơn hàng của ngày cụ thể đó.
 * **Duyệt hồ sơ người bán (Approvals Queue)**:
   - Hiển thị danh sách các tài khoản có trạng thái người bán đang chờ xử lý (`sellerStatus === "pending"`).
   - Thay vì các nút thao tác trực tiếp, cung cấp nút **"Xem chi tiết"** để hiển thị thông tin đầy đủ về: thông tin shop, thông tin liên hệ, nông trại và tiêu chuẩn canh tác (kèm danh sách ảnh thực địa), ảnh thẻ CCCD mặt trước/sau (hỗ trợ zoom/preview ảnh đầy đủ), thông tin tài khoản ngân hàng.
@@ -344,8 +341,8 @@ Quy trình dưới đây là định hướng phát triển sau MVP, khi hệ th
   - Cung cấp nút **"Từ chối"** để mở modal phụ yêu cầu nhập lý do từ chối. Sau khi xác nhận, chuyển trạng thái người bán sang `rejected`, lưu lý do vào trường `sellerRejectionReason` trên Firestore, và gửi thông báo `account_update` chứa lý do từ chối cụ thể đến người bán.
 * **Quản lý phân quyền người dùng**:
   - Bảng hiển thị danh sách tất cả các tài khoản trên hệ thống kèm Email, Vai trò (role) và Ngày gia nhập.
-  - Cung cấp nút **"Lên Admin"** để nâng cấp một tài khoản thành quản trị viên.
-  - Cung cấp nút **"Bỏ Shop (Buyer)"** hoặc **"Lên Shop (Seller)"** để thay đổi nhanh vai trò của tài khoản đó.
+  - **Hạn chế quyền**: Hệ thống chỉ cho phép duy nhất tài khoản `admin@nongsach.vn` giữ vai trò Quản trị. Chức năng cấp quyền Admin cho tài khoản khác bị vô hiệu hóa để đảm bảo an ninh.
+  - Cung cấp nút **"Bỏ Shop (Buyer)"** hoặc **"Lên Shop (Seller)"** để thay đổi nhanh vai trò của các tài khoản khác.
 * **Nút lối tắt trên Header**:
   - Hiển thị nút "Trang quản trị" ngay cạnh tên tài khoản trên Header storefront cho các tài khoản là admin để truy cập nhanh.
 
@@ -637,14 +634,7 @@ interface ContactMessage {
 | T-53 | Layout trang Admin với sidebar và logout | 3  | ✅      |
 | T-54 | Dashboard Admin: thống kê, duyệt người bán, quản lý role | 4  | ✅      |
 | T-55 | Dọn lỗi compile & lint cho admin pages | 1  | ✅      |
-
-## Sprint 5.1 — Admin KPI & Biểu đồ SVG Line (✅ Hoàn thành)
-
-| ID   | Task                                           | SP | Status |
-| ---- | ---------------------------------------------- | -- | ------ |
 | T-56 | Thẻ KPI dựa trên dữ liệu thực tế Firestore     | 2  | ✅      |
-| T-57 | Vẽ biểu đồ SVG Line tuỳ biến (Doanh thu/Đơn)   | 3  | ✅      |
-| T-58 | Bộ lọc thời gian 7/30 ngày & Tooltip tương tác | 2  | ✅      |
 
 ## Sprint 5.2 — Quy trình duyệt & Từ chối hồ sơ (✅ Hoàn thành)
 
@@ -675,13 +665,43 @@ interface ContactMessage {
 | T-71 | Tính năng "Mở khóa Shop" trong danh sách người dùng Admin | 2  | ✅      |
 | T-72 | Khắc phục lỗi Firestore write do properties undefined | 2  | ✅      |
 
+## Sprint 5.5 — VNPay Sandbox Payment Integration (✅ Hoàn thành)
+
+| ID   | Task                                           | SP | Status |
+| ---- | ---------------------------------------------- | -- | ------ |
+| T-73 | Xây dựng API Route tạo liên kết VNPay Sandbox  | 3  | ✅      |
+| T-74 | Xây dựng API Route xác thực kết quả thanh toán | 3  | ✅      |
+| T-75 | Thiết lập IPN Webhook tự động cập nhật đơn hàng| 2  | ✅      |
+| T-76 | Landing page callback `/vnpay-return` xử lý UI | 3  | ✅      |
+| T-77 | Tích hợp Visa/Mastercard và Ví điện tử qua VNPay| 2  | ✅      |
+| T-78 | Hiển thị mã giao dịch ở Success & Profile      | 1  | ✅      |
+
+## Sprint 5.6 — Nhập mã vận đơn & Theo dõi đơn hàng GHN (✅ Hoàn thành)
+
+| ID   | Task                                           | SP | Status |
+| ---- | ---------------------------------------------- | -- | ------ |
+| T-79 | Thêm trường trackingCode & trackingUrl vào Order type | 1  | ✅      |
+| T-80 | Triển khai logic updateTrackingCode trong Order Store | 2  | ✅      |
+| T-81 | Thiết kế ô nhập mã vận đơn cho Seller trong Profile | 2  | ✅      |
+| T-82 | Tự động gửi Notification cho Buyer khi có mã mới | 1  | ✅      |
+| T-83 | Hiển thị link tra cứu GHN tại Profile & Success Page | 2  | ✅      |
+
+## Sprint 5.9 — Hệ thống Yêu cầu Hoàn trả Đơn hàng (✅ Hoàn thành)
+
+| ID   | Task                                           | SP | Status |
+| ---- | ---------------------------------------------- | -- | ------ |
+| T-84 | Khai báo interface RefundRequest & Status mới | 1  | ✅      |
+| T-85 | Triển khai requestRefund trong Order Store    | 2  | ✅      |
+| T-86 | Thiết kế Modal yêu cầu hoàn trả kèm ảnh minh chứng | 3  | ✅      |
+| T-87 | Tích hợp nút Yêu cầu hoàn trả trên Đơn hàng đã giao | 1  | ✅      |
+| T-88 | Tự động gửi Notification cho Người bán khi có yêu cầu | 1  | ✅      |
+
 ## Backlog Phase 2 (Tương lai)
 
 | ID    | Tính năng          | Mô tả                                   | Priority |
 | ----- | ------------------ | --------------------------------------- | -------- |
 | P2-01 | Firebase Firestore | Migrate mock data sang Cloud Firestore  | High     |
 | P2-02 | Firebase Auth thật | Google OAuth + email thực tế            | High     |
-| P2-03 | Thanh toán VNPay   | Tích hợp cổng thanh toán VNPay sandbox  | Medium   |
 | P2-04 | Đánh giá sản phẩm  | Rating 5 sao + review text              | Medium   |
 | P2-06 | Order Tracking     | Theo dõi trạng thái giao hàng real-time | Low      |
 | P2-07 | Contact Backend    | Lưu/gửi form liên hệ qua API/Firebase   | Medium   |

@@ -12,6 +12,7 @@ import { db } from "@/lib/firebase";
 import { doc, onSnapshot } from "firebase/firestore";
 import { Order } from "@/types/order";
 import { Product } from "@/types/product";
+import { OrderTrackingTimeline } from "@/components/order/OrderTrackingTimeline";
 
 function SuccessContent() {
   const searchParams = useSearchParams();
@@ -26,6 +27,8 @@ function SuccessContent() {
   const [notificationStatus, setNotificationStatus] = useState<"idle" | "enabled" | "dismissed">("idle");
   const [order, setOrder] = useState<Order | null>(null);
   const [recommendedProducts, setRecommendedProducts] = useState<Product[]>([]);
+  
+  const vnpTransactionNo = searchParams.get("vnp_TransactionNo") || order?.vnp_TransactionNo || "";
 
   useEffect(() => {
     let active = true;
@@ -77,6 +80,8 @@ function SuccessContent() {
         return "Tiền mặt khi nhận hàng (COD)";
       case "bank":
         return "Chuyển khoản ngân hàng";
+      case "vnpay":
+        return "Thanh toán online qua VNPay";
       case "credit":
         return "Thẻ Visa / Mastercard";
       case "wallet":
@@ -92,11 +97,6 @@ function SuccessContent() {
   const displayItems = order?.items || [];
   const displayTotal = order?.totalAmount ?? totalParam;
   const statusMeta = getOrderStatusMeta(order?.status ?? "pending");
-
-  const currentStatus = order?.status ?? "pending";
-  const step2Active = ["confirmed", "shipping", "delivered"].includes(currentStatus);
-  const step3Active = ["shipping", "delivered"].includes(currentStatus);
-  const step4Active = currentStatus === "delivered";
 
   return (
     <div className="max-w-[860px] mx-auto space-y-8 pb-12">
@@ -168,6 +168,11 @@ function SuccessContent() {
                 <div className="space-y-0.5">
                   <p className="text-xs text-on-surface-variant font-medium">Thanh toán</p>
                   <p className="text-sm font-bold text-on-surface">{getPaymentLabel(paymentMethod)}</p>
+                  {vnpTransactionNo && (
+                    <p className="text-xs text-on-surface-variant font-semibold mt-1">
+                      Mã GD VNPay: <span className="text-primary font-bold">{vnpTransactionNo}</span>
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -183,6 +188,11 @@ function SuccessContent() {
                   </p>
                 </div>
               </div>
+            </div>
+
+            {/* Real-time Order Tracking Timeline */}
+            <div className="mt-8 pt-6 border-t border-outline-variant/20">
+              <OrderTrackingTimeline order={order || ({ id: orderId, status: "pending" } as Order)} />
             </div>
           </div>
 
@@ -243,70 +253,6 @@ function SuccessContent() {
         </div>
       </section>
 
-      {/* Stepper Timeline */}
-      <div className="flex justify-center items-center py-4 bg-white rounded-[2rem] border border-outline-variant/10 shadow-sm">
-        <div className="grid grid-cols-[1fr_50px_1fr_50px_1fr_50px_1fr] items-start gap-1 w-full max-w-[520px] px-6">
-          {/* Step 1: Đặt hàng */}
-          <div className="flex flex-col items-center">
-            <div className="w-9 h-9 rounded-full bg-[#006c49] text-white flex items-center justify-center shadow-md transition-colors duration-300">
-              <span className="material-symbols-outlined text-[18px]">check</span>
-            </div>
-            <span className="text-[10px] font-bold text-[#006c49] mt-1 text-center">Đặt hàng</span>
-          </div>
-          <span className={`mt-[18px] h-[2px] transition-colors duration-300 ${step2Active ? "bg-[#006c49]" : "bg-outline-variant/30"}`} />
-          
-          {/* Step 2: Đóng gói */}
-          <div className="flex flex-col items-center">
-            <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 ${
-              step2Active ? "bg-[#006c49] text-white shadow-md" : "bg-[#e7eeff] text-on-surface-variant"
-            }`}>
-              <span className={`material-symbols-outlined text-[18px] transition-colors duration-300 ${step2Active ? "text-white" : "text-[#5c5f61]"}`}>
-                inventory_2
-              </span>
-            </div>
-            <span className={`text-[10px] mt-1 text-center transition-all duration-300 ${
-              step2Active ? "font-bold text-[#006c49]" : "font-medium text-on-surface-variant"
-            }`}>
-              Đóng gói
-            </span>
-          </div>
-          <span className={`mt-[18px] h-[2px] transition-colors duration-300 ${step3Active ? "bg-[#006c49]" : "bg-outline-variant/30"}`} />
-
-          {/* Step 3: Đang giao */}
-          <div className="flex flex-col items-center">
-            <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 ${
-              step3Active ? "bg-[#006c49] text-white shadow-md" : "bg-[#e7eeff] text-on-surface-variant"
-            }`}>
-              <span className={`material-symbols-outlined text-[18px] transition-colors duration-300 ${step3Active ? "text-white" : "text-[#5c5f61]"}`}>
-                local_shipping
-              </span>
-            </div>
-            <span className={`text-[10px] mt-1 text-center transition-all duration-300 ${
-              step3Active ? "font-bold text-[#006c49]" : "font-medium text-on-surface-variant"
-            }`}>
-              Đang giao
-            </span>
-          </div>
-          <span className={`mt-[18px] h-[2px] transition-colors duration-300 ${step4Active ? "bg-[#006c49]" : "bg-outline-variant/30"}`} />
-
-          {/* Step 4: Đã nhận */}
-          <div className="flex flex-col items-center">
-            <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 ${
-              step4Active ? "bg-[#006c49] text-white shadow-md" : "bg-[#e7eeff] text-on-surface-variant"
-            }`}>
-              <span className={`material-symbols-outlined text-[18px] transition-colors duration-300 ${step4Active ? "text-white" : "text-[#5c5f61]"}`}>
-                check_circle
-              </span>
-            </div>
-            <span className={`text-[10px] mt-1 text-center transition-all duration-300 ${
-              step4Active ? "font-bold text-[#006c49]" : "font-medium text-on-surface-variant"
-            }`}>
-              Đã nhận
-            </span>
-          </div>
-        </div>
-      </div>
-
       {/* Notification banner card */}
       {notificationStatus !== "dismissed" && (
         <div className="p-4 bg-[#e8f5e9]/40 border border-outline-variant/15 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -353,11 +299,17 @@ function SuccessContent() {
       {/* Direct CTA Buttons */}
       <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
         <button
-          onClick={() => alert("Chức năng theo dõi đơn hàng đang được cập nhật ở Phase 2!")}
+          onClick={() => {
+            if (order?.trackingCode) {
+              window.open(order.trackingUrl || `https://ghn.vn/blogs/trang-thai-don-hang?v=${order.trackingCode}`, "_blank");
+            } else {
+              alert("Mã vận đơn đang được người bán cập nhật. Vui lòng quay lại sau!");
+            }
+          }}
           className="px-6 py-3.5 bg-primary text-white font-bold rounded-2xl hover:opacity-90 active:scale-[0.99] transition-all shadow-md flex items-center justify-center gap-xs cursor-pointer w-full sm:w-auto"
         >
           Theo dõi đơn hàng
-          <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+          <span className="material-symbols-outlined text-[18px]">local_shipping</span>
         </button>
 
         <Link

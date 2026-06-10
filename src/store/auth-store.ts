@@ -398,8 +398,11 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     const currentUser = get().currentUser;
     if (!currentUser) return;
 
+    // Security: Do not allow role changes via updateProfile
+    const { role, id, ...safeProfile } = profile;
+    
     // Filter out undefined properties to prevent Firestore error
-    const sanitizedProfile = removeUndefinedFields({ ...profile });
+    const sanitizedProfile = removeUndefinedFields({ ...safeProfile });
     const updatedUser = { ...currentUser, ...sanitizedProfile };
     set({ currentUser: updatedUser });
 
