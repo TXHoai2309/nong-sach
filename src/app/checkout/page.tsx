@@ -11,7 +11,7 @@ import { useCartStore } from "@/store/cart-store";
 import { useOrderStore } from "@/store/order-store";
 import { useNotificationStore } from "@/store/notification-store";
 import { Order } from "@/types/order";
-import { incrementVoucherUsage } from "@/lib/vouchers";
+import { incrementVoucherUsage, saveVoucherHistory } from "@/lib/vouchers";
 
 const PROVINCES_API = "https://provinces.open-api.vn/api/v1/?depth=2";
 
@@ -488,6 +488,13 @@ export default function CheckoutPage() {
       if (isSellerVoucher) {
         try {
           await incrementVoucherUsage(appliedVoucher.code);
+          await saveVoucherHistory({
+            voucherCode: appliedVoucher.code,
+            userId: currentUser?.id || "guest",
+            orderId: subOrderId,
+            discountAmount: discountAmount,
+            sellerId: appliedVoucher.sellerId,
+          });
         } catch (error) {
           console.error("Lỗi khi cập nhật lượt sử dụng voucher:", error);
         }

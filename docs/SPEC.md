@@ -5,7 +5,7 @@
 | Thông tin         | Chi tiết                                    |
 | ----------------- | ------------------------------------------- |
 | Tên dự án         | NôngSạch — Nền tảng giao dịch nông sản sạch |
-| Phiên bản         | MVP v0.7.4 (Sprint 5.9)                     |
+| Phiên bản         | MVP v0.8.2 (Sprint 6.0)                     |
 | Ngày tạo          | 03/06/2026                                  |
 | Cập nhật lần cuối | 10/06/2026                                  |
 | Nhóm              | NôngSạch Team                               |
@@ -83,6 +83,7 @@ Người tiêu dùng ngày càng lo ngại về an toàn thực phẩm, đặc b
 | F-26 | Nhập mã vận đơn & Theo dõi đơn hàng | Người bán nhập mã GHN, hệ thống tự tạo link tra cứu và thông báo cho người mua | P1      | ✅ Done     |
 | F-27 | Yêu cầu hoàn trả đơn hàng | Người mua gửi yêu cầu hoàn trả kèm lý do và ảnh minh chứng cho đơn hàng đã giao | P1      | ✅ Done     |
 | F-28 | Phân xử hoàn trả (Admin Mediation) | Admin phân xử yêu cầu hoàn trả (Chấp nhận/Từ chối), ghi log và thông báo 2 bên | P1      | ✅ Done     |
+| F-29 | Áp dụng Voucher tại Checkout | Nhập mã giảm giá, kiểm tra validation 4 lỗi, khấu trừ tiền chính xác, lưu lịch sử dùng lên Firestore và cập nhật limit | P1      | ✅ Done     |
 
 
 > **Ghi chú cho team:** F-09 hiện đã có giao diện hoàn chỉnh theo Stitch HTML tại route `/contact`. Form liên hệ đang ở mức UI/UX MVP; nếu cần gửi dữ liệu thật, cần bổ sung API/Firebase handler ở Phase 2. Kênh bán hàng (F-11), Quản lý sản phẩm (F-12) và Trang chi tiết shop (F-14) hiện được lưu động tại `localStorage` phía client của từng người dùng để mô phỏng tính năng thực tế.
@@ -197,6 +198,21 @@ Quy trình dưới đây là định hướng phát triển sau MVP, khi hệ th
 * Layout checkout dùng width explicit và spacing nhỏ để tránh lỗi Tailwind v4 custom spacing làm body bị phình to
 
 > **Comment cho đồng nghiệp:** Nếu cần thêm phường/xã, đổi API sang `depth=3` và bổ sung state `wardCode`. Không hard-code tỉnh/quận trong UI nữa vì hiện đã có nguồn dữ liệu động từ `provinces.open-api.vn`.
+
+### US-05B: Áp dụng Voucher tại Checkout (Voucher Checkout Integration)
+
+**Là** người mua, **tôi muốn** nhập mã voucher tại trang checkout, **để** nhận được mức giảm giá trực tiếp trước khi đặt hàng.
+
+#### Acceptance Criteria
+
+* Có ô nhập mã giảm giá trực tiếp tại trang checkout, hỗ trợ nhập mã (ví dụ: `VALID10`) và hiển thị kết quả.
+* Kiểm tra 4 lỗi validation từ server-side:
+  1. Mã giảm giá không tồn tại.
+  2. Mã giảm giá đã hết hạn.
+  3. Mã giảm giá đã hết lượt sử dụng.
+  4. Mã giảm giá đã dừng hoạt động.
+* Tính toán khấu trừ đúng giá trị chiết khấu (giảm theo % hoặc số tiền cố định) vào tổng số tiền của đơn hàng.
+* Khi đặt hàng thành công (hoặc VNPay payment thành công), tự động cập nhật `usedCount` của voucher tăng lên 1, đồng thời lưu lịch sử sử dụng vào collection `voucherHistories` trong Firestore.
 
 ### US-06 & US-07: Đăng ký / Đăng nhập
 
@@ -695,6 +711,15 @@ interface ContactMessage {
 | T-86 | Thiết kế Modal yêu cầu hoàn trả kèm ảnh minh chứng | 3  | ✅      |
 | T-87 | Tích hợp nút Yêu cầu hoàn trả trên Đơn hàng đã giao | 1  | ✅      |
 | T-88 | Tự động gửi Notification cho Người bán khi có yêu cầu | 1  | ✅      |
+
+## Sprint 6.0 — Tích hợp Voucher tại Checkout & Lưu lịch sử Firestore (✅ Hoàn thành)
+
+| ID   | Task                                           | SP | Status |
+| ---- | ---------------------------------------------- | -- | ------ |
+| T-89 | Thiết lập hàm `saveVoucherHistory` và collection `voucherHistories` | 1  | ✅      |
+| T-90 | Tích hợp áp dụng voucher vào checkout page và lưu lịch sử | 2  | ✅      |
+| T-91 | Đồng bộ giảm giá & cập nhật lịch sử dùng voucher cho VNPay verify và IPN webhook | 2  | ✅      |
+| T-92 | Kiểm thử 4 case validation lỗi, khấu trừ và build pass | 1  | ✅      |
 
 ## Backlog Phase 2 (Tương lai)
 

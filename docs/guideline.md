@@ -472,4 +472,4 @@ Chức năng Mã giảm giá cho phép người bán tự thiết lập các chi
 3. Hệ thống sẽ xác thực mã giảm giá trên máy chủ:
    - **Áp dụng thành công**: Hiển thị thông báo thành công và khấu trừ trực tiếp số tiền chiết khấu vào phần tính tổng tiền của đơn hàng (chỉ áp dụng đối với tổng giá trị các sản phẩm của chính shop phát hành mã).
    - **Lỗi áp dụng**: Hiển thị thông báo lỗi chi tiết nếu mã đã hết hạn, hết lượt sử dụng, bị dừng sớm hoặc giỏ hàng không chứa sản phẩm của shop phát hành mã.
-4. Chọn phương thức thanh toán (COD, Chuyển khoản hoặc VNPay) và hoàn tất đặt hàng. Số tiền giảm giá và mã voucher được ghi nhận trực tiếp vào hóa đơn của từng shop cụ thể sau khi đơn hàng được tách.
+4. Chọn phương thức thanh toán (COD, Chuyển khoản hoặc VNPay) và hoàn tất đặt hàng. Số tiền giảm giá và mã voucher được ghi nhận trực tiếp vào hóa đơn của từng shop cụ thể sau khi đơn hàng được tách. Đồng thời, hệ thống sẽ tự động cập nhật số lượt đã dùng của voucher (`usedCount` +1) và lưu lại bản ghi lịch sử sử dụng vào bộ sưu tập `voucherHistories` trên Firestore để tiện theo dõi và kiểm toán.

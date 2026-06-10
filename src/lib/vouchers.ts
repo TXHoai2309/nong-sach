@@ -42,3 +42,20 @@ export async function incrementVoucherUsage(code: string): Promise<void> {
     usedCount: increment(1),
   });
 }
+
+export async function saveVoucherHistory(history: {
+  voucherCode: string;
+  userId: string;
+  orderId: string;
+  discountAmount: number;
+  sellerId: string;
+}): Promise<void> {
+  const id = `VH-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  const docRef = doc(db, "voucherHistories", id);
+  await setDoc(docRef, {
+    ...history,
+    id,
+    usedAt: new Date().toISOString(),
+  });
+}
+

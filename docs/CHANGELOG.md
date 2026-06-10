@@ -4,6 +4,22 @@ All notable changes to the **NôngSạch** project will be documented in this fi
 
 The format is based on **Keep a Changelog** and this project adheres to **Semantic Versioning**.
 
+## [0.8.2] - 2026-06-10
+
+### Tích hợp Voucher tại Checkout & Lưu Lịch sử sử dụng (Voucher Checkout & History Logging)
+
+### Added
+* **Tích hợp Voucher tại Checkout**: Cho phép người mua nhập và áp dụng mã voucher trực tiếp tại trang checkout, tính toán chiết khấu và khấu trừ trực tiếp vào tổng tiền thanh toán của đơn hàng.
+* **Xác thực 4 trường hợp lỗi (Server-side Validation)**: Trả về và hiển thị đúng 4 thông báo lỗi màu đỏ khi mã không hợp lệ: mã không tồn tại, mã hết hạn, mã hết lượt dùng, và mã đã dừng hoạt động.
+* **Lưu Lịch sử Sử dụng vào Firestore**: Tự động ghi lại bản ghi lịch sử sử dụng voucher (bao gồm `voucherCode`, `userId`, `orderId`, `discountAmount`, `sellerId`, `usedAt`) vào collection `voucherHistories` khi đơn hàng được đặt thành công (cả đối với COD, chuyển khoản ngân hàng và thanh toán VNPay trực tuyến).
+* **Tự động cập nhật usedCount**: Trường `usedCount` của voucher được tăng thêm 1 khi áp dụng thành công.
+
+### Changed
+* Đồng bộ hóa logic xử lý VNPay IPN webhook (`src/app/api/vnpay/ipn/route.ts`) để thực hiện đầy đủ việc trừ chiết khấu voucher, ghi nhận voucherCode/discountAmount vào đơn hàng chính thức, tăng lượt usedCount và lưu lịch sử dùng.
+
+### Fixed
+* Loại bỏ tất cả các kiểu `any` không an toàn trong `src/app/api/vnpay/ipn/route.ts` để đáp ứng các tiêu chuẩn TypeScript nghiêm ngặt và giải quyết triệt để cảnh báo/lỗi linter.
+
 ## [0.8.0] - 2026-06-10
 
 ### Mã Giảm Giá của Người Bán (Seller Vouchers Feature)

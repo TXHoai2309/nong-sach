@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
 import crypto from "crypto";
-import { incrementVoucherUsage } from "@/lib/vouchers";
+import { incrementVoucherUsage, saveVoucherHistory } from "@/lib/vouchers";
 import { CartItem } from "@/types/cart";
 
 // Helper to sort and encode parameters
@@ -140,6 +140,13 @@ export async function POST(request: Request) {
         if (isSellerVoucher) {
           try {
             await incrementVoucherUsage(appliedVoucher.code);
+            await saveVoucherHistory({
+              voucherCode: appliedVoucher.code,
+              userId: pendingOrder.userId || "guest",
+              orderId: subOrderId,
+              discountAmount: voucherDiscount,
+              sellerId: appliedVoucher.sellerId,
+            });
           } catch (error) {
             console.error("Lỗi khi cập nhật lượt sử dụng voucher trong VNPay verify:", error);
           }
