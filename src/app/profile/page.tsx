@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo, type FormEvent, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { collection, doc, getDocs, query, where } from "firebase/firestore";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import { formatCurrency } from "@/lib/format";
@@ -23,6 +23,8 @@ import { getAllProducts, addProduct, deleteProduct } from "@/lib/products";
 import { addReview, checkReviewedItems, getBaseProductId, getReviewsByOrderId } from "@/lib/reviews";
 import { Review } from "@/types/review";
 import { OrderTrackingTimeline } from "@/components/order/OrderTrackingTimeline";
+import { toggleFollow } from "@/lib/follows";
+import { getShopById, Shop } from "@/lib/shops";
 
 const PROVINCES_API = "https://provinces.open-api.vn/api/v1/?depth=2";
 
@@ -56,7 +58,7 @@ const fallbackProvinces = [
   },
 ];
 
-type ProfileTab = "info" | "orders" | "addresses" | "password" | "notifications" | "seller";
+type ProfileTab = "info" | "orders" | "addresses" | "password" | "notifications" | "followed_shops" | "seller";
 type ProfileGender = NonNullable<User["gender"]>;
 
 const normalizeVietnamPhone = (phone?: string) => {
@@ -161,7 +163,7 @@ function ProfileContent() {
   // Listen to tab URL query param
   useEffect(() => {
     if (tabParam) {
-      const validTabs: ProfileTab[] = ["info", "orders", "addresses", "password", "notifications", "seller"];
+      const validTabs: ProfileTab[] = ["info", "orders", "addresses", "password", "notifications", "followed_shops", "seller"];
       if (validTabs.includes(tabParam as ProfileTab)) {
         const timer = window.setTimeout(() => setActiveTab(tabParam as ProfileTab), 0);
         return () => window.clearTimeout(timer);
@@ -294,6 +296,10 @@ function ProfileContent() {
   const [reviewImages, setReviewImages] = useState<string[]>([]);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
+  // Followed shops states
+  const [followedShops, setFollowedShops] = useState<Shop[]>([]);
+  const [loadingFollowedShops, setLoadingFollowedShops] = useState(false);
+
   // Show toast helper
   const showToast = (message: string, type: "success" | "error" = "success") => {
     setToast({ message, type });
@@ -410,6 +416,41 @@ function ProfileContent() {
       return () => unsubscribe();
     }
   }, [mounted, activeTab, currentUser?.id, subscribeToUserOrders]);
+
+  // Subscribe to followed shops in real-time
+  useEffect(() => {
+    if (!mounted || !currentUser || activeTab !== "followed_shops") return;
+
+    const timer = window.setTimeout(() => setLoadingFollowedShops(true), 0);
+    const q = query(collection(db, "follows"), where("userId", "==", currentUser.id));
+    
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
+      const shopIds = snapshot.docs.map(doc => doc.data().shopId as string);
+      if (shopIds.length === 0) {
+        setFollowedShops([]);
+        setLoadingFollowedShops(false);
+        return;
+      }
+      
+      try {
+        const shopPromises = shopIds.map(id => getShopById(id));
+        const resolvedShops = (await Promise.all(shopPromises)).filter((s): s is Shop => s !== null);
+        setFollowedShops(resolvedShops);
+      } catch (err) {
+        console.error("Error fetching followed shops:", err);
+      } finally {
+        setLoadingFollowedShops(false);
+      }
+    }, (error) => {
+      console.error("Error listening to follows:", error);
+      setLoadingFollowedShops(false);
+    });
+
+    return () => {
+      window.clearTimeout(timer);
+      unsubscribe();
+    };
+  }, [mounted, currentUser, activeTab]);
 
   useEffect(() => {
     if (!mounted || !currentUser) return;
@@ -1519,6 +1560,7 @@ function ProfileContent() {
                     { id: "addresses", label: "Địa chỉ giao hàng", icon: "location_on" },
                     { id: "password", label: "Đổi mật khẩu", icon: "lock" },
                     { id: "notifications", label: "Thông báo", icon: "notifications" },
+                    { id: "followed_shops", label: "Shop đã theo dõi", icon: "favorite" },
                   ];
 
                   let sellerLabel = "Đăng ký bán hàng";
@@ -2541,6 +2583,87 @@ function ProfileContent() {
                     })
                   )}
                 </div>
+              </div>
+            )}
+
+            {/* 5.5. FOLLOWED SHOPS TAB */}
+            {activeTab === "followed_shops" && (
+              <div className="rounded-3xl border border-[#bbcabf]/30 bg-white p-6 shadow-sm">
+                <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <h3 className="text-lg font-bold text-[#006c49]">Shop đã theo dõi</h3>
+                  <p className="text-xs font-medium text-[#3c4a42]/60">
+                    {followedShops.length > 0
+                      ? `Đang theo dõi ${followedShops.length} cửa hàng`
+                      : "Chưa theo dõi cửa hàng nào"}
+                  </p>
+                </div>
+                
+                {loadingFollowedShops ? (
+                  <div className="py-20 text-center text-[#3c4a42]/50 animate-pulse">
+                    <p className="text-sm font-bold">Đang tải danh sách cửa hàng...</p>
+                  </div>
+                ) : followedShops.length === 0 ? (
+                  <div className="py-16 text-center border border-dashed border-[#bbcabf]/30 rounded-2xl bg-slate-50/50">
+                    <span className="material-symbols-outlined text-4xl mb-2 text-[#3c4a42]/30">storefront</span>
+                    <h3 className="text-base font-bold text-[#3c4a42]">Bạn chưa theo dõi cửa hàng nào.</h3>
+                    <p className="text-xs text-[#3c4a42]/60 mt-1">Hãy khám phá các cửa hàng nông sản sạch và nhấn Theo dõi nhé!</p>
+                    <Link href="/products" className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-[#006c49] px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#005236] transition-all">
+                      Khám phá ngay
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {followedShops.map((item) => (
+                      <div key={item.id} className="p-4 border border-[#bbcabf]/20 bg-white rounded-2xl shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="relative w-12 h-12 overflow-hidden rounded-full border border-slate-100 shrink-0 bg-slate-50">
+                            <Image src={item.logo} alt={item.name} fill className="object-cover" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-bold text-on-surface text-sm line-clamp-1">{item.name}</h4>
+                            <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-on-surface-variant font-semibold">
+                              <div className="flex items-center gap-0.5 text-[#FFB800]">
+                                <span className="material-symbols-outlined text-[10px] [font-variation-settings:'FILL'_1]">star</span>
+                                <span>{item.rating}</span>
+                              </div>
+                              <span>•</span>
+                              <span>{item.standard}</span>
+                            </div>
+                          </div>
+                        </div>
+                        {item.slogan && (
+                          <p className="text-xs text-on-surface-variant/90 line-clamp-1 mb-4 italic leading-relaxed">&ldquo;{item.slogan}&rdquo;</p>
+                        )}
+                        <div className="flex items-center justify-between gap-2 border-t border-[#bbcabf]/10 pt-3">
+                          <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-on-surface-variant/80">
+                            <span className="material-symbols-outlined text-sm text-red-400">location_on</span>
+                            {item.location}
+                          </span>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={async () => {
+                                if (!currentUser) return;
+                                try {
+                                  await toggleFollow(currentUser.id, item.id);
+                                  showToast(`Đã bỏ theo dõi ${item.name}`, "success");
+                                } catch (e) {
+                                  console.error(e);
+                                  showToast("Có lỗi xảy ra khi bỏ theo dõi", "error");
+                                }
+                              }}
+                              className="inline-flex rounded-xl bg-slate-50 hover:bg-red-50 border border-slate-200 hover:border-red-200 text-xs font-bold text-slate-600 hover:text-red-600 transition-all px-3 py-1.5"
+                            >
+                              Bỏ theo dõi
+                            </button>
+                            <Link href={`/shop/${item.id}`} className="inline-flex rounded-xl bg-[#e6f4ea] hover:bg-[#d8efe0] border border-[#006c49]/10 text-xs font-bold text-[#006c49] transition-all px-3.5 py-1.5">
+                              Xem shop
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
             {/* 6. SELLER REGISTRATION & CHANNEL TAB */}

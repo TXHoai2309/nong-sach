@@ -43,7 +43,7 @@ Tại trang chi tiết sản phẩm, người dùng có thể:
 Tại trang chi tiết cửa hàng (`/shop/[id]`), người dùng có thể:
 
 1. Xem ảnh bìa, logo đại diện, tên cửa hàng, slogan, địa điểm và các tiêu chuẩn chất lượng (như VietGAP, USDA Organic).
-2. **Theo dõi cửa hàng**: Bấm nút `+ Theo dõi` để theo dõi cửa hàng (số lượng "Người theo dõi" sẽ tự động tăng lên và nút chuyển sang `Đang theo dõi`).
+2. **Theo dõi cửa hàng**: Bấm nút `+ Theo dõi` để theo dõi cửa hàng (số lượng "Người theo dõi" sẽ tự động tăng lên và nút chuyển sang `Đang theo dõi`). Người dùng có thể quản lý danh sách các cửa hàng đã theo dõi bằng cách vào **Trang cá nhân** -> chọn tab **"Shop đã theo dõi"**. Tại đây có thể thực hiện bỏ theo dõi nhanh hoặc xem nhanh thông tin cửa hàng trực tiếp.
 3. Bấm `Nhắn tin` để kích hoạt mô phỏng hộp thoại trò chuyện với chủ vườn.
 4. Xem tab `Sản phẩm`: Lọc sản phẩm theo danh mục của shop, tìm kiếm sản phẩm trong shop, và sắp xếp theo giá cả hoặc tên gọi.
 5. Xem tab `Đánh giá`: Xem các đánh giá chi tiết từ khách hàng cũ về nhà vườn.

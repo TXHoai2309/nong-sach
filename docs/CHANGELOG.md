@@ -4,6 +4,15 @@ All notable changes to the **NôngSạch** project will be documented in this fi
 
 The format is based on **Keep a Changelog** and this project adheres to **Semantic Versioning**.
 
+## [0.7.7] - 2026-06-10
+
+### Theo dõi Cửa hàng & Quản lý Shop đã theo dõi (Shop Follow & Following Dashboard)
+
+### Added
+* **Tab Shop đã theo dõi tại Profile**: Thêm tab mới cho phép người dùng xem danh sách các shop đang theo dõi với đầy đủ thông tin (Logo, tên, đánh giá, tiêu chuẩn, location, slogan).
+* **Nút Bỏ theo dõi và Xem shop**: Người dùng có thể bỏ theo dõi trực tiếp từ trang cá nhân (danh sách tự động cập nhật thời gian thực qua listener `onSnapshot` trên Firestore) hoặc chuyển hướng nhanh đến gian hàng.
+* **Tích hợp Firestore**: Đồng bộ hóa toàn bộ trạng thái theo dõi qua `follows` collection trong Firestore, tự động tăng/giảm số lượng follower của shop tương ứng.
+
 ## [0.7.6] - 2026-06-10
 
 ### Phân xử Hoàn trả Đơn hàng (Admin Refund Mediation)
