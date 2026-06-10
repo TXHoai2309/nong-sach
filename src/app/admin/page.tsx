@@ -223,10 +223,18 @@ export default function AdminDashboardPage() {
   };
 
   const handleChangeRole = async (userId: string, newRole: "buyer" | "seller" | "admin") => {
+    const targetUser = users.find(u => u.id === userId);
+    
     if (newRole === "admin") {
-      alert("Hệ thống chỉ cho phép duy nhất một tài khoản Quản trị.");
+      alert("Hệ thống chỉ cho phép duy nhất một tài khoản Quản trị mặc định.");
       return;
     }
+
+    if (targetUser?.email === "admin@nongsach.vn") {
+      alert("Không thể thay đổi quyền hạn của tài khoản Quản trị hệ thống.");
+      return;
+    }
+
     setActionLoading(userId + "-role");
     try {
       const userRef = doc(db, "users", userId);
