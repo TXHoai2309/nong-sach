@@ -427,9 +427,20 @@ Tính năng này cho phép người mua gửi yêu cầu hoàn trả nếu sản
    - Chọn **Lý do hoàn trả** (Sản phẩm không đúng mô tả, hư hỏng, giao sai,...).
    - Nhập **Mô tả chi tiết** về vấn đề.
    - Tải lên tối đa **3 ảnh minh chứng** thực tế.
-5. Bấm **"Gửi yêu cầu"**. Hệ thống sẽ đổi trạng thái đơn hàng sang **Đang hoàn trả** và thông báo cho các bên liên quan.
+5. Bấm **"Gửi yêu cầu"**. Hệ thống sẽ đổi trạng thái đơn hàng sang **Đang hoàn trả** và thông báo cho người bán.
 
-### 21.2. Đối với Người bán và Quản trị viên
+### 21.2. Đối với Người bán (Seller)
 
-1. Nhận thông báo chuông về yêu cầu hoàn trả mới.
-2. Kiểm tra dữ liệu tại collection `refundRequests` trên Firestore để xem xét bằng chứng và xử lý yêu cầu.
+1. Nhận thông báo chuông về yêu cầu hoàn trả mới từ khách hàng.
+2. Truy cập **Kênh người bán** > **Đơn hàng của shop**.
+3. Các đơn hàng có yêu cầu hoàn trả sẽ ở trạng thái **Đang hoàn trả**. Bấm nút **"Xử lý hoàn trả"** trên thẻ đơn hàng.
+4. Một hộp thoại sẽ hiện ra hiển thị chi tiết:
+   - Lý do và mô tả từ khách hàng.
+   - Các ảnh minh chứng khách hàng cung cấp.
+5. Xem xét thông tin và nhập **Phản hồi của bạn (Ghi chú)** để giải thích quyết định của mình cho khách hàng.
+6. Bấm **"Từ chối"** hoặc **"Chấp nhận hoàn trả"**.
+   - Nếu chấp nhận: Đơn hàng chuyển sang trạng thái **Đã hoàn trả**.
+   - Nếu từ chối: Đơn hàng quay lại trạng thái **Đã giao**.
+7. Hệ thống sẽ tự động gửi thông báo kết quả kèm ghi chú của bạn cho người mua.
+
+*Lưu ý: Quản trị viên (Admin) chỉ quản lý tài khoản và sức khỏe hệ thống, không can thiệp vào các giao dịch hoàn trả cá nhân giữa người mua và người bán.*
