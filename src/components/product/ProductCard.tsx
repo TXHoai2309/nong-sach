@@ -13,6 +13,7 @@ import { useState, useEffect, type FormEvent } from "react";
 import { useReportStore } from "@/store/report-store";
 import { REPORT_REASONS } from "@/types/report";
 import { AlertCircle, X, Check } from "lucide-react";
+import { toggleWishlist, subscribeToWishlistStatus } from "@/lib/wishlist";
 
 interface ProductCardProps {
   product: Product;
@@ -23,6 +24,18 @@ export default function ProductCard({ product }: ProductCardProps) {
   const { currentUser } = useAuthStore();
   const openOptionsModal = useCartStore((state) => state.openOptionsModal);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isWishlisted, setIsWishlisted] = useState(false);
+
+  useEffect(() => {
+    if (!currentUser) {
+      const timer = window.setTimeout(() => setIsWishlisted(false), 0);
+      return () => window.clearTimeout(timer);
+    }
+    const unsubscribe = subscribeToWishlistStatus(currentUser.id, product.id, (wishlisted) => {
+      setIsWishlisted(wishlisted);
+    });
+    return () => unsubscribe();
+  }, [currentUser, product.id]);
 
   // Report states
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -137,6 +150,36 @@ export default function ProductCard({ product }: ProductCardProps) {
             </span>
           </div>
         )}
+
+        {/* Wishlist Button — top-left */}
+        <div className="absolute top-3 left-3 z-20">
+          <button
+            onClick={async (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (!currentUser) {
+                alert("Vui lòng đăng nhập để thêm sản phẩm vào danh sách yêu thích!");
+                const currentPath = typeof window !== "undefined" ? window.location.pathname + window.location.search : "/products";
+                router.push(`/login?redirect=${encodeURIComponent(currentPath)}`);
+                return;
+              }
+              try {
+                await toggleWishlist(currentUser.id, product.id);
+              } catch (err) {
+                console.error("Lỗi khi cập nhật danh sách yêu thích:", err);
+              }
+            }}
+            className="flex items-center justify-center bg-white/80 hover:bg-white border border-slate-100 backdrop-blur-sm w-8 h-8 rounded-full text-red-500 transition-all shadow-sm cursor-pointer active:scale-90"
+            title={isWishlisted ? "Xóa khỏi Yêu thích" : "Thêm vào Yêu thích"}
+          >
+            <span 
+              className="material-symbols-outlined text-[18px] select-none"
+              style={{ fontVariationSettings: `'FILL' ${isWishlisted ? 1 : 0}` }}
+            >
+              favorite
+            </span>
+          </button>
+        </div>
 
         {/* Utility Menu Button — top-right */}
         <div className="absolute top-3 right-3 z-20">

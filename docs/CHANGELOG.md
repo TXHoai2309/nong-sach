@@ -4,6 +4,16 @@ All notable changes to the **NôngSạch** project will be documented in this fi
 
 The format is based on **Keep a Changelog** and this project adheres to **Semantic Versioning**.
 
+## [0.7.8] - 2026-06-10
+
+### Danh sách sản phẩm yêu thích (Wishlist Feature)
+
+### Added
+* **Nút trái tim Yêu thích trên ProductCard**: Tích hợp nút hình trái tim ở góc trên bên trái của ảnh sản phẩm để thêm/xoá sản phẩm yêu thích nhanh chóng.
+* **Nút trái tim Yêu thích trên ProductDetail**: Tích hợp nút hình trái tim cạnh menu tiện ích ở góc trên bên phải ảnh sản phẩm trong trang chi tiết.
+* **Tab Yêu thích tại Trang cá nhân (Profile)**: Thêm tab mới cho phép người dùng xem tất cả sản phẩm đã lưu vào danh sách yêu thích, hỗ trợ hủy yêu thích realtime hoặc truy cập nhanh đến chi tiết sản phẩm.
+* **Đồng bộ cơ sở dữ liệu Firestore**: Toàn bộ dữ liệu được lưu vết trong collection `wishlists` trên Firestore, hỗ trợ đồng bộ hóa trạng thái theo thời gian thực giữa các thiết bị đăng nhập cùng tài khoản (cross-device sync).
+
 ## [0.7.7] - 2026-06-10
 
 ### Theo dõi Cửa hàng & Quản lý Shop đã theo dõi (Shop Follow & Following Dashboard)

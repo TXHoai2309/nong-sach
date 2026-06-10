@@ -15,6 +15,7 @@ import { useReportStore } from "@/store/report-store";
 import { REPORT_REASONS } from "@/types/report";
 import { getReviewsByProductId } from "@/lib/reviews";
 import { Review } from "@/types/review";
+import { toggleWishlist, subscribeToWishlistStatus } from "@/lib/wishlist";
 
 interface ProductDetailProps {
   product: Product;
@@ -98,6 +99,18 @@ export default function ProductDetail({ product, relatedProducts }: ProductDetai
   const [quantity, setQuantity] = useState(Math.min(2, Math.max(1, product.stock)));
   const [activeTab, setActiveTab] = useState<TabKey>("description");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isWishlisted, setIsWishlisted] = useState(false);
+
+  useEffect(() => {
+    if (!currentUser) {
+      const timer = window.setTimeout(() => setIsWishlisted(false), 0);
+      return () => window.clearTimeout(timer);
+    }
+    const unsubscribe = subscribeToWishlistStatus(currentUser.id, product.id, (wishlisted) => {
+      setIsWishlisted(wishlisted);
+    });
+    return () => unsubscribe();
+  }, [currentUser, product.id]);
 
   // Report states
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -329,6 +342,34 @@ export default function ProductDetail({ product, relatedProducts }: ProductDetai
             <div className="absolute left-4 top-4 flex items-center gap-1 rounded-full bg-primary px-4 py-1 text-xs font-semibold leading-4 tracking-wide text-white shadow-md">
               <span className="material-symbols-outlined text-[14px] [font-variation-settings:'FILL'_1]">eco</span>
               Hữu cơ
+            </div>
+
+            {/* Wishlist Button — top-right, next to utility menu */}
+            <div className="absolute top-4 right-[60px] z-30">
+              <button
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  if (!currentUser) {
+                    alert("Vui lòng đăng nhập để thêm sản phẩm vào danh sách yêu thích!");
+                    router.push(`/login?redirect=${encodeURIComponent(`/products/${product.id}`)}`);
+                    return;
+                  }
+                  try {
+                    await toggleWishlist(currentUser.id, product.id);
+                  } catch (err) {
+                    console.error("Lỗi khi cập nhật danh sách yêu thích:", err);
+                  }
+                }}
+                className={`flex items-center justify-center bg-black/25 hover:bg-black/40 border border-white/20 backdrop-blur-md w-9 h-9 rounded-full transition-all shadow-md cursor-pointer active:scale-90 ${isWishlisted ? "text-red-500" : "text-white"}`}
+                title={isWishlisted ? "Xóa khỏi Yêu thích" : "Thêm vào Yêu thích"}
+              >
+                <span 
+                  className="material-symbols-outlined text-[18px] select-none"
+                  style={{ fontVariationSettings: `'FILL' ${isWishlisted ? 1 : 0}` }}
+                >
+                  favorite
+                </span>
+              </button>
             </div>
 
             {/* Utility Menu Button — top-right */}

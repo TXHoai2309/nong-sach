@@ -25,6 +25,8 @@ import { Review } from "@/types/review";
 import { OrderTrackingTimeline } from "@/components/order/OrderTrackingTimeline";
 import { toggleFollow } from "@/lib/follows";
 import { getShopById, Shop } from "@/lib/shops";
+import { subscribeToUserWishlist } from "@/lib/wishlist";
+import ProductCard from "@/components/product/ProductCard";
 
 const PROVINCES_API = "https://provinces.open-api.vn/api/v1/?depth=2";
 
@@ -58,7 +60,7 @@ const fallbackProvinces = [
   },
 ];
 
-type ProfileTab = "info" | "orders" | "addresses" | "password" | "notifications" | "followed_shops" | "seller";
+type ProfileTab = "info" | "orders" | "addresses" | "password" | "notifications" | "followed_shops" | "wishlist" | "seller";
 type ProfileGender = NonNullable<User["gender"]>;
 
 const normalizeVietnamPhone = (phone?: string) => {
@@ -163,7 +165,7 @@ function ProfileContent() {
   // Listen to tab URL query param
   useEffect(() => {
     if (tabParam) {
-      const validTabs: ProfileTab[] = ["info", "orders", "addresses", "password", "notifications", "followed_shops", "seller"];
+      const validTabs: ProfileTab[] = ["info", "orders", "addresses", "password", "notifications", "followed_shops", "wishlist", "seller"];
       if (validTabs.includes(tabParam as ProfileTab)) {
         const timer = window.setTimeout(() => setActiveTab(tabParam as ProfileTab), 0);
         return () => window.clearTimeout(timer);
@@ -299,6 +301,10 @@ function ProfileContent() {
   // Followed shops states
   const [followedShops, setFollowedShops] = useState<Shop[]>([]);
   const [loadingFollowedShops, setLoadingFollowedShops] = useState(false);
+
+  // Wishlist states
+  const [wishlistProducts, setWishlistProducts] = useState<Product[]>([]);
+  const [loadingWishlist, setLoadingWishlist] = useState(false);
 
   // Show toast helper
   const showToast = (message: string, type: "success" | "error" = "success") => {
@@ -444,6 +450,36 @@ function ProfileContent() {
     }, (error) => {
       console.error("Error listening to follows:", error);
       setLoadingFollowedShops(false);
+    });
+
+    return () => {
+      window.clearTimeout(timer);
+      unsubscribe();
+    };
+  }, [mounted, currentUser, activeTab]);
+
+  // Subscribe to wishlist products in real-time
+  useEffect(() => {
+    if (!mounted || !currentUser || activeTab !== "wishlist") return;
+
+    const timer = window.setTimeout(() => setLoadingWishlist(true), 0);
+    
+    const unsubscribe = subscribeToUserWishlist(currentUser.id, async (productIds) => {
+      if (productIds.length === 0) {
+        setWishlistProducts([]);
+        setLoadingWishlist(false);
+        return;
+      }
+      
+      try {
+        const allProds = await getAllProducts(true);
+        const resolvedProducts = allProds.filter(p => productIds.includes(p.id));
+        setWishlistProducts(resolvedProducts);
+      } catch (err) {
+        console.error("Error fetching wishlist products:", err);
+      } finally {
+        setLoadingWishlist(false);
+      }
     });
 
     return () => {
@@ -1560,7 +1596,8 @@ function ProfileContent() {
                     { id: "addresses", label: "Địa chỉ giao hàng", icon: "location_on" },
                     { id: "password", label: "Đổi mật khẩu", icon: "lock" },
                     { id: "notifications", label: "Thông báo", icon: "notifications" },
-                    { id: "followed_shops", label: "Shop đã theo dõi", icon: "favorite" },
+                    { id: "followed_shops", label: "Shop đã theo dõi", icon: "storefront" },
+                    { id: "wishlist", label: "Yêu thích", icon: "favorite" },
                   ];
 
                   let sellerLabel = "Đăng ký bán hàng";
@@ -2661,6 +2698,41 @@ function ProfileContent() {
                           </div>
                         </div>
                       </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 5.6. WISHLIST TAB */}
+            {activeTab === "wishlist" && (
+              <div className="rounded-3xl border border-[#bbcabf]/30 bg-white p-6 shadow-sm">
+                <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <h3 className="text-lg font-bold text-[#006c49]">Sản phẩm yêu thích</h3>
+                  <p className="text-xs font-medium text-[#3c4a42]/60">
+                    {wishlistProducts.length > 0
+                      ? `Có ${wishlistProducts.length} sản phẩm trong danh sách`
+                      : "Chưa có sản phẩm yêu thích"}
+                  </p>
+                </div>
+                
+                {loadingWishlist ? (
+                  <div className="py-20 text-center text-[#3c4a42]/50 animate-pulse">
+                    <p className="text-sm font-bold">Đang tải danh sách yêu thích...</p>
+                  </div>
+                ) : wishlistProducts.length === 0 ? (
+                  <div className="py-16 text-center border border-dashed border-[#bbcabf]/30 rounded-2xl bg-slate-50/50">
+                    <span className="material-symbols-outlined text-4xl mb-2 text-[#3c4a42]/30">favorite</span>
+                    <h3 className="text-base font-bold text-[#3c4a42]">Danh sách yêu thích trống.</h3>
+                    <p className="text-xs text-[#3c4a42]/60 mt-1">Hãy thêm các nông sản tươi sạch bạn yêu thích để lưu lại tại đây!</p>
+                    <Link href="/products" className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-[#006c49] px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#005236] transition-all">
+                      Xem sản phẩm
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {wishlistProducts.map((item) => (
+                      <ProductCard key={item.id} product={item} />
                     ))}
                   </div>
                 )}

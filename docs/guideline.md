@@ -20,6 +20,7 @@ http://localhost:3000
 3. Chọn danh mục để lọc sản phẩm theo nhóm.
 4. Dùng bộ sắp xếp để xem sản phẩm theo giá tăng dần hoặc giảm dần.
 5. Bấm `Chi tiết` để xem thông tin đầy đủ của sản phẩm.
+6. **Lưu sản phẩm yêu thích (Wishlist)**: Bấm vào biểu tượng trái tim ở góc trên bên trái thẻ sản phẩm để lưu lại xem sau.
 
 ## 3. Xem chi tiết sản phẩm
 
@@ -37,6 +38,9 @@ Tại trang chi tiết sản phẩm, người dùng có thể:
    - **Sao chép liên kết**: Lưu URL vào bộ nhớ tạm.
    - **Báo cáo sản phẩm**: Mở hộp thoại báo cáo vi phạm với lý do cụ thể.
    - **Bạn cần giúp đỡ?**: Hiển thị hotline hỗ trợ nhanh.
+9. **Yêu thích sản phẩm**: Bấm nút hình trái tim nằm cạnh menu tiện ích ở góc trên bên phải ảnh sản phẩm để lưu nhanh vào Wishlist.
+10. **Quản lý Danh sách yêu thích**: Truy cập **Trang cá nhân** -> chọn tab **"Yêu thích"** để xem toàn bộ danh sách sản phẩm đã lưu và thực hiện bỏ thích nhanh trực tiếp từ đây.
+
 
 ## 4. Xem chi tiết Cửa hàng (Shop Profile)
 
