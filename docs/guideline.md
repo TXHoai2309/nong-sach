@@ -398,3 +398,23 @@ Sau khi thanh toán thành công, kiểm tra Firestore:
 - Collection `orders`: Đơn hàng mới được tạo với `payment_status: "paid"`, `vnp_TransactionNo` và `vnp_ResponseCode: "00"`.
 - Collection `pending_orders`: Document tạm thời đã bị xóa sau khi xử lý thành công.
 - Collection `notifications`: Thông báo chuông được gửi đến cả người mua và người bán liên quan.
+
+## 20. Hướng dẫn Nhập mã vận đơn & Theo dõi đơn hàng
+
+Tính năng này cho phép người bán cung cấp thông tin vận chuyển và người mua có thể theo dõi hành trình đơn hàng trực tiếp qua GHN.
+
+### 20.1. Đối với Người bán (Seller)
+
+1. Truy cập **Kênh người bán** > **Đơn hàng của shop**.
+2. Tìm đơn hàng ở trạng thái **Đã xác nhận** hoặc **Đang giao**.
+3. Tại card đơn hàng, nhập mã vận đơn vào ô **"Nhập mã vận đơn..."** (Ví dụ: `GHN123456`).
+4. Bấm nút **"Lưu mã"** (hoặc **"Cập nhật"** nếu muốn đổi mã khác).
+5. Hệ thống sẽ lưu mã vào Firestore và tự động gửi thông báo đến người mua.
+
+### 20.2. Đối với Người mua (Buyer)
+
+1. Nhận thông báo qua biểu tượng chuông: *"Đơn hàng #... đã có mã vận đơn: GHN123456. Bạn có thể theo dõi tại GHN."*
+2. Vào **Trang cá nhân** > **Đơn hàng của tôi**.
+3. Tại thẻ đơn hàng tương ứng, bạn sẽ thấy mục **"Mã vận đơn GHN"**.
+4. Bấm nút **"Theo dõi tại GHN"** để mở trang tra cứu vận đơn chính thức của Giao Hàng Nhanh với mã đã được điền sẵn.
+5. Bạn cũng có thể xem thông tin này tại trang **Hoàn tất đơn hàng** ngay sau khi người bán cập nhật mã.

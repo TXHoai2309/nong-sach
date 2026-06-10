@@ -3,7 +3,7 @@
 > **Tài liệu chứng minh quy trình phát triển và kiểm định chất lượng sản phẩm (Plan — Doc — Build — Test) trước khi xuất xưởng (Ship) phiên bản NôngSạch MVP v0.7.0.**
 > 
 > * **Dự án**: NôngSạch — Nền tảng giao dịch nông sản sạch
-> * **Phiên bản**: v0.7.0
+> * **Phiên bản**: v0.7.1
 > * **Ngày xác nhận**: 10/06/2026
 > * **Quy trình áp dụng**: Vibe Coding Standard (Plan ➔ Doc ➔ Build ➔ Test)
 > * **Trạng thái**: ✅ **ĐÃ THÔNG QUA (PASSED) & SẴN SÀNG SHIP**
@@ -42,6 +42,7 @@ Trước khi thực hiện bất kỳ thay đổi nào trong mã nguồn, hệ t
   - **Quy trình phê duyệt sản phẩm tự đăng của Người bán (Sprint 5.3)**: Tích hợp thuộc tính `status` và `rejectionReason` vào kiểu dữ liệu sản phẩm. Mặc định ẩn các sản phẩm chưa duyệt (`pending` hoặc `rejected`) khỏi cửa hàng công khai và trang chi tiết sản phẩm. Bổ sung cột Trạng thái chi tiết (Đang bán / Chờ duyệt / Bị từ chối kèm lý do) tại Kênh người bán, và reset trạng thái về `pending` khi người bán cập nhật sản phẩm bị từ chối. Thiết kế danh sách sản phẩm chờ duyệt dạng tab tại Dashboard Admin kèm modal xem chi tiết đầy đủ ảnh/mô tả và các nút Duyệt/Từ chối nhập lý do, tự động gửi thông báo kết quả cho người bán.
   - **Admin xử lý báo cáo vi phạm & Lịch sử Hoạt động Admin (Sprint 5.4)**: Xây dựng tab Báo cáo trong hàng đợi kiểm duyệt để xử lý các khiếu nại shop/sản phẩm từ người dùng. Admin có thể thực hiện 4 hành động: Bỏ qua (Dismiss), Cảnh báo (Warn), Khóa tạm (Block), và Xóa vi phạm (Delete). Triển khai cơ chế lưu vết hoạt động `adminLogs` trên Firestore và hiển thị bảng Lịch sử Hoạt động ở cuối giao diện Admin Panel. Tích hợp nút "Mở khóa Shop" trong danh sách người dùng để phục hồi các tài khoản shop bị khóa tạm thời.
   - **Tích hợp cổng thanh toán VNPay Sandbox & Tối ưu hóa thanh toán (Sprint 5.5)**: Thiết lập API Route tạo liên kết thanh toán VNPay Sandbox, API Route xác thực kết quả thanh toán, IPN Webhook tự động cập nhật đơn hàng và Landing page callback `/vnpay-return` xử lý UI. Tích hợp thanh toán bằng Thẻ Visa/Mastercard và Ví điện tử qua VNPay Sandbox, và hiển thị mã giao dịch VNPay ở trang success và profile.
+  - **Nhập mã vận đơn & Theo dõi đơn hàng GHN (Sprint 5.6)**: Cho phép người bán nhập mã vận đơn GHN trực tiếp trên card đơn hàng. Tự động tạo link tra cứu GHN và gửi thông báo Notification cho người mua. Hiển thị mã vận đơn và nút tra cứu tại trang Cá nhân và trang Hoàn tất đơn hàng.
 
 ---
 
@@ -188,6 +189,8 @@ Các ảnh chụp màn hình và video kiểm thử được lưu trữ trực t
 | **TC-50: Thanh toán VNPay thành công** | Chọn VNPay Sandbox/Visa/Ví điện tử, đặt hàng, nhập thẻ test NCB và OTP 123456 trên cổng VNPay. | Trình duyệt chuyển hướng về `/vnpay-return` xử lý xác thực chữ ký bảo mật thành công, xóa giỏ hàng, tạo đơn hàng trong Firestore và hiển thị mã giao dịch ở trang thành công `/checkout/success`. | ✅ Pass |
 | **TC-51: Hủy thanh toán VNPay** | Trên cổng thanh toán VNPay, click Hủy giao dịch. | Trình duyệt chuyển hướng về `/vnpay-return` hiển thị thông báo hủy, giỏ hàng được giữ nguyên và không có đơn hàng nào được tạo trong Firestore. | ✅ Pass |
 | **TC-52: Webhook IPN VNPay** | Thực hiện thanh toán và tắt trình duyệt trước khi redirect, hệ thống nhận IPN từ VNPay server. | Webhook `/api/vnpay/ipn` tự động xác thực chữ ký và số tiền, hoàn tất tạo đơn hàng trong Firestore, gửi Notification chuông realtime cho cả người mua và người bán. | ✅ Pass |
+| **TC-53: Nhập mã vận đơn Seller** | Người bán nhập mã `GHN123` vào ô mã vận đơn trên card đơn hàng và nhấn "Lưu mã". | Mã được lưu vào Firestore, hiển thị ngay trên UI người bán và hiện thông báo thành công. | ✅ Pass |
+| **TC-54: Theo dõi đơn hàng Buyer** | Người mua nhận thông báo mã vận đơn mới, click xem đơn hàng. | Thẻ đơn hàng hiển thị mã `GHN123` và nút "Theo dõi tại GHN". Click nút mở đúng link tra cứu của GHN. | ✅ Pass |
 
 ---
 

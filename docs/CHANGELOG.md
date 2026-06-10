@@ -4,6 +4,23 @@ All notable changes to the **NôngSạch** project will be documented in this fi
 
 The format is based on **Keep a Changelog** and this project adheres to **Semantic Versioning**.
 
+## [0.7.1] - 2026-06-10
+
+### Nhập mã vận đơn & Theo dõi đơn hàng GHN (Tracking Code Integration & GHN Tracking)
+
+### Added
+* **Tính năng nhập mã vận đơn cho người bán**: Cho phép người bán nhập và cập nhật mã vận đơn GHN trực tiếp trên thẻ đơn hàng tại Kênh người bán.
+* **Tự động tạo link tra cứu GHN**: Hệ thống tự động chuyển đổi mã vận đơn thành đường dẫn tra cứu trực tuyến tại GHN (`https://ghn.vn/blogs/trang-thai-don-hang?v=...`).
+* **Thông báo cập nhật mã vận đơn**: Tự động gửi thông báo thời gian thực đến người mua khi người bán cập nhật mã vận đơn, kèm theo mã và hướng dẫn tra cứu.
+
+### Changed
+* **Hiển thị thông tin vận chuyển cho người mua**: 
+  - Cập nhật thẻ đơn hàng trong trang Cá nhân (`/profile`) để hiển thị mã vận đơn và nút "Theo dõi tại GHN".
+  - Nâng cấp trang Hoàn tất đơn hàng (`/checkout/success`) để hiển thị thông tin vận đơn và tích hợp nút tra cứu trực tiếp vào hành động "Theo dõi đơn hàng".
+* **Mở rộng Order Store**: Thêm action `updateTrackingCode` hỗ trợ cập nhật dữ liệu đồng bộ trên Firestore và local state.
+
+---
+
 ## [0.7.0] - 2026-06-10
 
 ### Tích hợp cổng thanh toán VNPay Sandbox & Tối ưu hóa luồng Đơn hàng (VNPay Sandbox Payment Gateway Integration & Order Workflow Optimization)

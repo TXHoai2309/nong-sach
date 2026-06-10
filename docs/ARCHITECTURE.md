@@ -224,15 +224,27 @@ interface CartItem {
 
 ```ts
 interface Order {
-  orderId: string
-  customerName: string
-  phone: string
-  address: string
-  note?: string
-  items: CartItem[]
-  total: number
-  createdAt: Date
+  id: string;
+  userId: string;
+  sellerId?: string;
+  shopName?: string;
+  fullName: string;
+  phone: string;
+  email?: string;
+  address: string;
+  note?: string;
+  items: CartItem[];
+  totalAmount: number;
+  status: OrderStatus;
+  paymentMethod: string;
+  createdAt: string;
+  payment_status?: string;
+  vnp_TransactionNo?: string;
+  vnp_ResponseCode?: string;
+  trackingCode?: string;
+  trackingUrl?: string;
 }
+
 ```
 
 ## Shop
@@ -369,6 +381,38 @@ resolveReport(reportId: string, status: 'resolved' | 'dismissed', action: string
 * Tích hợp lưu trữ trực tiếp trên Firestore trong collection `"reports"`.
 * **Tránh lỗi undefined trên Firestore**: Trước khi ghi dữ liệu lên Firestore, tự động lọc sạch các trường có giá trị `undefined` bằng `Object.fromEntries(Object.entries(data).filter(([_, v]) => v !== undefined))` để đảm bảo an toàn truy vấn và ngăn chặn runtime exceptions của Firestore.
 * Khi Admin xử lý báo cáo, ghi nhận kết quả hành động và tự động cập nhật trạng thái thực tế của đối tượng bị báo cáo (Cửa hàng/Sản phẩm).
+
+---
+
+## Order Store
+
+File:
+
+```text
+src/store/order-store.ts
+```
+
+### State
+
+```ts
+orders: Order[]
+isLoading: boolean
+```
+
+### Actions
+
+```ts
+addOrder(order: Order)
+updateOrderStatus(orderId: string, status: OrderStatus)
+updateTrackingCode(orderId: string, trackingCode: string)
+fetchOrdersByUserId(userId: string)
+fetchOrdersBySellerId(sellerId: string)
+```
+
+### Business Rules
+
+* Quản lý trạng thái đơn hàng và lịch sử mua sắm/bán hàng trên Firestore.
+* **Cập nhật mã vận đơn**: Cho phép người bán nhập mã vận đơn GHN cho các đơn hàng đang xử lý. Hệ thống tự động tạo link tra cứu GHN và gửi thông báo cho người mua.
 
 ---
 

@@ -5,12 +5,12 @@
 | Thông tin         | Chi tiết                                    |
 | ----------------- | ------------------------------------------- |
 | Tên dự án         | NôngSạch — Nền tảng giao dịch nông sản sạch |
-| Phiên bản         | MVP v0.7.0 (Sprint 5.5)                     |
+| Phiên bản         | MVP v0.7.1 (Sprint 5.6)                     |
 | Ngày tạo          | 03/06/2026                                  |
 | Cập nhật lần cuối | 10/06/2026                                  |
 | Nhóm              | NôngSạch Team                               |
 | Môn học           | Vibe Coding Thực Chiến — Buổi 3             |
-| Trạng thái        | ✅ Hoàn thành Sprint 1 đến Sprint 5.5 |
+| Trạng thái        | ✅ Hoàn thành Sprint 1 đến Sprint 5.6 |
 
 ---
 
@@ -79,6 +79,7 @@ Người tiêu dùng ngày càng lo ngại về an toàn thực phẩm, đặc b
 | F-23 | Quy trình duyệt/từ chối hồ sơ | Modal xem chi tiết hồ sơ (zoom CCCD), từ chối kèm lý do và quy trình nộp lại | P1      | ✅ Done     |
 | F-24 | Quy trình duyệt/từ chối sản phẩm | Admin duyệt sản phẩm pending -> active hoặc từ chối kèm lý do và gửi thông báo | P1      | ✅ Done     |
 | F-25 | Xử lý báo cáo vi phạm | Quyết định xử lý của Admin (Bỏ qua/Cảnh báo/Khóa tạm/Xóa đối tượng) và ghi log kiểm toán Firestore | P1      | ✅ Done     |
+| F-26 | Nhập mã vận đơn & Theo dõi đơn hàng | Người bán nhập mã GHN, hệ thống tự tạo link tra cứu và thông báo cho người mua | P1      | ✅ Done     |
 
 
 > **Ghi chú cho team:** F-09 hiện đã có giao diện hoàn chỉnh theo Stitch HTML tại route `/contact`. Form liên hệ đang ở mức UI/UX MVP; nếu cần gửi dữ liệu thật, cần bổ sung API/Firebase handler ở Phase 2. Kênh bán hàng (F-11), Quản lý sản phẩm (F-12) và Trang chi tiết shop (F-14) hiện được lưu động tại `localStorage` phía client của từng người dùng để mô phỏng tính năng thực tế.
@@ -685,6 +686,16 @@ interface ContactMessage {
 | T-76 | Landing page callback `/vnpay-return` xử lý UI | 3  | ✅      |
 | T-77 | Tích hợp Visa/Mastercard và Ví điện tử qua VNPay| 2  | ✅      |
 | T-78 | Hiển thị mã giao dịch ở Success & Profile      | 1  | ✅      |
+
+## Sprint 5.6 — Nhập mã vận đơn & Theo dõi đơn hàng GHN (✅ Hoàn thành)
+
+| ID   | Task                                           | SP | Status |
+| ---- | ---------------------------------------------- | -- | ------ |
+| T-79 | Thêm trường trackingCode & trackingUrl vào Order type | 1  | ✅      |
+| T-80 | Triển khai logic updateTrackingCode trong Order Store | 2  | ✅      |
+| T-81 | Thiết kế ô nhập mã vận đơn cho Seller trong Profile | 2  | ✅      |
+| T-82 | Tự động gửi Notification cho Buyer khi có mã mới | 1  | ✅      |
+| T-83 | Hiển thị link tra cứu GHN tại Profile & Success Page | 2  | ✅      |
 
 ## Backlog Phase 2 (Tương lai)
 
