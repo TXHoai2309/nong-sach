@@ -693,7 +693,7 @@ interface ContactMessage {
 | T-85 | Triển khai requestRefund trong Order Store    | 2  | ✅      |
 | T-86 | Thiết kế Modal yêu cầu hoàn trả kèm ảnh minh chứng | 3  | ✅      |
 | T-87 | Tích hợp nút Yêu cầu hoàn trả trên Đơn hàng đã giao | 1  | ✅      |
-| T-88 | Tự động gửi Notification cho Seller và Admin | 1  | ✅      |
+| T-88 | Tự động gửi Notification cho Người bán khi có yêu cầu | 1  | ✅      |
 
 ## Backlog Phase 2 (Tương lai)
 

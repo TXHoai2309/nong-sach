@@ -11,6 +11,8 @@ interface OrderState {
   updateOrderStatus: (orderId: string, status: OrderStatus) => Promise<void>;
   updateTrackingCode: (orderId: string, trackingCode: string) => Promise<void>;
   requestRefund: (refundData: Omit<RefundRequest, "id" | "status" | "createdAt">) => Promise<void>;
+  getRefundRequest: (refundRequestId: string) => Promise<RefundRequest | null>;
+  processRefund: (orderId: string, refundRequestId: string, status: "approved" | "rejected", note?: string) => Promise<void>;
   getOrdersByUserId: (userId: string) => Promise<Order[]>;
   getOrdersBySellerId: (sellerId: string) => Promise<Order[]>;
   fetchOrdersByUserId: (userId: string) => Promise<void>;
@@ -93,6 +95,44 @@ export const useOrderStore = create<OrderState>()((set) => ({
       }));
     } catch (error) {
       console.error("Lỗi requestRefund:", error);
+      throw error;
+    }
+  },
+
+  getRefundRequest: async (refundRequestId) => {
+    try {
+      const docRef = doc(db, "refundRequests", refundRequestId);
+      const docSnap = await getDocs(query(collection(db, "refundRequests"), where("id", "==", refundRequestId)));
+      if (docSnap.empty) return null;
+      return docSnap.docs[0].data() as RefundRequest;
+    } catch (error) {
+      console.error("Lỗi getRefundRequest:", error);
+      return null;
+    }
+  },
+
+  processRefund: async (orderId, refundRequestId, status, note) => {
+    try {
+      const refundRef = doc(db, "refundRequests", refundRequestId);
+      const orderRef = doc(db, "orders", orderId);
+
+      const updateData: any = { status, updatedAt: new Date().toISOString() };
+      if (status === "approved") updateData.sellerNote = note || "Yêu cầu hoàn trả đã được chấp nhận.";
+      else updateData.sellerNote = note || "Yêu cầu hoàn trả bị từ chối.";
+
+      await updateDoc(refundRef, updateData);
+
+      const newOrderStatus: OrderStatus = status === "approved" ? "refunded" : "delivered";
+      await updateDoc(orderRef, { status: newOrderStatus });
+
+      // Update local state
+      set((state) => ({
+        orders: state.orders.map((order) =>
+          order.id === orderId ? { ...order, status: newOrderStatus } : order
+        ),
+      }));
+    } catch (error) {
+      console.error("Lỗi processRefund:", error);
       throw error;
     }
   },

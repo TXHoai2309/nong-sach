@@ -198,7 +198,7 @@ Các ảnh chụp màn hình và video kiểm thử được lưu trữ trực t
 | **TC-56: Chặn cấp quyền Admin** | Thử nâng cấp một tài khoản Buyer bất kỳ lên Admin từ bảng hành động. | Nút "Lên Admin" đã bị xóa hoàn toàn. Hàm `handleChangeRole` ném cảnh báo nếu cố tình truyền tham số admin. | ✅ Pass |
 | **TC-57: Tối ưu Dashboard Admin** | Truy cập trang Dashboard Admin và kiểm tra các thành phần chỉ số/biểu đồ. | Các thẻ doanh thu/đơn hàng và biểu đồ hiệu suất đã được gỡ bỏ. Dashboard hiển thị sạch sẽ 2 thẻ KPI về nhân sự. | ✅ Pass |
 | **TC-58: Gửi yêu cầu hoàn trả** | Người mua chọn lý do, nhập mô tả và tải 3 ảnh minh chứng trong modal hoàn trả. | Yêu cầu được lưu vào Firestore collection `refundRequests`. Trạng thái đơn hàng chuyển sang `refunding`. | ✅ Pass |
-| **TC-59: Thông báo yêu cầu hoàn trả** | Sau khi người mua gửi yêu cầu hoàn trả thành công. | Cả Seller và Admin đều nhận được thông báo chuông về yêu cầu hoàn trả mới của mã đơn hàng đó. | ✅ Pass |
+| **TC-59: Thông báo yêu cầu hoàn trả** | Sau khi người mua gửi yêu cầu hoàn trả thành công. | Người bán nhận được thông báo chuông về yêu cầu hoàn trả mới của mã đơn hàng đó để kịp thời xử lý. | ✅ Pass |
 
 ---
 

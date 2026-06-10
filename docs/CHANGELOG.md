@@ -4,20 +4,32 @@ All notable changes to the **NôngSạch** project will be documented in this fi
 
 The format is based on **Keep a Changelog** and this project adheres to **Semantic Versioning**.
 
-## [0.7.4] - 2026-06-10
+## [0.7.5] - 2026-06-10
 
-### Hệ thống Yêu cầu Hoàn trả Đơn hàng (Order Refund Request System)
+### Hoàn thiện luồng Hoàn trả Đơn hàng (End-to-End Refund Processing Flow)
 
 ### Added
-* **Tính năng Yêu cầu hoàn trả cho người mua**: Cho phép người mua gửi yêu cầu hoàn trả cho các đơn hàng đã được giao (`delivered`) nếu sản phẩm không đúng mô tả hoặc bị hư hỏng.
-* **Biểu mẫu yêu cầu chi tiết**: Tích hợp Modal với các tùy chọn lý do, mô tả chi tiết và hỗ trợ tải lên tối đa 3 ảnh minh chứng.
-* **Thông báo đa kênh**: Tự động gửi thông báo thời gian thực đến cả Người bán và Quản trị viên (Admin) ngay khi có yêu cầu hoàn trả mới.
-* **Mô hình dữ liệu Hoàn trả**: Tạo collection `refundRequests` trên Firestore để lưu trữ và quản lý các yêu cầu hoàn trả.
+* **Giao diện Xử lý hoàn trả cho Người bán**: Cho phép Người bán xem chi tiết yêu cầu hoàn trả (lý do, mô tả, ảnh minh chứng) và thực hiện "Chấp nhận" hoặc "Từ chối".
+* **Logic xử lý Dữ liệu Hoàn trả**:
+  - `getRefundRequest`: Tải thông tin chi tiết yêu cầu hoàn trả từ Firestore.
+  - `processRefund`: Cập nhật trạng thái yêu cầu hoàn trả và tự động điều chỉnh trạng thái đơn hàng tương ứng (`refunded` nếu chấp nhận, `delivered` nếu từ chối).
+* **Thông báo kết quả cho Người mua**: Tự động gửi thông báo thời gian thực kèm ghi chú của người bán khi yêu cầu được xử lý.
 
 ### Changed
-* **Cấu trúc Đơn hàng**: Mở rộng trạng thái đơn hàng (`refunding`, `refunded`) và thêm trường `refundRequestId` để theo dõi liên kết.
-* **Giao diện Người mua**: Hiển thị nút "Yêu cầu hoàn trả" trên thẻ đơn hàng đã giao trong trang Cá nhân.
-* **Metadata Trạng thái**: Cập nhật màu sắc và biểu tượng cho các trạng thái hoàn trả mới trong hệ thống.
+* **Tối ưu hóa Kênh người bán**: Bổ sung nút thao tác nhanh "Xử lý hoàn trả" trên card đơn hàng có trạng thái `refunding`.
+
+### Fixed
+* **Lỗi logic Yêu cầu hoàn trả**: Khắc phục lỗi thiếu hàm xử lý ảnh và submit form khiến người dùng không thể gửi yêu cầu ở phiên bản trước.
+
+---
+
+## [0.7.4] - 2026-06-10
+
+### Hệ thống Yêu cầu Hoàn trả Đơn hàng (Order Refund Request System - Buyer Side)
+
+### Added
+* **Tính năng Yêu cầu hoàn trả cho người mua**: Cho phép người mua gửi yêu cầu hoàn trả cho các đơn hàng đã được giao (`delivered`) kèm tối đa 3 ảnh minh chứng.
+* **Thông báo cho Người bán**: Tự động gửi thông báo thời gian thực đến Người bán ngay khi có yêu cầu hoàn trả mới.
 
 ---
 
