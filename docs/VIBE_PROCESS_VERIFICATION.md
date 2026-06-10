@@ -3,7 +3,7 @@
 > **Tài liệu chứng minh quy trình phát triển và kiểm định chất lượng sản phẩm (Plan — Doc — Build — Test) trước khi xuất xưởng (Ship) phiên bản NôngSạch MVP v0.7.0.**
 > 
 > * **Dự án**: NôngSạch — Nền tảng giao dịch nông sản sạch
-> * **Phiên bản**: v0.7.1
+> * **Phiên bản**: v0.7.2
 > * **Ngày xác nhận**: 10/06/2026
 > * **Quy trình áp dụng**: Vibe Coding Standard (Plan ➔ Doc ➔ Build ➔ Test)
 > * **Trạng thái**: ✅ **ĐÃ THÔNG QUA (PASSED) & SẴN SÀNG SHIP**
@@ -43,6 +43,7 @@ Trước khi thực hiện bất kỳ thay đổi nào trong mã nguồn, hệ t
   - **Admin xử lý báo cáo vi phạm & Lịch sử Hoạt động Admin (Sprint 5.4)**: Xây dựng tab Báo cáo trong hàng đợi kiểm duyệt để xử lý các khiếu nại shop/sản phẩm từ người dùng. Admin có thể thực hiện 4 hành động: Bỏ qua (Dismiss), Cảnh báo (Warn), Khóa tạm (Block), và Xóa vi phạm (Delete). Triển khai cơ chế lưu vết hoạt động `adminLogs` trên Firestore và hiển thị bảng Lịch sử Hoạt động ở cuối giao diện Admin Panel. Tích hợp nút "Mở khóa Shop" trong danh sách người dùng để phục hồi các tài khoản shop bị khóa tạm thời.
   - **Tích hợp cổng thanh toán VNPay Sandbox & Tối ưu hóa thanh toán (Sprint 5.5)**: Thiết lập API Route tạo liên kết thanh toán VNPay Sandbox, API Route xác thực kết quả thanh toán, IPN Webhook tự động cập nhật đơn hàng và Landing page callback `/vnpay-return` xử lý UI. Tích hợp thanh toán bằng Thẻ Visa/Mastercard và Ví điện tử qua VNPay Sandbox, và hiển thị mã giao dịch VNPay ở trang success và profile.
   - **Nhập mã vận đơn & Theo dõi đơn hàng GHN (Sprint 5.6)**: Cho phép người bán nhập mã vận đơn GHN trực tiếp trên card đơn hàng. Tự động tạo link tra cứu GHN và gửi thông báo Notification cho người mua. Hiển thị mã vận đơn và nút tra cứu tại trang Cá nhân và trang Hoàn tất đơn hàng.
+  - **Bảo mật Quản trị & Tối ưu Dashboard (Sprint 5.7)**: Thiết lập khóa quyền Admin duy nhất cho `admin@nongsach.vn`, vô hiệu hóa thăng cấp Admin cho các tài khoản khác. Loại bỏ các chỉ số bán hàng (doanh thu, đơn hàng, biểu đồ) khỏi trang Admin để tập trung vào quản lý nhân sự và hệ thống.
 
 ---
 
@@ -191,6 +192,9 @@ Các ảnh chụp màn hình và video kiểm thử được lưu trữ trực t
 | **TC-52: Webhook IPN VNPay** | Thực hiện thanh toán và tắt trình duyệt trước khi redirect, hệ thống nhận IPN từ VNPay server. | Webhook `/api/vnpay/ipn` tự động xác thực chữ ký và số tiền, hoàn tất tạo đơn hàng trong Firestore, gửi Notification chuông realtime cho cả người mua và người bán. | ✅ Pass |
 | **TC-53: Nhập mã vận đơn Seller** | Người bán nhập mã `GHN123` vào ô mã vận đơn trên card đơn hàng và nhấn "Lưu mã". | Mã được lưu vào Firestore, hiển thị ngay trên UI người bán và hiện thông báo thành công. | ✅ Pass |
 | **TC-54: Theo dõi đơn hàng Buyer** | Người mua nhận thông báo mã vận đơn mới, click xem đơn hàng. | Thẻ đơn hàng hiển thị mã `GHN123` và nút "Theo dõi tại GHN". Click nút mở đúng link tra cứu của GHN. | ✅ Pass |
+| **TC-55: Bảo vệ Master Admin** | Thử tìm tài khoản `admin@nongsach.vn` trong bảng quản lý người dùng và thay đổi quyền. | Hệ thống hiển thị nhãn "Không được chỉnh sửa" và ẩn các nút thao tác cho tài khoản này. | ✅ Pass |
+| **TC-56: Chặn cấp quyền Admin** | Thử nâng cấp một tài khoản Buyer bất kỳ lên Admin từ bảng hành động. | Nút "Lên Admin" đã bị xóa hoàn toàn. Hàm `handleChangeRole` ném cảnh báo nếu cố tình truyền tham số admin. | ✅ Pass |
+| **TC-57: Tối ưu Dashboard Admin** | Truy cập trang Dashboard Admin và kiểm tra các thành phần chỉ số/biểu đồ. | Các thẻ doanh thu/đơn hàng và biểu đồ hiệu suất đã được gỡ bỏ. Dashboard hiển thị sạch sẽ 2 thẻ KPI về nhân sự. | ✅ Pass |
 
 ---
 

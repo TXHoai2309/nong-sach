@@ -4,6 +4,26 @@ All notable changes to the **NôngSạch** project will be documented in this fi
 
 The format is based on **Keep a Changelog** and this project adheres to **Semantic Versioning**.
 
+## [0.7.2] - 2026-06-10
+
+### Bảo mật quyền Quản trị & Tối ưu hóa Dashboard Admin (Admin Security Lockdown & Dashboard Optimization)
+
+### Added
+* **Cơ chế khóa quyền Quản trị (Admin Role Lockdown)**: Thiết lập quy tắc bảo mật chỉ cho phép duy nhất tài khoản `admin@nongsach.vn` giữ vai trò Admin hệ thống.
+* **Bảo vệ tài khoản Master Admin**: Tài khoản admin chính được đánh dấu "Không được chỉnh sửa" trong danh sách quản lý người dùng để tránh các thay đổi vô ý.
+
+### Changed
+* **Vô hiệu hóa thăng cấp Admin**: Loại bỏ hoàn toàn tính năng cấp quyền Admin cho người dùng khác từ giao diện quản trị và logic xử lý backend (`auth-store.ts`).
+* **Tối ưu hóa Dashboard tập trung vào Quản lý User**:
+  - Loại bỏ các chỉ số bán hàng (Doanh thu, Đơn hàng hôm nay) khỏi Dashboard Admin để tập trung hoàn toàn vào nhiệm vụ quản lý người dùng và phê duyệt chất lượng.
+  - Thu gọn bảng chỉ số KPI chỉ còn: *Tổng người dùng* và *Số lượng Seller chờ duyệt*.
+* **Cải thiện luồng truy cập Admin**: Thêm lại lối tắt "Trang quản trị" trên Header storefront cho người dùng Admin để chuyển đổi nhanh giữa giao diện người dùng và quản trị.
+
+### Removed
+* **Gỡ bỏ Biểu đồ Hiệu suất Nền tảng (SVG Chart)**: Xóa bỏ biểu đồ doanh thu và đơn hàng cùng các logic tính toán dữ liệu liên quan tại trang quản trị để tối ưu hóa hiệu năng tải trang.
+
+---
+
 ## [0.7.1] - 2026-06-10
 
 ### Nhập mã vận đơn & Theo dõi đơn hàng GHN (Tracking Code Integration & GHN Tracking)
