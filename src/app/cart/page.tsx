@@ -58,11 +58,16 @@ export default function CartPage() {
     setPromoSuccess("");
     const trimmedCode = promoCode.trim().toUpperCase();
     if (!trimmedCode) {
-      setPromoError("Vui lòng nhập mã giảm giá");
+      const wasApplied = sessionStorage.getItem("appliedVoucherCode");
       setDiscount(0);
       sessionStorage.removeItem("appliedVoucherCode");
       sessionStorage.removeItem("appliedVoucherDiscount");
       sessionStorage.removeItem("appliedVoucherSellerId");
+      if (wasApplied) {
+        setPromoSuccess("Đã hủy áp dụng mã giảm giá");
+      } else {
+        setPromoError("Vui lòng nhập mã giảm giá");
+      }
       return;
     }
 
@@ -93,11 +98,21 @@ export default function CartPage() {
         sessionStorage.setItem("appliedVoucherDiscount", data.discount.toString());
         sessionStorage.setItem("appliedVoucherSellerId", data.sellerId);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Lỗi khi áp dụng voucher:", error);
       setPromoError("Đã xảy ra lỗi khi kết nối với máy chủ");
       setDiscount(0);
     }
+  };
+
+  const handleClearPromo = () => {
+    setPromoCode("");
+    setDiscount(0);
+    setPromoError("");
+    setPromoSuccess("Đã hủy áp dụng mã giảm giá");
+    sessionStorage.removeItem("appliedVoucherCode");
+    sessionStorage.removeItem("appliedVoucherDiscount");
+    sessionStorage.removeItem("appliedVoucherSellerId");
   };
 
   useEffect(() => {
@@ -337,12 +352,21 @@ export default function CartPage() {
                     }}
                     className="w-full sm:w-64 rounded-xl border border-outline-variant focus:border-primary p-sm bg-surface text-sm focus:outline-none"
                   />
-                  <button
-                    onClick={handleApplyPromo}
-                    className="px-md bg-primary text-white rounded-xl font-bold hover:opacity-95 transition-colors cursor-pointer text-sm"
-                  >
-                    Áp dụng
-                  </button>
+                  {discount > 0 ? (
+                    <button
+                      onClick={handleClearPromo}
+                      className="px-md bg-error text-white rounded-xl font-bold hover:opacity-95 transition-colors cursor-pointer text-sm"
+                    >
+                      Hủy
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleApplyPromo}
+                      className="px-md bg-primary text-white rounded-xl font-bold hover:opacity-95 transition-colors cursor-pointer text-sm"
+                    >
+                      Áp dụng
+                    </button>
+                  )}
                 </div>
                 {promoError && (
                   <p className="text-xs text-error font-semibold mt-1 pl-1">{promoError}</p>

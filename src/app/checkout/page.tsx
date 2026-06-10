@@ -186,11 +186,16 @@ export default function CheckoutPage() {
     setPromoSuccess("");
     const trimmedCode = promoCodeInput.trim().toUpperCase();
     if (!trimmedCode) {
-      setPromoError("Vui lòng nhập mã giảm giá");
+      const wasApplied = sessionStorage.getItem("appliedVoucherCode");
       setAppliedVoucher(null);
       sessionStorage.removeItem("appliedVoucherCode");
       sessionStorage.removeItem("appliedVoucherDiscount");
       sessionStorage.removeItem("appliedVoucherSellerId");
+      if (wasApplied) {
+        setPromoSuccess("Đã hủy áp dụng mã giảm giá");
+      } else {
+        setPromoError("Vui lòng nhập mã giảm giá");
+      }
       return;
     }
 
@@ -229,6 +234,16 @@ export default function CheckoutPage() {
       setPromoError("Đã xảy ra lỗi khi kết nối với máy chủ");
       setAppliedVoucher(null);
     }
+  };
+
+  const handleClearPromoCheckout = () => {
+    setPromoCodeInput("");
+    setAppliedVoucher(null);
+    setPromoError("");
+    setPromoSuccess("Đã hủy áp dụng mã giảm giá");
+    sessionStorage.removeItem("appliedVoucherCode");
+    sessionStorage.removeItem("appliedVoucherDiscount");
+    sessionStorage.removeItem("appliedVoucherSellerId");
   };
 
   useEffect(() => {
@@ -921,13 +936,23 @@ export default function CheckoutPage() {
                   }}
                   className="min-w-0 flex-1 rounded-xl border border-outline-variant bg-surface px-3 py-2.5 text-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
                 />
-                <button
-                  type="button"
-                  onClick={handleApplyPromoCheckout}
-                  className="rounded-xl bg-secondary px-4 py-2.5 text-sm font-bold text-white transition hover:opacity-90 cursor-pointer"
-                >
-                  Áp dụng
-                </button>
+                {appliedVoucher ? (
+                  <button
+                    type="button"
+                    onClick={handleClearPromoCheckout}
+                    className="rounded-xl bg-error px-4 py-2.5 text-sm font-bold text-white transition hover:opacity-90 cursor-pointer"
+                  >
+                    Hủy
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleApplyPromoCheckout}
+                    className="rounded-xl bg-secondary px-4 py-2.5 text-sm font-bold text-white transition hover:opacity-90 cursor-pointer"
+                  >
+                    Áp dụng
+                  </button>
+                )}
               </div>
               {promoError && (
                 <p className="text-xs text-error font-semibold mt-1.5 pl-1">{promoError}</p>
