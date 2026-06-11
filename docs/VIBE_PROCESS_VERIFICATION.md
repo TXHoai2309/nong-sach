@@ -220,6 +220,9 @@ Các ảnh chụp màn hình và video kiểm thử được lưu trữ trực t
 | **TC-74: Kích hoạt chế độ tồn kho hàng loạt** | Đăng nhập tài khoản Seller, chọn tab Sản phẩm của tôi, click "Cập nhật kho hàng loạt". | Bảng danh sách sản phẩm chuyển sang chế độ chỉnh sửa: cột tồn kho hiển thị ô nhập số; các nút Đăng sản phẩm mới, Xem, Sửa, Xóa bị vô hiệu hóa; nút Hủy và Lưu tất cả hiển thị rõ ràng. | ✅ Pass |
 | **TC-75: Cập nhật tồn kho hàng loạt và Lưu** | Sửa đổi giá trị tồn kho của các sản phẩm, click "Lưu tất cả". | Ẩn chế độ sửa, hiển thị thông báo lưu thành công, số lượng tồn kho mới được ghi nhận vào Firestore qua writeBatch và cập nhật tức thì trên giao diện cửa hàng và public store. | ✅ Pass |
 | **TC-76: Hủy cập nhật tồn kho hàng loạt** | Trong chế độ sửa, thay đổi giá trị tồn kho, click "Hủy". | Bảng thoát khỏi chế độ sửa, khôi phục lại các giá trị cũ của sản phẩm, không ghi nhận thay đổi nào lên Firestore. | ✅ Pass |
+| **TC-77: Ẩn gợi ý khi chưa đăng nhập** | Truy cập trang chủ khi chưa đăng nhập tài khoản. | Section "Dành cho bạn" hoàn toàn ẩn đi trên trang chủ. | ✅ Pass |
+| **TC-78: Gợi ý mặc định khi đăng nhập mới (chưa mua hàng)** | Đăng nhập tài khoản mới chưa có đơn hàng, truy cập trang chủ. | Section "Dành cho bạn" hiển thị đầy đủ 8 sản phẩm hoạt động bình thường (mặc định lấy từ danh sách sản phẩm). | ✅ Pass |
+| **TC-79: Gợi ý theo danh mục đã mua** | Đăng nhập tài khoản có đơn hàng, truy cập trang chủ. | Section "Dành cho bạn" ưu tiên các sản phẩm thuộc danh mục đã đặt mua nhiều nhất ở các vị trí đầu tiên để khuyến khích khám phá và mua lại. | ✅ Pass |
 
 ---
 

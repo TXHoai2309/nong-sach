@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import ProductGrid from "@/components/product/ProductGrid";
+import UserRecommendations from "@/components/product/UserRecommendations";
 import { getAllProducts } from "@/lib/products";
 import { CATEGORY_LABELS, ProductCategory } from "@/types/product";
 
@@ -191,6 +192,8 @@ export default async function HomePage() {
 
         <ProductGrid products={featuredProducts} />
       </section>
+
+      <UserRecommendations />
 
       {/* ── CTA Banner ── */}
       <section
