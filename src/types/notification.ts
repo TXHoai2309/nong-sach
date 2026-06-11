@@ -1,4 +1,4 @@
-export type NotificationType = "order_update" | "new_order" | "account_update" | "system";
+export type NotificationType = "order_update" | "new_order" | "account_update" | "system" | "new_message";
 export type NotificationActionType = "review_detail";
 
 export interface Notification {

@@ -86,6 +86,7 @@ Người tiêu dùng ngày càng lo ngại về an toàn thực phẩm, đặc b
 | F-29 | Áp dụng Voucher tại Checkout | Nhập mã giảm giá, kiểm tra validation 4 lỗi, khấu trừ tiền chính xác, lưu lịch sử dùng lên Firestore và cập nhật limit | P1      | ✅ Done     |
 | F-30 | Tương tác đánh giá đa chiều | Hỗ trợ trao đổi qua lại (threaded messages) giữa người mua và người bán trực tiếp trên từng đánh giá | P1      | ✅ Done     |
 | F-31 | Quản lý danh sách user & Khóa/Mở khóa | Admin tìm kiếm/lọc user, xem chi tiết và Khóa/Mở khóa tài khoản kèm lý do (chặn đăng nhập qua Middleware) | P1      | ✅ Done     |
+| F-32 | Trò chuyện trực tiếp Buyer-Seller Realtime | Chat trực tiếp qua Firebase, danh sách & lịch sử trong trang profile, thông báo tin nhắn mới | P1      | ✅ Done     |
 
 
 > **Ghi chú cho team:** F-09 hiện đã có giao diện hoàn chỉnh theo Stitch HTML tại route `/contact`. Form liên hệ đang ở mức UI/UX MVP; nếu cần gửi dữ liệu thật, cần bổ sung API/Firebase handler ở Phase 2. Kênh bán hàng (F-11), Quản lý sản phẩm (F-12) và Trang chi tiết shop (F-14) hiện được lưu động tại `localStorage` phía client của từng người dùng để mô phỏng tính năng thực tế.
@@ -94,7 +95,6 @@ Người tiêu dùng ngày càng lo ngại về an toàn thực phẩm, đặc b
 
 * Thanh toán online (MoMo, ZaloPay, Stripe) (VNPay Sandbox đã hoàn thành)
 * Hệ thống đánh giá và nhận xét sản phẩm
-* Chat trực tiếp với nông dân
 * Multi-vendor marketplace
 * Theo dõi trạng thái giao hàng real-time
 * AI gợi ý sản phẩm cá nhân hóa
@@ -745,6 +745,17 @@ interface ContactMessage {
 | T-103 | Tạo Modal hiển thị chi tiết thông tin và sổ địa chỉ của User tại trang quản trị Admin         | 2  | ✅      |
 | T-104 | Chức năng Khóa/Mở khóa tài khoản: mở modal lý do, cập nhật Firestore, ghi log kiểm toán, khóa shop/sản phẩm liên đới | 3  | ✅      |
 | T-105 | Xác minh build pass và linting toàn project                                                   | 1  | ✅      |
+
+## Sprint 6.3 — Realtime Buyer-Seller Chat (✅ Hoàn thành)
+
+| ID    | Task                                                                                         | SP | Status |
+| ----- | -------------------------------------------------------------------------------------------- | -- | ------ |
+| T-106 | Khai báo các interface `ChatRoom` và `ChatMessage` trong `src/types/chat.ts`                 | 1  | ✅      |
+| T-107 | Thiết lập `useChatStore` Zustand lưu trữ, quản lý và đăng ký realtime các tin nhắn/phòng chat | 2  | ✅      |
+| T-108 | Thêm nút "Nhắn tin" ở trang chi tiết Shop và banner thông tin shop ở trang chi tiết sản phẩm   | 2  | ✅      |
+| T-109 | Thiết lập tab "Trò chuyện" trong trang cá nhân với layout split-pane 2 cột hiện đại           | 3  | ✅      |
+| T-110 | Tích hợp gửi thông báo realtime loại `new_message` và điều hướng click thông báo vào chat room | 2  | ✅      |
+| T-111 | Xác minh type-safety check và biên dịch Next.js build pass                                   | 1  | ✅      |
 
 ## Backlog Phase 2 (Tương lai)
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, type FormEvent, Suspense } from "react";
+import { useEffect, useState, useMemo, type FormEvent, Suspense, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -15,6 +15,7 @@ import { useAuthStore } from "@/store/auth-store";
 import { useCartStore } from "@/store/cart-store";
 import { useOrderStore } from "@/store/order-store";
 import { useNotificationStore } from "@/store/notification-store";
+import { useChatStore } from "@/store/chat-store";
 import { Notification } from "@/types/notification";
 import { Product, ProductCategory } from "@/types/product";
 import { UserAddress, User } from "@/types/user";
@@ -63,7 +64,7 @@ const fallbackProvinces = [
   },
 ];
 
-type ProfileTab = "info" | "orders" | "addresses" | "password" | "notifications" | "followed_shops" | "wishlist" | "seller";
+type ProfileTab = "info" | "orders" | "addresses" | "password" | "notifications" | "followed_shops" | "wishlist" | "seller" | "chats";
 type ProfileGender = NonNullable<User["gender"]>;
 
 const normalizeVietnamPhone = (phone?: string) => {
@@ -92,6 +93,11 @@ const notificationMeta: Record<Notification["type"], { icon: string; label: stri
     icon: "campaign",
     label: "Hệ thống",
     tone: "bg-slate-50 text-slate-700 ring-slate-100",
+  },
+  new_message: {
+    icon: "chat",
+    label: "Tin nhắn",
+    tone: "bg-teal-50 text-teal-700 ring-teal-100",
   },
 };
 
@@ -168,7 +174,7 @@ function ProfileContent() {
   // Listen to tab URL query param
   useEffect(() => {
     if (tabParam) {
-      const validTabs: ProfileTab[] = ["info", "orders", "addresses", "password", "notifications", "followed_shops", "wishlist", "seller"];
+      const validTabs: ProfileTab[] = ["info", "orders", "addresses", "password", "notifications", "followed_shops", "wishlist", "seller", "chats"];
       if (validTabs.includes(tabParam as ProfileTab)) {
         const timer = window.setTimeout(() => setActiveTab(tabParam as ProfileTab), 0);
         return () => window.clearTimeout(timer);
@@ -304,6 +310,82 @@ function ProfileContent() {
   const [expandedReviewNotificationId, setExpandedReviewNotificationId] = useState<string | null>(null);
   const [notificationReviewDetails, setNotificationReviewDetails] = useState<Record<string, Review | null>>({});
   const [loadingReviewNotificationId, setLoadingReviewNotificationId] = useState<string | null>(null);
+
+  // Chat store & state integration
+  const chatRooms = useChatStore((state) => state.rooms);
+  const chatMessages = useChatStore((state) => state.messages);
+  const isChatRoomsLoading = useChatStore((state) => state.isRoomsLoading);
+  const isChatMessagesLoading = useChatStore((state) => state.isMessagesLoading);
+  const activeRoomId = useChatStore((state) => state.activeRoomId);
+  const getOrCreateChatRoom = useChatStore((state) => state.getOrCreateChatRoom);
+  const subscribeToChatRooms = useChatStore((state) => state.subscribeToChatRooms);
+  const subscribeToMessages = useChatStore((state) => state.subscribeToMessages);
+  const sendChatMessage = useChatStore((state) => state.sendMessage);
+  const markChatAsRead = useChatStore((state) => state.markAsRead);
+  const setActiveRoomId = useChatStore((state) => state.setActiveRoomId);
+
+  const [chatInputText, setChatInputText] = useState("");
+  const chatMessagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Subscribe to user chat rooms
+  useEffect(() => {
+    if (!mounted || !currentUser) return;
+    const unsubscribe = subscribeToChatRooms(currentUser.id, currentUser.role || "buyer");
+    return () => unsubscribe();
+  }, [mounted, currentUser, subscribeToChatRooms]);
+
+  // Subscribe to messages of active room
+  useEffect(() => {
+    if (!mounted || !activeRoomId) return;
+    const unsubscribe = subscribeToMessages(activeRoomId);
+    return () => unsubscribe();
+  }, [mounted, activeRoomId, subscribeToMessages]);
+
+  // Auto-scroll chat to bottom
+  useEffect(() => {
+    if (chatMessagesEndRef.current) {
+      chatMessagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [chatMessages]);
+
+  // Mark room as read when messages update
+  useEffect(() => {
+    if (!mounted || !currentUser || !activeRoomId) return;
+    void markChatAsRead(activeRoomId, currentUser.id);
+  }, [mounted, currentUser, activeRoomId, chatMessages, markChatAsRead]);
+
+  // Handle URL Query Params for direct chat redirection
+  useEffect(() => {
+    if (!mounted || !currentUser || activeTab !== "chats") return;
+
+    const sellerIdParam = searchParams.get("sellerId");
+    if (sellerIdParam) {
+      const initRoom = async () => {
+        try {
+          const shopData = await getShopById(sellerIdParam);
+          const shopName = shopData?.name || "Cửa hàng";
+          const room = await getOrCreateChatRoom(
+            currentUser.id,
+            currentUser.name,
+            sellerIdParam,
+            shopName
+          );
+          setActiveRoomId(room.id);
+          router.push("/profile?tab=chats", { scroll: false });
+        } catch (err) {
+          console.error("Error creating/opening chat room:", err);
+        }
+      };
+      void initRoom();
+      return;
+    }
+
+    const roomIdParam = searchParams.get("roomId");
+    if (roomIdParam) {
+      setActiveRoomId(roomIdParam);
+      router.push("/profile?tab=chats", { scroll: false });
+    }
+  }, [mounted, currentUser, activeTab, searchParams, getOrCreateChatRoom, setActiveRoomId, router]);
 
   // Order filter
   const [orderFilter, setOrderFilter] = useState<"all" | "processing" | "completed">("all");
@@ -1836,6 +1918,7 @@ function ProfileContent() {
                     { id: "addresses", label: "Địa chỉ giao hàng", icon: "location_on" },
                     { id: "password", label: "Đổi mật khẩu", icon: "lock" },
                     { id: "notifications", label: "Thông báo", icon: "notifications" },
+                    { id: "chats", label: "Trò chuyện", icon: "chat" },
                     { id: "followed_shops", label: "Shop đã theo dõi", icon: "storefront" },
                     { id: "wishlist", label: "Yêu thích", icon: "favorite" },
                   ];
@@ -2790,7 +2873,17 @@ function ProfileContent() {
                       return (
                       <div
                         key={noti.id}
-                        onClick={() => markAsRead(noti.id)}
+                        onClick={() => {
+                          markAsRead(noti.id);
+                          if (noti.type === "new_message") {
+                            setActiveTab("chats");
+                            if (noti.productId) {
+                              router.push(`/profile?tab=chats&roomId=${noti.productId}`, { scroll: false });
+                            } else {
+                              router.push(`/profile?tab=chats`, { scroll: false });
+                            }
+                          }
+                        }}
                         className={`rounded-2xl border p-4.5 transition-all cursor-pointer ${
                           !noti.isRead
                             ? "border-[#006c49] bg-[#006c49]/[0.01]"
@@ -3140,6 +3233,175 @@ function ProfileContent() {
                     ))}
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* 5.7. TIN NHẮN CHAT TAB */}
+            {activeTab === "chats" && (
+              <div className="rounded-3xl border border-[#bbcabf]/30 bg-white shadow-sm overflow-hidden flex flex-col md:flex-row h-[600px]">
+                {/* Left side: Room list */}
+                <div className="w-full md:w-80 border-r border-[#bbcabf]/20 flex flex-col h-1/3 md:h-full shrink-0">
+                  <div className="p-4 border-b border-[#bbcabf]/20 bg-slate-50/50">
+                    <h3 className="text-base font-bold text-[#006c49]">Trò chuyện</h3>
+                  </div>
+                  <div className="flex-1 overflow-y-auto divide-y divide-[#bbcabf]/10">
+                    {isChatRoomsLoading ? (
+                      <div className="p-8 text-center text-xs text-[#3c4a42]/50 animate-pulse">
+                        Đang tải danh sách...
+                      </div>
+                    ) : chatRooms.length === 0 ? (
+                      <div className="p-8 text-center text-xs text-[#3c4a42]/50">
+                        Chưa có cuộc trò chuyện nào.
+                      </div>
+                    ) : (
+                      chatRooms.map((room) => {
+                        const isSelected = activeRoomId === room.id;
+                        const partnerName = currentUser.id === room.buyerId ? room.sellerName : room.buyerName;
+                        const hasUnread = currentUser.id === room.buyerId ? room.unreadByBuyer : room.unreadBySeller;
+                        const displayMessage = room.lastMessage || "Chưa có tin nhắn";
+                        const displayTime = room.lastMessageAt ? formatNotificationTime(room.lastMessageAt) : "";
+
+                        return (
+                          <button
+                            key={room.id}
+                            onClick={() => setActiveRoomId(room.id)}
+                            className={`w-full flex items-start gap-3 p-4 text-left transition-colors hover:bg-slate-50 ${
+                              isSelected ? "bg-[#e6f4ea]/60" : ""
+                            }`}
+                          >
+                            <div className="h-10 w-10 shrink-0 rounded-full bg-[#006c49]/10 text-[#006c49] flex items-center justify-center font-bold text-sm">
+                              {partnerName.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-1.5">
+                                <span className={`text-xs font-bold truncate ${hasUnread ? "text-[#006c49]" : "text-[#3c4a42]"}`}>
+                                  {partnerName}
+                                </span>
+                                <span className="text-[10px] text-[#3c4a42]/40 shrink-0">
+                                  {displayTime}
+                                </span>
+                              </div>
+                              <p className={`text-xs truncate mt-1 ${hasUnread ? "font-bold text-[#3c4a42]" : "text-[#3c4a42]/65"}`}>
+                                {room.lastSenderId === currentUser.id ? "Bạn: " : ""}{displayMessage}
+                              </p>
+                            </div>
+                            {hasUnread && (
+                              <span className="h-2 w-2 rounded-full bg-emerald-600 shrink-0 self-center"></span>
+                            )}
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+
+                {/* Right side: Active Chat pane */}
+                <div className="flex-1 flex flex-col h-2/3 md:h-full bg-slate-50/20">
+                  {activeRoomId ? (
+                    (() => {
+                      const room = chatRooms.find((r) => r.id === activeRoomId);
+                      if (!room) return null;
+                      const partnerName = currentUser.id === room.buyerId ? room.sellerName : room.buyerName;
+
+                      return (
+                        <>
+                          {/* Chat Header */}
+                          <div className="p-4 border-b border-[#bbcabf]/20 bg-white flex items-center gap-3 shrink-0">
+                            <div className="h-10 w-10 rounded-full bg-[#006c49] text-white flex items-center justify-center font-bold text-sm">
+                              {partnerName.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <h4 className="text-xs font-bold text-[#3c4a42]">{partnerName}</h4>
+                              <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
+                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 inline-block"></span>
+                                Trực tuyến
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Messages list */}
+                          <div className="flex-1 overflow-y-auto p-4 space-y-3.5 flex flex-col">
+                            {isChatMessagesLoading ? (
+                              <div className="my-auto text-center text-xs text-[#3c4a42]/50 animate-pulse">
+                                Đang tải tin nhắn...
+                              </div>
+                            ) : chatMessages.length === 0 ? (
+                              <div className="my-auto text-center text-xs text-[#3c4a42]/50 p-6">
+                                <span className="material-symbols-outlined text-3xl mb-1 text-slate-300">forum</span>
+                                <p>Bắt đầu cuộc trò chuyện bằng cách gửi tin nhắn đầu tiên!</p>
+                              </div>
+                            ) : (
+                              chatMessages.map((msg) => {
+                                const isMe = msg.senderId === currentUser.id;
+                                return (
+                                  <div
+                                    key={msg.id}
+                                    className={`flex flex-col max-w-[75%] ${isMe ? "self-end items-end" : "self-start items-start"}`}
+                                  >
+                                    <div
+                                      className={`rounded-2xl px-4 py-2 text-xs leading-5 shadow-sm font-medium ${
+                                        isMe
+                                          ? "bg-[#006c49] text-white rounded-tr-none"
+                                          : "bg-white border border-[#bbcabf]/25 text-[#3c4a42] rounded-tl-none"
+                                      }`}
+                                    >
+                                      {msg.content}
+                                    </div>
+                                    <span className="text-[9px] text-[#3c4a42]/40 mt-1 px-1">
+                                      {formatNotificationTime(msg.createdAt)}
+                                    </span>
+                                  </div>
+                                );
+                              })
+                            )}
+                            <div ref={chatMessagesEndRef} />
+                          </div>
+
+                          {/* Message input area */}
+                          <form
+                            onSubmit={async (e) => {
+                              e.preventDefault();
+                              if (!chatInputText.trim()) return;
+                              const partnerId = currentUser.id === room.buyerId ? room.sellerId : room.buyerId;
+                              const txt = chatInputText.trim();
+                              setChatInputText("");
+                              try {
+                                await sendChatMessage(room.id, currentUser.id, currentUser.name, partnerId, txt);
+                              } catch (err) {
+                                console.error(err);
+                                showToast("Gửi tin nhắn thất bại", "error");
+                              }
+                            }}
+                            className="p-3 border-t border-[#bbcabf]/20 bg-white flex items-center gap-2 shrink-0"
+                          >
+                            <input
+                              type="text"
+                              value={chatInputText}
+                              onChange={(e) => setChatInputText(e.target.value)}
+                              placeholder="Nhập tin nhắn..."
+                              className="flex-1 rounded-full border border-[#bbcabf]/30 px-4 py-2.5 text-xs text-[#3c4a42] outline-none focus:border-[#006c49] bg-slate-50/50"
+                            />
+                            <button
+                              type="submit"
+                              disabled={!chatInputText.trim()}
+                              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#006c49] text-white hover:bg-[#005236] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <span className="material-symbols-outlined text-[20px] [font-variation-settings:'FILL'_1]">send</span>
+                            </button>
+                          </form>
+                        </>
+                      );
+                    })()
+                  ) : (
+                    <div className="m-auto text-center p-8 text-[#3c4a42]/50 max-w-sm">
+                      <div className="h-16 w-16 rounded-full bg-[#006c49]/5 text-[#006c49] flex items-center justify-center mx-auto mb-4">
+                        <span className="material-symbols-outlined text-[32px]">chat</span>
+                      </div>
+                      <h4 className="text-sm font-bold text-[#3c4a42]">Chưa chọn cuộc trò chuyện</h4>
+                      <p className="text-xs text-[#3c4a42]/60 mt-1">Vui lòng chọn một cuộc trò chuyện từ danh sách bên trái hoặc nhắn tin từ trang chi tiết sản phẩm/cửa hàng.</p>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
             {/* 6. SELLER REGISTRATION & CHANNEL TAB */}

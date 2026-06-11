@@ -4,6 +4,21 @@ All notable changes to the **NôngSạch** project will be documented in this fi
 
 The format is based on **Keep a Changelog** and this project adheres to **Semantic Versioning**.
 
+## [0.8.7] - 2026-06-11
+
+### Trò chuyện trực tiếp Buyer-Seller Realtime (Realtime Buyer-Seller Chat)
+
+### Added
+* **Nút liên kết Trò chuyện**: Tích hợp nút "Nhắn tin" trên trang chi tiết cửa hàng (`/shop/[id]`) và banner thông tin cửa hàng ở trang chi tiết sản phẩm (`/products/[id]`). Tự động chuyển hướng về Trang cá nhân và mở phòng chat.
+* **Giao diện Trò chuyện Split-pane**: Thiết kế layout 2 cột hiện đại trong Tab "Trò chuyện" tại `/profile`: Cột trái là danh sách phòng chat hiển thị avatar, tên đối tác, tin nhắn cuối và chấm xanh unread; Cột phải hiển thị bong bóng chat căn chỉnh tự động, thông tin đối tác và ô nhập liệu thông minh.
+* **Zustand Chat Store & Firestore**: Tích hợp `useChatStore` kết nối trực tiếp với Firestore qua collection `chats` và subcollection `messages`. Cơ chế tự động khởi tạo phòng chat duy nhất với id định dạng `chat_{buyerId}_{sellerId}`.
+* **Đăng ký lắng nghe Realtime**: Sử dụng `onSnapshot` để đồng bộ tin nhắn và phòng chat tức thời mà không cần tải lại trang, đi kèm cơ chế tự động cuộn xuống tin nhắn mới nhất.
+* **Thông báo tin nhắn mới**: Tự động kích hoạt thông báo chuông loại `new_message` gửi đến đối tác khi có tin nhắn mới. Cho phép người dùng bấm vào thông báo để di chuyển thẳng tới tab Trò chuyện và mở phòng chat tương ứng.
+* **Theo dõi trạng thái Chưa đọc (Unread)**: Tự động cập nhật thuộc tính `unreadByBuyer` và `unreadBySeller` khi có tin nhắn mới hoặc khi người dùng mở xem phòng chat.
+
+### Changed
+* **Mở rộng Loại thông báo**: Cập nhật `NotificationType` bổ sung loại `new_message` và bổ sung cấu hình màu sắc/icon hiển thị tin nhắn trong danh sách thông báo.
+
 ## [0.8.6] - 2026-06-11
 
 ### Admin quản lý người dùng (Admin User Management)
