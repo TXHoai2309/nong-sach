@@ -92,8 +92,9 @@ export default function CheckoutPage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const { currentUser } = useAuthStore();
-  const { items, getSelectedItems, getSelectedTotalItems, getSelectedTotalPrice, removePurchasedItems } = useCartStore();
-  const selectedItems = getSelectedItems();
+  const { items, getSelectedItems, getSelectedTotalItems, getSelectedTotalPrice, removePurchasedItems, buyNowItem, clearBuyNowItem } = useCartStore();
+  const isBuyNow = !!buyNowItem;
+  const selectedItems = isBuyNow ? [buyNowItem!] : getSelectedItems();
   const addOrder = useOrderStore((state) => state.addOrder);
   const addNotification = useNotificationStore((state) => state.addNotification);
 
@@ -318,10 +319,14 @@ export default function CheckoutPage() {
   }, []);
 
   const shippingFee = shippingMethod === "fast" ? 15000 : 0;
-  const subtotal = getSelectedTotalPrice();
+  const subtotal = isBuyNow
+    ? (buyNowItem ? buyNowItem.price * buyNowItem.quantity : 0)
+    : getSelectedTotalPrice();
   const discountAmount = appliedVoucher && selectedItems.some(item => (item.sellerId || "admin") === appliedVoucher.sellerId) ? appliedVoucher.discount : 0;
   const total = Math.max(0, subtotal + shippingFee - discountAmount);
-  const totalItems = getSelectedTotalItems();
+  const totalItems = isBuyNow
+    ? (buyNowItem?.quantity ?? 0)
+    : getSelectedTotalItems();
 
   const updateError = (field: keyof FormErrors) => {
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
@@ -526,7 +531,12 @@ export default function CheckoutPage() {
       });
     }
 
-    removePurchasedItems(selectedItems.map((item) => item.productId));
+    // Clear buy now item if this was a buy-now checkout
+    if (isBuyNow) {
+      clearBuyNowItem();
+    } else {
+      removePurchasedItems(selectedItems.map((item) => item.productId));
+    }
 
     const queryParams = new URLSearchParams({
       orderId: orderIdBase,
@@ -548,7 +558,8 @@ export default function CheckoutPage() {
     );
   }
 
-  if (items.length === 0) {
+  // Only show empty cart message for normal cart checkout (not buy-now)
+  if (!isBuyNow && items.length === 0) {
     return (
       <main className="page-surface py-8">
         <div className="site-container">
