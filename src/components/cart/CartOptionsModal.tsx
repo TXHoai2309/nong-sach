@@ -18,6 +18,7 @@ export default function CartOptionsModal() {
     isOptionsModalOpen,
     closeOptionsModal,
     addToCartWithOptions,
+    setBuyNowItem,
   } = useCartStore();
 
   const [weight, setWeight] = useState<WeightOption>("1kg");
@@ -67,7 +68,20 @@ export default function CartOptionsModal() {
 
   const handleBuyNowClick = () => {
     if (isOutOfStock) return;
-    addToCartWithOptions(product, quantity, weight);
+    const targetId = `${product.id}-${weight}`;
+    const suffix = ` (${weight})`;
+    const displayName = product.name.endsWith(suffix) ? product.name : `${product.name}${suffix}`;
+    const buyNowCartItem = {
+      productId: targetId,
+      name: displayName,
+      price: adjustedUnitPrice,
+      image: product.image,
+      quantity,
+      stock: product.stock,
+      sellerId: product.sellerId || "admin",
+      shopName: product.shopName || "NôngSạch",
+    };
+    setBuyNowItem(buyNowCartItem);
     closeOptionsModal();
     router.push("/checkout");
   };

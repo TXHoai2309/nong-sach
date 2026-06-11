@@ -4,6 +4,16 @@ All notable changes to the **NôngSạch** project will be documented in this fi
 
 The format is based on **Keep a Changelog** and this project adheres to **Semantic Versioning**.
 
+## [0.8.9] - 2026-06-11
+
+### Fix: Tách biệt luồng "Mua ngay" khỏi Giỏ hàng (Buy Now Cart Isolation)
+
+### Fixed
+* **Lỗi "Mua ngay" tính cả giỏ hàng**: Trước đây khi người mua bấm **"Mua ngay"** trên trang chi tiết sản phẩm, trang Thanh toán tự động tính luôn tất cả sản phẩm đang được chọn trong giỏ hàng thay vì chỉ sản phẩm vừa chọn.
+* **Cơ chế tách biệt hai luồng**:
+  - Luồng **Mua ngay**: Lưu sản phẩm tạm vào `buyNowItem` trong `cart-store` mà không thêm vào giỏ hàng. Trang Thanh toán đọc `buyNowItem` và chỉ xử lý đúng sản phẩm đó. Sau khi đặt hàng thành công, `buyNowItem` được tự động xóa.
+  - Luồng **Giỏ hàng → Checkout**: Không thay đổi, vẫn đọc `getSelectedItems()` từ giỏ hàng như bình thường.
+
 ## [0.8.8] - 2026-06-11
 
 ### Tồn kho hàng loạt & Gợi ý sản phẩm (Batch Stock Update & Product Recommendations)

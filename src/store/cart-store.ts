@@ -25,6 +25,11 @@ interface CartState {
   getSelectedTotalPrice: () => number;
   subscribeToUserCart: (userId: string) => () => void;
 
+  // Buy now flow (bypass cart selection)
+  buyNowItem: CartItem | null;
+  setBuyNowItem: (item: CartItem) => void;
+  clearBuyNowItem: () => void;
+
   // Modal states
   activeProductForModal: Product | null;
   defaultQuantityForModal: number;
@@ -286,6 +291,15 @@ export const useCartStore = create<CartState>((set, get) => ({
         console.error("Loi subscribeToUserCart:", error);
       }
     );
+  },
+
+  // Buy now item
+  buyNowItem: null,
+  setBuyNowItem: (item: CartItem) => {
+    set({ buyNowItem: item });
+  },
+  clearBuyNowItem: () => {
+    set({ buyNowItem: null });
   },
 
   // Modal control
