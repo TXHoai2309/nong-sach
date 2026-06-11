@@ -1,6 +1,6 @@
 import { db, storage } from "@/lib/firebase";
-import { Review } from "@/types/review";
-import { collection, doc, getDocs, setDoc, query, where } from "firebase/firestore";
+import { Review, ReviewMessage } from "@/types/review";
+import { collection, doc, getDocs, setDoc, query, where, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
 import { getDownloadURL, ref, uploadString } from "firebase/storage";
 
 /**
@@ -134,7 +134,6 @@ export async function checkReviewedItems(orderId: string): Promise<Record<string
 
 /**
  * Lấy danh sách đánh giá cho một shop (bán hàng).
- * Kết quả bao gồm đánh giá trực tiếp có sellerId khớp hoặc có productId thuộc danh sách sản phẩm của shop.
  */
 export async function getReviewsByShopId(shopId: string, shopProductIds: string[]): Promise<Review[]> {
   try {
@@ -167,13 +166,35 @@ export async function getReviewsByShopId(shopId: string, shopProductIds: string[
 export async function updateReviewReply(reviewId: string, replyComment: string): Promise<void> {
   try {
     const docRef = doc(db, "reviews", reviewId);
-    await setDoc(docRef, {
+    await updateDoc(docRef, {
       replyComment,
       replyCreatedAt: new Date().toISOString()
-    }, { merge: true });
+    });
   } catch (error) {
     console.error(`Lỗi khi cập nhật phản hồi cho đánh giá ${reviewId}:`, error);
     throw error;
   }
 }
 
+/**
+ * Thêm một tin nhắn vào luồng trao đổi của đánh giá.
+ */
+export async function addReviewMessage(reviewId: string, message: Omit<ReviewMessage, "id" | "createdAt">): Promise<ReviewMessage> {
+  try {
+    const docRef = doc(db, "reviews", reviewId);
+    const newMessage: ReviewMessage = {
+      ...message,
+      id: Math.random().toString(36).substring(2, 9),
+      createdAt: new Date().toISOString()
+    };
+
+    await updateDoc(docRef, {
+      messages: arrayUnion(newMessage)
+    });
+
+    return newMessage;
+  } catch (error) {
+    console.error(`Lỗi khi thêm tin nhắn vào đánh giá ${reviewId}:`, error);
+    throw error;
+  }
+}

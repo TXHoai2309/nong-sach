@@ -10,8 +10,8 @@ import {
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import { getShopById, getAllShops, Shop } from "@/lib/shops";
 import { getAllProducts } from "@/lib/products";
-import { getReviewsByShopId, updateReviewReply } from "@/lib/reviews";
-import { Review } from "@/types/review";
+import { getReviewsByShopId, updateReviewReply, addReviewMessage } from "@/lib/reviews";
+import { Review, ReviewMessage } from "@/types/review";
 import { toggleFollow, subscribeToFollowStatus, subscribeToShopFollowers } from "@/lib/follows";
 import { useCartStore } from "@/store/cart-store";
 import { useAuthStore } from "@/store/auth-store";
@@ -321,6 +321,35 @@ export default function ShopDetailPage({ params }: PageProps) {
       active = false;
     };
   }, [mounted, shop, shopProducts]);
+
+  const handleAddMessage = async (reviewId: string, text: string, role: "buyer" | "seller") => {
+    if (!text.trim() || !currentUser) return;
+    setSubmittingReply(true);
+    try {
+      const newMessage = await addReviewMessage(reviewId, {
+        senderId: currentUser.id,
+        senderName: currentUser.name || "Người dùng",
+        senderRole: role,
+        text: text
+      });
+
+      setReviews((prev) =>
+        prev.map((rev) =>
+          rev.id === reviewId
+            ? { ...rev, messages: [...(rev.messages || []), newMessage] }
+            : rev
+        )
+      );
+
+      setReplyText("");
+      setReplyingReviewId(null);
+    } catch (error) {
+      console.error("Lỗi khi gửi tin nhắn:", error);
+      alert("Có lỗi xảy ra khi gửi tin nhắn. Vui lòng thử lại!");
+    } finally {
+      setSubmittingReply(false);
+    }
+  };
 
   const handleSaveReply = async (reviewId: string) => {
     if (!replyText.trim()) {
@@ -868,35 +897,51 @@ export default function ShopDetailPage({ params }: PageProps) {
                         </p>
                       )}
 
-                      {/* Display Shop Reply */}
-                      {rev.replyComment && (
+                      {/* Display Shop Messages Thread */}
+                      {rev.messages && rev.messages.length > 0 && (
+                        <div className="mt-3 space-y-2">
+                          {rev.messages.map((msg) => (
+                            <div key={msg.id} className={`flex ${msg.senderId === currentUser?.id ? "justify-end" : "justify-start"}`}>
+                              <div className={`max-w-[85%] p-2.5 rounded-xl text-[11px] shadow-sm ${
+                                msg.senderRole === "seller" 
+                                  ? "bg-primary text-white rounded-tr-none" 
+                                  : "bg-slate-100 text-on-surface-variant rounded-tl-none border border-slate-200"
+                              }`}>
+                                <div className="flex justify-between items-center gap-4 mb-0.5">
+                                  <span className="font-bold opacity-90">{msg.senderName}</span>
+                                  <span className="text-[8px] opacity-60">{new Date(msg.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</span>
+                                </div>
+                                <p className="leading-relaxed">{msg.text}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Display Old Shop Reply (Fallback) */}
+                      {rev.replyComment && (!rev.messages || !rev.messages.some(m => m.text === rev.replyComment)) && (
                         <div className="mt-3 p-3.5 rounded-xl bg-slate-50 border border-slate-100 space-y-1">
                           <div className="flex items-center justify-between">
                             <span className="text-xs font-bold text-primary flex items-center gap-1">
                               <span className="material-symbols-outlined text-[14px]">store</span>
-                              Phản hồi của shop
+                              Phản hồi cũ của shop
                             </span>
-                            {rev.replyCreatedAt && (
-                              <span className="text-[10px] text-on-surface-variant/50 font-medium">
-                                {formatReviewTime(rev.replyCreatedAt)}
-                              </span>
-                            )}
                           </div>
-                          <p className="text-xs leading-relaxed text-on-surface-variant/80 font-medium">
-                            {rev.replyComment}
+                          <p className="text-xs leading-relaxed text-on-surface-variant/80 font-medium italic">
+                            &quot;{rev.replyComment}&quot;
                           </p>
                         </div>
                       )}
 
-                      {/* Reply action for Shop Owner */}
-                      {isOwner && (
+                      {/* Interaction for both Buyer and Seller */}
+                      {currentUser && (
                         <div className="pt-2">
                           {replyingReviewId === rev.id ? (
                             <div className="space-y-2.5">
                               <textarea
                                 value={replyText}
                                 onChange={(e) => setReplyText(e.target.value)}
-                                placeholder="Nhập phản hồi của bạn..."
+                                placeholder="Nhập nội dung trao đổi..."
                                 rows={3}
                                 className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs outline-none focus:border-primary transition-all resize-none bg-white text-on-surface font-medium"
                               />
@@ -913,8 +958,8 @@ export default function ShopDetailPage({ params }: PageProps) {
                                 </button>
                                 <button
                                   type="button"
-                                  disabled={submittingReply}
-                                  onClick={() => handleSaveReply(rev.id)}
+                                  disabled={submittingReply || !replyText.trim()}
+                                  onClick={() => handleAddMessage(rev.id, replyText, isOwner ? "seller" : "buyer")}
                                   className="px-4 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/95 transition-all disabled:opacity-60 flex items-center gap-1.5"
                                 >
                                   {submittingReply ? (
@@ -922,7 +967,7 @@ export default function ShopDetailPage({ params }: PageProps) {
                                   ) : (
                                     <span className="material-symbols-outlined text-[14px]">send</span>
                                   )}
-                                  Gửi phản hồi
+                                  Gửi tin nhắn
                                 </button>
                               </div>
                             </div>
@@ -931,12 +976,12 @@ export default function ShopDetailPage({ params }: PageProps) {
                               type="button"
                               onClick={() => {
                                 setReplyingReviewId(rev.id);
-                                setReplyText(rev.replyComment || "");
+                                setReplyText("");
                               }}
                               className="inline-flex items-center gap-1 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white px-3 py-1.5 text-xs font-bold border border-primary/20 transition-all cursor-pointer active:scale-95"
                             >
-                              <span className="material-symbols-outlined text-[14px]">reply</span>
-                              {rev.replyComment ? "Chỉnh sửa phản hồi" : "Phản hồi"}
+                              <span className="material-symbols-outlined text-[14px]">chat</span>
+                              {rev.messages && rev.messages.length > 0 ? "Tiếp tục trao đổi" : isOwner ? "Phản hồi khách hàng" : "Phản hồi shop"}
                             </button>
                           )}
                         </div>

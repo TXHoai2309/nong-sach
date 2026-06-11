@@ -4,6 +4,20 @@ All notable changes to the **NôngSạch** project will be documented in this fi
 
 The format is based on **Keep a Changelog** and this project adheres to **Semantic Versioning**.
 
+## [0.8.5] - 2026-06-11
+
+### Tương tác đánh giá đa chiều (Threaded Review Interactions)
+
+### Added
+* **Luồng trao đổi tin nhắn (Review Threads)**: Nâng cấp hệ thống đánh giá một chiều thành cuộc hội thoại đa chiều. Mỗi đánh giá giờ đây có thể chứa một chuỗi các tin nhắn trao đổi (`ReviewMessage`) giữa người mua và người bán.
+* **Tab Quản lý đánh giá cho Người bán**: Bổ sung subtab **"Đánh giá của khách"** trong Kênh người bán tại trang Hồ sơ. Cho phép người bán xem toàn bộ đánh giá, xem ảnh chi tiết, phản hồi mới hoặc tiếp tục trao đổi với khách hàng.
+* **Tương tác từ phía Người mua**: Người mua có thể xem các phản hồi của shop và gửi tin nhắn phản hồi lại ngay trong chi tiết đơn hàng đã mua hoặc từ thông báo đánh giá.
+* **Hiển thị luồng trao đổi công khai**: Toàn bộ nội dung trao đổi giữa người mua và người bán được hiển thị công khai trên **Trang chi tiết sản phẩm** và **Trang cửa hàng** để tăng tính minh bạch và độ tin cậy.
+
+### Changed
+* **Cấu trúc dữ liệu Firestore**: Mở rộng tài liệu `reviews` để lưu trữ mảng `messages` và triển khai cơ chế cập nhật nguyên tử bằng `arrayUnion`.
+* **Giao diện thông báo đánh giá**: Cập nhật bảng xem chi tiết đánh giá từ thông báo để hỗ trợ gửi và nhận tin nhắn trực tiếp cho cả hai vai trò.
+
 ## [0.8.4] - 2026-06-11
 
 ### Đồng nhất trạng thái đơn hàng tách & Lọc đơn hàng Dashboard người bán (Unified Split Orders Status & Seller Dashboard Order Filtering)

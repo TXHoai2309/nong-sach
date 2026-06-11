@@ -20,8 +20,8 @@ import { Product, ProductCategory } from "@/types/product";
 import { UserAddress, User } from "@/types/user";
 import CoverImageCropper from "@/components/ui/CoverImageCropper";
 import { getAllProducts, addProduct, deleteProduct } from "@/lib/products";
-import { addReview, checkReviewedItems, getBaseProductId, getReviewsByOrderId } from "@/lib/reviews";
-import { Review } from "@/types/review";
+import { addReview, addReviewMessage, checkReviewedItems, getBaseProductId, getReviewsByOrderId, getReviewsByShopId, updateReviewReply } from "@/lib/reviews";
+import { Review, ReviewMessage } from "@/types/review";
 import { OrderTrackingTimeline } from "@/components/order/OrderTrackingTimeline";
 import { toggleFollow } from "@/lib/follows";
 import { getShopById, Shop } from "@/lib/shops";
@@ -176,7 +176,7 @@ function ProfileContent() {
     }
   }, [tabParam]);
 
-  const [sellerSubTab, setSellerSubTab] = useState<"products" | "orders" | "vouchers" | "reports">("products");
+  const [sellerSubTab, setSellerSubTab] = useState<"products" | "orders" | "vouchers" | "reports" | "reviews">("products");
   const [focusedSellerOrderId, setFocusedSellerOrderId] = useState<string | null>(null);
   const [nowTime] = useState(() => Date.now());
 
@@ -198,6 +198,10 @@ function ProfileContent() {
       const timer = window.setTimeout(() => setSellerSubTab("reports"), 0);
       return () => window.clearTimeout(timer);
     }
+    if (sellerTabParam === "reviews") {
+      const timer = window.setTimeout(() => setSellerSubTab("reviews"), 0);
+      return () => window.clearTimeout(timer);
+    }
   }, [tabParam, sellerTabParam]);
 
   useEffect(() => {
@@ -208,6 +212,13 @@ function ProfileContent() {
 
   // Notifications/Toasts
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  // Seller reviews state
+  const [sellerReviews, setSellerReviews] = useState<Review[]>([]);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
+  const [replyingReviewId, setReplyingReviewId] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
+  const [submittingReply, setSubmittingReply] = useState(false);
 
   // Seller registration form state
   const [isSubmittingSeller, setIsSubmittingSeller] = useState(false);
@@ -530,14 +541,120 @@ function ProfileContent() {
   }, [mounted, activeTab, sellerSubTab, currentUser?.id]);
 
   useEffect(() => {
-    if (activeTab !== "seller" || sellerSubTab !== "orders" || !focusedSellerOrderId) return;
-    const timer = window.setTimeout(() => {
-      document
-        .getElementById(`seller-order-${focusedSellerOrderId}`)
-        ?.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 250);
-    return () => window.clearTimeout(timer);
-  }, [activeTab, sellerSubTab, focusedSellerOrderId, sellerOrders.length]);
+    if (!mounted || !currentUser) return;
+    if (activeTab === "seller" && sellerSubTab === "reviews") {
+      async function fetchSellerReviews() {
+        if (!currentUser) return;
+        setIsLoadingReviews(true);
+        try {
+          const prodIds = shopProducts.map(p => p.id);
+          const reviews = await getReviewsByShopId(currentUser.id, prodIds);
+          setSellerReviews(reviews);
+        } catch (error) {
+          console.error("Lỗi khi tải đánh giá của người bán:", error);
+        } finally {
+          setIsLoadingReviews(false);
+        }
+      }
+      fetchSellerReviews();
+    }
+  }, [mounted, activeTab, sellerSubTab, currentUser?.id, shopProducts]);
+
+  const handleSaveReply = async (reviewId: string) => {
+    if (!replyText.trim()) return;
+    setSubmittingReply(true);
+    try {
+      await updateReviewReply(reviewId, replyText);
+      
+      // Update local state for sellerReviews
+      setSellerReviews(prev => prev.map(rev => 
+        rev.id === reviewId 
+          ? { ...rev, replyComment: replyText, replyCreatedAt: new Date().toISOString() } 
+          : rev
+      ));
+      
+      // Update local state for notification details if open
+      setNotificationReviewDetails(prev => {
+        const next = { ...prev };
+        Object.keys(next).forEach(notiId => {
+          if (next[notiId]?.id === reviewId) {
+            next[notiId] = { 
+              ...next[notiId]!, 
+              replyComment: replyText, 
+              replyCreatedAt: new Date().toISOString() 
+            };
+          }
+        });
+        return next;
+      });
+
+      showToast("Gửi phản hồi thành công!");
+      setReplyingReviewId(null);
+      setReplyText("");
+    } catch (error) {
+      console.error("Lỗi khi gửi phản hồi:", error);
+      showToast("Có lỗi xảy ra khi gửi phản hồi", "error");
+    } finally {
+      setSubmittingReply(false);
+    }
+  };
+
+  const handleAddMessage = async (reviewId: string, text: string, role: "buyer" | "seller") => {
+    if (!text.trim() || !currentUser) return;
+    setSubmittingReply(true);
+    try {
+      const newMessage = await addReviewMessage(reviewId, {
+        senderId: currentUser.id,
+        senderName: currentUser.name || "Người dùng",
+        senderRole: role,
+        text: text
+      });
+
+      // Update local state for sellerReviews
+      setSellerReviews(prev => prev.map(rev => 
+        rev.id === reviewId 
+          ? { ...rev, messages: [...(rev.messages || []), newMessage] } 
+          : rev
+      ));
+
+      // Update local state for notification details
+      setNotificationReviewDetails(prev => {
+        const next = { ...prev };
+        Object.keys(next).forEach(notiId => {
+          if (next[notiId]?.id === reviewId) {
+            next[notiId] = { 
+              ...next[notiId]!, 
+              messages: [...(next[notiId]!.messages || []), newMessage]
+            };
+          }
+        });
+        return next;
+      });
+
+      // Update local state for orderReviewsMap
+      setOrderReviewsMap(prev => {
+        const next = { ...prev };
+        Object.keys(next).forEach(id => {
+          if (next[id]?.id === reviewId) {
+            next[id] = {
+              ...next[id],
+              messages: [...(next[id].messages || []), newMessage]
+            };
+          }
+        });
+        return next;
+      });
+
+      showToast("Gửi tin nhắn thành công!");
+      setReplyText("");
+      setReplyingReviewId(null);
+    } catch (error) {
+      console.error("Lỗi khi gửi tin nhắn:", error);
+      showToast("Có lỗi xảy ra khi gửi tin nhắn", "error");
+    } finally {
+      setSubmittingReply(false);
+    }
+  };
 
   useEffect(() => {
     if (!currentUser || !userOrders.length) return;
@@ -2196,6 +2313,89 @@ function ProfileContent() {
                                                 ))}
                                               </div>
                                             )}
+
+                                            {/* Thread of messages */}
+                                            {reviewForItem.messages && reviewForItem.messages.length > 0 && (
+                                              <div className="mt-3 space-y-2">
+                                                {reviewForItem.messages.map((msg) => (
+                                                  <div key={msg.id} className={`flex ${msg.senderRole === "buyer" ? "justify-end" : "justify-start"}`}>
+                                                    <div className={`max-w-[90%] p-2 rounded-xl text-[10px] shadow-sm ${
+                                                      msg.senderRole === "buyer" 
+                                                        ? "bg-[#006c49] text-white rounded-tr-none" 
+                                                        : "bg-white text-[#3c4a42] rounded-tl-none border border-slate-100"
+                                                    }`}>
+                                                      <div className="flex justify-between items-center gap-3 mb-0.5">
+                                                        <span className="font-bold opacity-90">{msg.senderName}</span>
+                                                        <span className="text-[8px] opacity-60">{new Date(msg.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</span>
+                                                      </div>
+                                                      <p className="leading-relaxed">{msg.text}</p>
+                                                    </div>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            )}
+
+                                            {/* Interaction Button/Input */}
+                                            <div className="mt-2">
+                                              {replyingReviewId === reviewForItem.id ? (
+                                                <div className="space-y-2">
+                                                  <textarea
+                                                    value={replyText}
+                                                    onChange={(e) => setReplyText(e.target.value)}
+                                                    placeholder="Nhập phản hồi của bạn tới người bán..."
+                                                    rows={2}
+                                                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-[10px] outline-none focus:border-[#006c49] transition-all resize-none bg-white text-[#3c4a42]"
+                                                  />
+                                                  <div className="flex gap-2 justify-end">
+                                                    <button
+                                                      type="button"
+                                                      onClick={() => {
+                                                        setReplyingReviewId(null);
+                                                        setReplyText("");
+                                                      }}
+                                                      className="px-2 py-1 rounded-lg border border-slate-200 text-[9px] font-bold text-[#3c4a42] hover:bg-slate-50 transition-all"
+                                                    >
+                                                      Hủy
+                                                    </button>
+                                                    <button
+                                                      type="button"
+                                                      disabled={submittingReply || !replyText.trim()}
+                                                      onClick={() => handleAddMessage(reviewForItem.id, replyText, "buyer")}
+                                                      className="px-2 py-1 rounded-lg bg-[#006c49] text-white text-[9px] font-bold hover:bg-[#006c49]/95 transition-all disabled:opacity-60 flex items-center gap-1.5"
+                                                    >
+                                                      {submittingReply ? (
+                                                        <span className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                                                      ) : (
+                                                        <span className="material-symbols-outlined text-[12px]">send</span>
+                                                      )}
+                                                      Gửi
+                                                    </button>
+                                                  </div>
+                                                </div>
+                                              ) : (
+                                                <button
+                                                  onClick={() => {
+                                                    setReplyingReviewId(reviewForItem.id);
+                                                    setReplyText("");
+                                                  }}
+                                                  className="inline-flex items-center gap-1 text-[10px] font-bold text-[#006c49] hover:underline"
+                                                >
+                                                  <span className="material-symbols-outlined text-[14px]">chat</span>
+                                                  {reviewForItem.messages && reviewForItem.messages.length > 0 ? "Tiếp tục trao đổi" : "Phản hồi người bán"}
+                                                </button>
+                                              )}
+                                            </div>
+
+                                            {/* Old Style Seller's Reply (Fallback) */}
+                                            {reviewForItem.replyComment && !reviewForItem.messages?.some(m => m.text === reviewForItem.replyComment) && (
+                                              <div className="mt-3 ml-2 p-3 rounded-xl bg-white/60 border-l-4 border-[#006c49]">
+                                                <div className="flex items-center gap-1.5 mb-1 text-[10px] font-bold text-[#006c49]">
+                                                  <span className="material-symbols-outlined text-[14px]">reply</span>
+                                                  PHẢN HỒI CŨ TỪ NGƯỜI BÁN
+                                                </div>
+                                                <p className="text-xs text-[#3c4a42]/80 leading-relaxed italic">&quot;{reviewForItem.replyComment}&quot;</p>
+                                              </div>
+                                            )}
                                           </div>
                                         )}
                                       </div>
@@ -2702,6 +2902,87 @@ function ProfileContent() {
                                             ))}
                                           </div>
                                         )}
+
+                                        {/* Reply Section */}
+                                        <div className="pt-2 border-t border-amber-200/50 mt-1">
+                                          {/* Thread of messages */}
+                                          {reviewDetail.messages && reviewDetail.messages.length > 0 && (
+                                            <div className="mb-3 space-y-2">
+                                              {reviewDetail.messages.map((msg) => (
+                                                <div key={msg.id} className={`flex ${msg.senderId === currentUser?.id ? "justify-end" : "justify-start"}`}>
+                                                  <div className={`max-w-[90%] p-2 rounded-xl text-[10px] shadow-sm ${
+                                                    msg.senderId === currentUser?.id 
+                                                      ? "bg-[#006c49] text-white rounded-tr-none" 
+                                                      : "bg-white/60 text-[#3c4a42] rounded-tl-none border border-amber-100"
+                                                  }`}>
+                                                    <div className="flex justify-between items-center gap-3 mb-0.5">
+                                                      <span className="font-bold opacity-90">{msg.senderName}</span>
+                                                      <span className="text-[8px] opacity-60">{new Date(msg.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</span>
+                                                    </div>
+                                                    <p className="leading-relaxed">{msg.text}</p>
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          )}
+
+                                          {replyingReviewId === reviewDetail.id ? (
+                                            <div className="space-y-2">
+                                              <textarea
+                                                value={replyText}
+                                                onChange={(e) => setReplyText(e.target.value)}
+                                                placeholder="Nhập nội dung trao đổi..."
+                                                rows={3}
+                                                className="w-full px-3 py-2 border border-amber-200 rounded-xl text-[11px] outline-none focus:border-[#006c49] transition-all resize-none bg-white text-[#3c4a42]"
+                                              />
+                                              <div className="flex gap-2 justify-end">
+                                                <button
+                                                  type="button"
+                                                  onClick={() => {
+                                                    setReplyingReviewId(null);
+                                                    setReplyText("");
+                                                  }}
+                                                  className="px-3 py-1 rounded-lg border border-slate-200 text-[10px] font-bold text-[#3c4a42] hover:bg-slate-50 transition-all"
+                                                >
+                                                  Hủy
+                                                </button>
+                                                <button
+                                                  type="button"
+                                                  disabled={submittingReply || !replyText.trim()}
+                                                  onClick={() => handleAddMessage(reviewDetail.id, replyText, currentUser?.sellerInfo ? "seller" : "buyer")}
+                                                  className="px-3 py-1 rounded-lg bg-[#006c49] text-white text-[10px] font-bold hover:bg-[#006c49]/95 transition-all disabled:opacity-60 flex items-center gap-1.5"
+                                                >
+                                                  {submittingReply ? (
+                                                    <span className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                                                  ) : (
+                                                    <span className="material-symbols-outlined text-[14px]">send</span>
+                                                  )}
+                                                  Gửi tin nhắn
+                                                </button>
+                                              </div>
+                                            </div>
+                                          ) : (
+                                            <div className="flex justify-between items-center">
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  setReplyingReviewId(reviewDetail.id);
+                                                  setReplyText("");
+                                                }}
+                                                className="inline-flex items-center gap-1 text-[11px] font-bold text-[#006c49] hover:underline"
+                                              >
+                                                <span className="material-symbols-outlined text-[14px]">chat</span>
+                                                {reviewDetail.messages && reviewDetail.messages.length > 0 ? "Tiếp tục trao đổi" : "Phản hồi đánh giá"}
+                                              </button>
+                                              
+                                              {reviewDetail.replyComment && !reviewDetail.messages?.some(m => m.text === reviewDetail.replyComment) && (
+                                                <div className="text-[9px] text-[#3c4a42]/40 italic">
+                                                   Đã có phản hồi cũ
+                                                </div>
+                                              )}
+                                            </div>
+                                          )}
+                                        </div>
                                       </div>
                                     ) : (
                                       <p className="text-xs font-bold text-[#3c4a42]/55">
@@ -3680,6 +3961,16 @@ function ProfileContent() {
                         Khuyến mãi & Vouchers
                       </button>
                       <button
+                        onClick={() => setSellerSubTab("reviews")}
+                        className={`pb-3 text-sm font-bold transition-all ${
+                          sellerSubTab === "reviews"
+                            ? "border-b-2 border-[#006c49] text-[#006c49]"
+                            : "text-[#3c4a42]/50 hover:text-[#3c4a42]"
+                        }`}
+                      >
+                        Đánh giá của khách
+                      </button>
+                      <button
                         onClick={() => setSellerSubTab("reports")}
                         className={`pb-3 text-sm font-bold transition-all ${
                           sellerSubTab === "reports"
@@ -4137,6 +4428,142 @@ function ProfileContent() {
                           </div>
                         )}
                       </div>
+                    )}
+
+                    {sellerSubTab === "reviews" && (
+                       <div className="space-y-4">
+                         {isLoadingReviews ? (
+                           <div className="flex flex-col items-center justify-center py-12 space-y-3">
+                             <div className="w-8 h-8 border-4 border-[#006c49]/20 border-t-[#006c49] rounded-full animate-spin" />
+                             <p className="text-xs text-[#3c4a42]/60 font-medium italic">Đang tải đánh giá...</p>
+                           </div>
+                         ) : sellerReviews.length === 0 ? (
+                           <div className="text-center py-12 rounded-3xl border border-dashed border-[#bbcabf]/50 bg-white/50">
+                             <span className="material-symbols-outlined text-4xl text-[#3c4a42]/20 mb-2">rate_review</span>
+                             <p className="text-sm text-[#3c4a42]/60 font-medium">Bạn chưa có đánh giá nào từ khách hàng.</p>
+                           </div>
+                         ) : (
+                           <div className="grid gap-4">
+                             {sellerReviews.map((rev) => (
+                               <div key={rev.id} className="p-5 rounded-3xl border border-[#bbcabf]/30 bg-white shadow-sm hover:shadow-md transition-all group">
+                                 <div className="flex justify-between items-start mb-3">
+                                   <div className="flex items-center gap-3">
+                                     <div className="w-10 h-10 rounded-full bg-[#006c49]/10 flex items-center justify-center">
+                                       <span className="material-symbols-outlined text-[#006c49]">person</span>
+                                     </div>
+                                     <div>
+                                       <p className="text-sm font-bold text-[#3c4a42]">{rev.userName}</p>
+                                       <p className="text-[10px] text-[#3c4a42]/60">{new Date(rev.createdAt).toLocaleString('vi-VN')}</p>
+                                     </div>
+                                   </div>
+                                   <div className="flex text-amber-400">
+                                     {[...Array(5)].map((_, i) => (
+                                       <span key={i} className="material-symbols-outlined text-[16px]">
+                                         {i < rev.rating ? "star" : "star_outline"}
+                                       </span>
+                                     ))}
+                                   </div>
+                                 </div>
+                                 
+                                 <div className="mb-4">
+                                   <Link href={`/products/${rev.productId}`} className="text-xs font-bold text-[#006c49] hover:underline flex items-center gap-1 mb-2">
+                                     <span className="material-symbols-outlined text-[14px]">inventory_2</span>
+                                     Sản phẩm: {rev.productName}
+                                   </Link>
+                                   <p className="text-sm text-[#3c4a42] leading-relaxed italic">&quot;{rev.comment}&quot;</p>
+                                 </div>
+
+                                 {rev.images && rev.images.length > 0 && (
+                                   <div className="flex flex-wrap gap-2 mb-4">
+                                     {rev.images.map((img, idx) => (
+                                       <div key={idx} className="relative w-16 h-16 rounded-xl overflow-hidden border border-[#bbcabf]/20">
+                                         <Image src={img} alt={`Review ${idx}`} fill className="object-cover" />
+                                       </div>
+                                     ))}
+                                   </div>
+                                 )}
+
+                                 <div className="pt-3 border-t border-[#bbcabf]/10">
+                                   {/* Thread of messages */}
+                                   {rev.messages && rev.messages.length > 0 && (
+                                     <div className="mb-4 space-y-3">
+                                       {rev.messages.map((msg) => (
+                                         <div key={msg.id} className={`flex ${msg.senderRole === "seller" ? "justify-end" : "justify-start"}`}>
+                                           <div className={`max-w-[85%] p-3 rounded-2xl text-xs shadow-sm ${
+                                             msg.senderRole === "seller" 
+                                               ? "bg-[#006c49] text-white rounded-tr-none" 
+                                               : "bg-[#f4f6fa] text-[#3c4a42] rounded-tl-none border border-slate-100"
+                                           }`}>
+                                             <div className="flex justify-between items-center gap-4 mb-1">
+                                               <span className="font-bold opacity-90">{msg.senderName}</span>
+                                               <span className="text-[9px] opacity-60">{new Date(msg.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</span>
+                                             </div>
+                                             <p className="leading-relaxed">{msg.text}</p>
+                                           </div>
+                                         </div>
+                                       ))}
+                                     </div>
+                                   )}
+
+                                   {replyingReviewId === rev.id ? (
+                                      <div className="space-y-3">
+                                        <textarea
+                                          value={replyText}
+                                          onChange={(e) => setReplyText(e.target.value)}
+                                          placeholder="Nhập nội dung trao đổi..."
+                                          rows={3}
+                                          className="w-full px-4 py-3 border border-[#bbcabf]/30 rounded-2xl text-xs outline-none focus:ring-2 focus:ring-[#006c49]/20 transition-all resize-none bg-white text-[#3c4a42]"
+                                        />
+                                        <div className="flex gap-2 justify-end">
+                                          <button
+                                            onClick={() => {
+                                              setReplyingReviewId(null);
+                                              setReplyText("");
+                                            }}
+                                            className="px-4 py-1.5 rounded-xl border border-[#bbcabf]/30 text-xs font-bold text-[#3c4a42] hover:bg-slate-50"
+                                          >
+                                            Hủy
+                                          </button>
+                                          <button
+                                            disabled={submittingReply || !replyText.trim()}
+                                            onClick={() => handleAddMessage(rev.id, replyText, "seller")}
+                                            className="px-4 py-1.5 rounded-xl bg-[#006c49] text-white text-xs font-bold hover:bg-[#006c49]/90 disabled:opacity-50 flex items-center gap-1.5"
+                                          >
+                                            {submittingReply ? (
+                                              <span className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                                            ) : (
+                                              <span className="material-symbols-outlined text-sm">send</span>
+                                            )}
+                                            Gửi tin nhắn
+                                          </button>
+                                        </div>
+                                      </div>
+                                   ) : (
+                                     <div className="flex justify-between items-center">
+                                       <button
+                                         onClick={() => {
+                                           setReplyingReviewId(rev.id);
+                                           setReplyText("");
+                                         }}
+                                         className="inline-flex items-center gap-1.5 text-xs font-bold text-[#006c49] hover:bg-[#006c49]/5 px-3 py-1.5 rounded-lg transition-all"
+                                       >
+                                         <span className="material-symbols-outlined text-sm">chat</span>
+                                         {rev.messages && rev.messages.length > 0 ? "Tiếp tục trao đổi" : "Phản hồi khách hàng"}
+                                       </button>
+                                       
+                                       {rev.replyComment && !rev.messages?.some(m => m.text === rev.replyComment) && (
+                                         <div className="text-[10px] text-[#3c4a42]/40 italic">
+                                            Phản hồi cũ: {rev.replyComment.substring(0, 20)}...
+                                         </div>
+                                       )}
+                                     </div>
+                                   )}
+                                 </div>
+                               </div>
+                             ))}
+                           </div>
+                         )}
+                       </div>
                     )}
 
                     {sellerSubTab === "reports" && (

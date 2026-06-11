@@ -205,6 +205,7 @@ Các ảnh chụp màn hình và video kiểm thử được lưu trữ trực t
 | **TC-61: Validation 4 Case lỗi Voucher** | Thử nhập lần lượt các mã voucher không hợp lệ (Không tồn tại, hết hạn, hết lượt, đã dừng). | Hệ thống chặn và hiển thị đúng 4 thông báo lỗi tương ứng từ server-side. | ✅ Pass |
 | **TC-62: Ghi nhận usedCount & Lịch sử sử dụng** | Tiến hành đặt hàng thành công (COD hoặc VNPay) có áp dụng voucher `VALID10`. | Trường `usedCount` của voucher tăng thêm 1, đồng thời 1 record mới được lưu vào collection `voucherHistories`. | ✅ Pass |
 | **TC-63: Báo cáo doanh thu seller** | Vào Kênh người bán -> Báo cáo doanh thu, chọn filter 7/30/90 ngày, đổi kiểu biểu đồ Line/Bar, hover xem tooltip, xuất CSV. | Biểu đồ SVG và các chỉ số thống kê, top 5 bán chạy cập nhật chính xác; file CSV tải xuống chứa định dạng UTF-8 BOM hiển thị chuẩn tiếng Việt trong Excel. | ✅ Pass |
+| **TC-64: Tương tác đánh giá đa chiều** | Người bán phản hồi đánh giá, sau đó người mua phản hồi lại tin nhắn của người bán. | Luồng trao đổi hiển thị dưới dạng bong bóng chat, đồng bộ realtime trên Firestore và hiển thị đầy đủ ở cả Profile, Thông báo và Trang chi tiết sản phẩm. | ✅ Pass |
 
 ---
 

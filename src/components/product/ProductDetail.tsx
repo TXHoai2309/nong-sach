@@ -806,6 +806,49 @@ export default function ProductDetail({ product, relatedProducts }: ProductDetai
                         </span>
                       </div>
                       <p className="text-on-surface-variant text-sm pl-1">{rev.comment}</p>
+                      
+                      {/* Thread of messages (Back-and-forth) */}
+                      {rev.messages && rev.messages.length > 0 && (
+                        <div className="mt-4 space-y-3">
+                          {rev.messages.map((msg) => (
+                            <div key={msg.id} className={`flex ${msg.senderRole === "seller" ? "justify-start ml-2" : "justify-end mr-2"}`}>
+                              <div className={`max-w-[85%] p-3 rounded-2xl text-xs shadow-sm ${
+                                msg.senderRole === "seller" 
+                                  ? "bg-[#f4f6fa] text-[#3c4a42] border-l-4 border-[#006c49] rounded-tl-none" 
+                                  : "bg-[#e6f4ea] text-[#006c49] rounded-tr-none border border-[#006c49]/10"
+                              }`}>
+                                <div className="flex items-center gap-2 mb-1">
+                                  {msg.senderRole === "seller" && <span className="material-symbols-outlined text-[14px] font-bold">reply</span>}
+                                  <span className="font-bold uppercase tracking-wider text-[10px]">
+                                    {msg.senderRole === "seller" ? "Người bán phản hồi" : msg.senderName}
+                                  </span>
+                                  <span className="text-[9px] opacity-40 ml-auto">
+                                    {new Date(msg.createdAt).toLocaleDateString("vi-VN")}
+                                  </span>
+                                </div>
+                                <p className="leading-relaxed italic">&quot;{msg.text}&quot;</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Legacy Seller's Reply (Fallback) */}
+                      {rev.replyComment && (!rev.messages || !rev.messages.some(m => m.text === rev.replyComment)) && (
+                        <div className="mt-4 ml-1 p-4 rounded-2xl bg-[#f4f6fa] border-l-4 border-[#006c49]">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <span className="material-symbols-outlined text-[16px] text-[#006c49] font-bold">reply</span>
+                            <span className="text-[11px] font-bold text-[#006c49] uppercase tracking-wider">Phản hồi từ người bán</span>
+                          </div>
+                          <p className="text-sm text-on-surface-variant leading-relaxed italic">&quot;{rev.replyComment}&quot;</p>
+                          {rev.replyCreatedAt && (
+                            <p className="mt-2 text-[10px] text-on-surface-variant/50 text-right">
+                              {new Date(rev.replyCreatedAt).toLocaleDateString("vi-VN")}
+                            </p>
+                          )}
+                        </div>
+                      )}
+
                       {rev.images && rev.images.length > 0 && (
                         <div className="mt-4 flex flex-wrap gap-2 pl-1">
                           {rev.images.map((image, index) => (
