@@ -4,6 +4,23 @@ All notable changes to the **NôngSạch** project will be documented in this fi
 
 The format is based on **Keep a Changelog** and this project adheres to **Semantic Versioning**.
 
+## [0.8.8] - 2026-06-11
+
+### Tồn kho hàng loạt & Gợi ý sản phẩm (Batch Stock Update & Product Recommendations)
+
+### Added
+* **Cập nhật tồn kho hàng loạt**:
+  - Tích hợp nút **"Cập nhật kho hàng loạt"** trong tab Sản phẩm của tôi ở Kênh người bán.
+  - Hỗ trợ chế độ chỉnh sửa inline: Cột tồn kho chuyển đổi thành ô nhập số (`<input type="number">`) và tự động kiểm tra điều kiện không âm.
+  - Sử dụng Firestore `writeBatch` để cập nhật đồng thời tồn kho của nhiều sản phẩm một cách an toàn và tối ưu tài nguyên mạng.
+  - Tự động khóa các thao tác Xem, Chỉnh sửa đơn lẻ, Xóa và Đăng sản phẩm mới trong suốt thời gian chỉnh sửa hàng loạt để tránh xung đột dữ liệu.
+* **Gợi ý sản phẩm cá nhân hóa ("Dành cho bạn")**:
+  - Xây dựng component gợi ý cá nhân hóa `<UserRecommendations />` ở trang chủ.
+  - Tải lịch sử đơn hàng của người dùng từ Firestore (`orders` collection) để phân tích tần suất mua hàng theo từng danh mục (category).
+  - Thuật toán sắp xếp và ưu tiên các sản phẩm thuộc danh mục đã mua nhiều nhất (ưu tiên sản phẩm chưa mua trước, sau đó là sản phẩm đã mua để mua lại).
+  - Tích hợp Skeleton Loading mượt mà khi đang tải dữ liệu từ Firestore.
+  - Ẩn hoàn toàn section gợi ý đối với người dùng chưa đăng nhập.
+
 ## [0.8.7] - 2026-06-11
 
 ### Trò chuyện trực tiếp Buyer-Seller Realtime (Realtime Buyer-Seller Chat)
