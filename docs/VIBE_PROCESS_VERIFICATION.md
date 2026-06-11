@@ -217,6 +217,9 @@ Các ảnh chụp màn hình và video kiểm thử được lưu trữ trực t
 | **TC-71: Nhắn tin Realtime** | Đăng nhập Buyer gửi tin nhắn, đồng thời mở tab Trò chuyện ở tài khoản Seller. | Tin nhắn hiển thị tức thời ở cả 2 bên mà không cần tải lại trang. | ✅ Pass |
 | **TC-72: Trạng thái unread & chấm xanh** | Gửi tin nhắn từ tài khoản Buyer sang Seller khi Seller đang tắt tab chat. | Phòng chat bên phía Seller hiển thị tin nhắn mới in đậm kèm chấm xanh thông báo. | ✅ Pass |
 | **TC-73: Thông báo tin nhắn mới & điều hướng** | Gửi tin nhắn sang tài khoản khác khi tài khoản đó đang ở trang chủ/sản phẩm. | Hiển thị thông báo chuông loại `new_message`, click vào thông báo sẽ tự động nhảy về tab Trò chuyện và mở đúng phòng chat đó. | ✅ Pass |
+| **TC-74: Kích hoạt chế độ tồn kho hàng loạt** | Đăng nhập tài khoản Seller, chọn tab Sản phẩm của tôi, click "Cập nhật kho hàng loạt". | Bảng danh sách sản phẩm chuyển sang chế độ chỉnh sửa: cột tồn kho hiển thị ô nhập số; các nút Đăng sản phẩm mới, Xem, Sửa, Xóa bị vô hiệu hóa; nút Hủy và Lưu tất cả hiển thị rõ ràng. | ✅ Pass |
+| **TC-75: Cập nhật tồn kho hàng loạt và Lưu** | Sửa đổi giá trị tồn kho của các sản phẩm, click "Lưu tất cả". | Ẩn chế độ sửa, hiển thị thông báo lưu thành công, số lượng tồn kho mới được ghi nhận vào Firestore qua writeBatch và cập nhật tức thì trên giao diện cửa hàng và public store. | ✅ Pass |
+| **TC-76: Hủy cập nhật tồn kho hàng loạt** | Trong chế độ sửa, thay đổi giá trị tồn kho, click "Hủy". | Bảng thoát khỏi chế độ sửa, khôi phục lại các giá trị cũ của sản phẩm, không ghi nhận thay đổi nào lên Firestore. | ✅ Pass |
 
 ---
 

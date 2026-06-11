@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo, type FormEvent, Suspense, useRef } from "
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { collection, query, where, onSnapshot, writeBatch, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import { formatCurrency } from "@/lib/format";
@@ -420,6 +420,60 @@ function ProfileContent() {
   const [newVoucherLimit, setNewVoucherLimit] = useState("");
   const [newVoucherExpiry, setNewVoucherExpiry] = useState("");
   const [isSubmittingVoucher, setIsSubmittingVoucher] = useState(false);
+
+  // Batch Stock states
+  const [isBatchStockMode, setIsBatchStockMode] = useState(false);
+  const [stockDrafts, setStockDrafts] = useState<Record<string, number>>({});
+  const [isSavingBatchStocks, setIsSavingBatchStocks] = useState(false);
+
+  const handleStartBatchStockMode = () => {
+    const drafts: Record<string, number> = {};
+    shopProducts.forEach((p) => {
+      drafts[p.id] = p.stock;
+    });
+    setStockDrafts(drafts);
+    setIsBatchStockMode(true);
+  };
+
+  const handleCancelBatchStockMode = () => {
+    setStockDrafts({});
+    setIsBatchStockMode(false);
+  };
+
+  const handleSaveBatchStocks = async () => {
+    if (!currentUser) return;
+    setIsSavingBatchStocks(true);
+    try {
+      const batch = writeBatch(db);
+      let hasChanges = false;
+      
+      for (const p of shopProducts) {
+        const draftVal = stockDrafts[p.id];
+        if (draftVal !== undefined && draftVal !== p.stock) {
+          const newValue = Math.max(0, Math.floor(draftVal));
+          const productRef = doc(db, "products", p.id);
+          batch.update(productRef, { stock: newValue });
+          hasChanges = true;
+        }
+      }
+      
+      if (hasChanges) {
+        await batch.commit();
+        const list = await getAllProducts(true);
+        const filteredList = list.filter((p) => p.sellerId === currentUser.id) as ShopProduct[];
+        setShopProducts(filteredList);
+        showToast("Cập nhật tồn kho hàng loạt thành công!", "success");
+      } else {
+        showToast("Không có thay đổi nào để cập nhật.", "success");
+      }
+      setIsBatchStockMode(false);
+    } catch (error) {
+      console.error("Lỗi cập nhật tồn kho hàng loạt:", error);
+      showToast("Đã xảy ra lỗi khi cập nhật tồn kho.", "error");
+    } finally {
+      setIsSavingBatchStocks(false);
+    }
+  };
 
   // Show toast helper
   const showToast = (message: string, type: "success" | "error" = "success") => {
@@ -4246,26 +4300,82 @@ function ProfileContent() {
 
                     {sellerSubTab === "products" && (
                       <div className="rounded-3xl border border-[#bbcabf]/30 bg-white p-6 shadow-sm">
-                        <div className="flex justify-between items-center mb-6">
-                          <h4 className="text-sm font-bold text-[#006c49] flex items-center gap-2">
-                            <span className="material-symbols-outlined text-base">list_alt</span>
-                            Danh sách sản phẩm
-                          </h4>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (currentUser?.sellerStatus === "blocked") {
-                                alert("Cửa hàng của bạn đang bị khóa, không thể đăng bán sản phẩm mới!");
-                              } else {
-                                setIsAddProductOpen(true);
-                              }
-                            }}
-                            className="rounded-full bg-[#006c49] px-4 py-2 text-xs font-bold text-white shadow-sm hover:opacity-90 transition-all flex items-center gap-1"
-                          >
-                            <span className="material-symbols-outlined text-sm">add</span>
-                            Đăng sản phẩm mới
-                          </button>
-                        </div>
+                        {!isBatchStockMode ? (
+                          <div className="flex justify-between items-center mb-6">
+                            <h4 className="text-sm font-bold text-[#006c49] flex items-center gap-2">
+                              <span className="material-symbols-outlined text-base">list_alt</span>
+                              Danh sách sản phẩm
+                            </h4>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (currentUser?.sellerStatus === "blocked") {
+                                    alert("Cửa hàng của bạn đang bị khóa, không thể cập nhật kho!");
+                                  } else if (shopProducts.length === 0) {
+                                    alert("Cửa hàng của bạn chưa có sản phẩm nào để cập nhật kho!");
+                                  } else {
+                                    handleStartBatchStockMode();
+                                  }
+                                }}
+                                className="rounded-full border border-[#006c49] text-[#006c49] px-4 py-2 text-xs font-bold shadow-sm hover:bg-emerald-50 transition-all flex items-center gap-1"
+                              >
+                                <span className="material-symbols-outlined text-sm">edit_note</span>
+                                Cập nhật kho hàng loạt
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (currentUser?.sellerStatus === "blocked") {
+                                    alert("Cửa hàng của bạn đang bị khóa, không thể đăng bán sản phẩm mới!");
+                                  } else {
+                                    setIsAddProductOpen(true);
+                                  }
+                                }}
+                                className="rounded-full bg-[#006c49] px-4 py-2 text-xs font-bold text-white shadow-sm hover:opacity-90 transition-all flex items-center gap-1"
+                              >
+                                <span className="material-symbols-outlined text-sm">add</span>
+                                Đăng sản phẩm mới
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex justify-between items-center mb-6">
+                            <h4 className="text-sm font-bold text-[#006c49] flex items-center gap-2">
+                              <span className="material-symbols-outlined text-base">list_alt</span>
+                              Danh sách sản phẩm (Chế độ chỉnh sửa tồn kho)
+                            </h4>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={handleCancelBatchStockMode}
+                                disabled={isSavingBatchStocks}
+                                className="rounded-full border border-gray-300 text-gray-700 px-4 py-2 text-xs font-bold shadow-sm hover:bg-gray-50 transition-all flex items-center gap-1 disabled:opacity-50"
+                              >
+                                <span className="material-symbols-outlined text-sm">close</span>
+                                Hủy
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleSaveBatchStocks}
+                                disabled={isSavingBatchStocks}
+                                className="rounded-full bg-[#006c49] px-4 py-2 text-xs font-bold text-white shadow-sm hover:opacity-90 transition-all flex items-center gap-1 disabled:opacity-50"
+                              >
+                                {isSavingBatchStocks ? (
+                                  <>
+                                    <span className="h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full animate-spin mr-1" />
+                                    Đang lưu...
+                                  </>
+                                ) : (
+                                  <>
+                                    <span className="material-symbols-outlined text-sm">save</span>
+                                    Lưu tất cả
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          </div>
+                        )}
 
                         {shopProducts.length === 0 ? (
                           <div className="py-14 text-center text-[#3c4a42]/60">
@@ -4284,7 +4394,7 @@ function ProfileContent() {
                                   <th className="pb-3 pr-2">Tên sản phẩm</th>
                                   <th className="pb-3 pr-2">Danh mục</th>
                                   <th className="pb-3 pr-2">Giá bán</th>
-                                  <th className="pb-3 pr-2">Tồn kho</th>
+                                  <th className="pb-3 pr-2 w-[180px]">Tồn kho</th>
                                   <th className="pb-3 pr-2">Nguồn gốc</th>
                                   <th className="pb-3 pr-2">Trạng thái</th>
                                   <th className="pb-3 pr-2 text-right">Thao tác</th>
@@ -4316,7 +4426,29 @@ function ProfileContent() {
                                     <td className="py-3 pr-2 font-extrabold text-[#006c49]">
                                       {formatCurrency(p.price)}/{p.unit}
                                     </td>
-                                    <td className="py-3 pr-2 font-semibold">{p.stock} {p.unit}</td>
+                                    <td className="py-3 pr-2 font-semibold">
+                                      {isBatchStockMode ? (
+                                        <div className="flex items-center gap-1.5 max-w-[140px]">
+                                          <input
+                                            type="number"
+                                            min="0"
+                                            value={stockDrafts[p.id] !== undefined ? stockDrafts[p.id] : p.stock}
+                                            onChange={(e) => {
+                                              const val = parseInt(e.target.value, 10);
+                                              setStockDrafts((prev) => ({
+                                                ...prev,
+                                                [p.id]: isNaN(val) ? 0 : val,
+                                              }));
+                                            }}
+                                            className="w-20 rounded-lg border border-[#bbcabf]/30 px-2.5 py-1 text-xs font-semibold focus:border-[#006c49] focus:outline-none"
+                                            disabled={isSavingBatchStocks}
+                                          />
+                                          <span className="text-[#3c4a42]/60 font-semibold">{p.unit}</span>
+                                        </div>
+                                      ) : (
+                                        <span className="font-semibold">{p.stock} {p.unit}</span>
+                                      )}
+                                    </td>
                                     <td className="py-3 pr-2 font-semibold">{p.origin}</td>
                                     <td className="py-3 pr-2 font-semibold">
                                       {p.status === "pending" && (
@@ -4352,13 +4484,16 @@ function ProfileContent() {
                                       <Link
                                         href={`/products/${p.id}`}
                                         target="_blank"
-                                        className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-gray-50 text-gray-500 hover:bg-gray-100 transition-colors"
+                                        className={`inline-flex h-7 w-7 items-center justify-center rounded-lg bg-gray-50 text-gray-500 hover:bg-gray-100 transition-colors ${
+                                          isBatchStockMode ? "pointer-events-none opacity-40" : ""
+                                        }`}
                                         title="Xem chi tiết"
                                       >
                                         <span className="material-symbols-outlined text-[16px]">visibility</span>
                                       </Link>
                                       <button
                                         type="button"
+                                        disabled={isBatchStockMode || isSavingBatchStocks}
                                         onClick={() => {
                                           if (currentUser?.sellerStatus === "blocked") {
                                             alert("Cửa hàng của bạn đang bị khóa, không thể chỉnh sửa sản phẩm!");
@@ -4366,15 +4501,16 @@ function ProfileContent() {
                                             handleEditProduct(p);
                                           }
                                         }}
-                                        className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors"
+                                        className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                                         title="Chỉnh sửa"
                                       >
                                         <span className="material-symbols-outlined text-[16px]">edit</span>
                                       </button>
                                       <button
                                         type="button"
+                                        disabled={isBatchStockMode || isSavingBatchStocks}
                                         onClick={() => handleDeleteProduct(p.id)}
-                                        className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                                        className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                                         title="Xóa"
                                       >
                                         <span className="material-symbols-outlined text-[16px]">delete</span>

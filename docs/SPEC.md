@@ -87,6 +87,7 @@ Người tiêu dùng ngày càng lo ngại về an toàn thực phẩm, đặc b
 | F-30 | Tương tác đánh giá đa chiều | Hỗ trợ trao đổi qua lại (threaded messages) giữa người mua và người bán trực tiếp trên từng đánh giá | P1      | ✅ Done     |
 | F-31 | Quản lý danh sách user & Khóa/Mở khóa | Admin tìm kiếm/lọc user, xem chi tiết và Khóa/Mở khóa tài khoản kèm lý do (chặn đăng nhập qua Middleware) | P1      | ✅ Done     |
 | F-32 | Trò chuyện trực tiếp Buyer-Seller Realtime | Chat trực tiếp qua Firebase, danh sách & lịch sử trong trang profile, thông báo tin nhắn mới | P1      | ✅ Done     |
+| F-33 | Tồn kho hàng loạt | Cập nhật tồn kho (stock) hàng loạt qua bảng inline-edit ở Kênh bán hàng bằng Firestore writeBatch | P1      | ✅ Done     |
 
 
 > **Ghi chú cho team:** F-09 hiện đã có giao diện hoàn chỉnh theo Stitch HTML tại route `/contact`. Form liên hệ đang ở mức UI/UX MVP; nếu cần gửi dữ liệu thật, cần bổ sung API/Firebase handler ở Phase 2. Kênh bán hàng (F-11), Quản lý sản phẩm (F-12) và Trang chi tiết shop (F-14) hiện được lưu động tại `localStorage` phía client của từng người dùng để mô phỏng tính năng thực tế.
