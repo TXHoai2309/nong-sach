@@ -4,6 +4,22 @@ All notable changes to the **NôngSạch** project will be documented in this fi
 
 The format is based on **Keep a Changelog** and this project adheres to **Semantic Versioning**.
 
+## [0.8.6] - 2026-06-11
+
+### Admin quản lý người dùng (Admin User Management)
+
+### Added
+* **Tìm kiếm & Bộ lọc tài khoản**: Cho phép Admin tìm kiếm người dùng theo tên/email, lọc theo vai trò (Admin, Seller, Buyer) và trạng thái (Đang hoạt động, Bị khóa) trực tiếp từ ô điều khiển phía trên bảng.
+* **Chi tiết tài khoản**: Tích hợp modal xem chi tiết thông tin cá nhân của người dùng, bao gồm họ tên, giới tính, số điện thoại, ngày gia nhập, danh sách sổ địa chỉ nhận hàng và hồ sơ cửa hàng chi tiết (nếu là Người bán).
+* **Khóa/Mở khóa tài khoản với lý do**: Admin có thể khóa tài khoản vi phạm (yêu cầu nhập lý do chi tiết trong modal xác nhận). Mở khóa khôi phục tài khoản hoạt động bình thường.
+* **Tự động chặn người bán & sản phẩm**: Khi khóa tài khoản là Người bán, hệ thống tự động đổi trạng thái shop thành `blocked` và ẩn toàn bộ các sản phẩm của họ khỏi hệ thống. Khi mở khóa, tự động kích hoạt lại shop và sản phẩm tương ứng.
+* **Ghi nhận lịch sử hoạt động**: Mọi hành động khóa/mở khóa tài khoản đều được ghi lại tự động vào lịch sử hoạt động của Admin (`adminLogs`) hiển thị thời gian, tên admin, đối tượng bị ảnh hưởng và lý do chi tiết.
+
+### Changed
+* **Xác thực trạng thái Locked khi đăng nhập**: Cập nhật Auth Store (`useAuthStore`) để chặn đăng nhập ngay lập tức đối với tài khoản bị khóa trong cả 3 luồng đăng nhập (Demo Admin, Demo Buyer và đăng nhập chuẩn), trả về thông tin lý do khóa cụ thể từ Firestore.
+* **Middleware bảo mật ở Edge**: Cập nhật `src/middleware.ts` để kiểm tra cookie `user-locked`. Nếu tài khoản bị khóa, tự động xóa cookie phiên và chuyển hướng về trang đăng nhập `/login?error=locked`.
+* **Mở rộng bảo vệ Middleware**: Cấu hình cấu trúc so khớp của Middleware để bảo vệ thêm các tuyến đường `/profile` và `/checkout` bên cạnh `/admin`.
+
 ## [0.8.5] - 2026-06-11
 
 ### Tương tác đánh giá đa chiều (Threaded Review Interactions)
