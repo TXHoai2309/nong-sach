@@ -75,27 +75,53 @@ export const useChatStore = create<ChatState>((set, get) => ({
     return newRoom;
   },
 
-  subscribeToChatRooms: (userId, role) => {
+  subscribeToChatRooms: (userId) => {
     set({ isRoomsLoading: true });
-    // If admin, we can query rooms. But usually chats are between buyers and sellers.
-    const field = role === "seller" ? "sellerId" : "buyerId";
-    const q = query(collection(db, "chats"), where(field, "==", userId));
+    const qBuyer = query(collection(db, "chats"), where("buyerId", "==", userId));
+    const qSeller = query(collection(db, "chats"), where("sellerId", "==", userId));
 
-    return onSnapshot(
-      q,
+    let buyerRooms: ChatRoom[] = [];
+    let sellerRooms: ChatRoom[] = [];
+
+    const updateRooms = () => {
+      const allRooms = [...buyerRooms, ...sellerRooms];
+      const uniqueRooms = allRooms.filter(
+        (room, index, self) => self.findIndex((r) => r.id === room.id) === index
+      );
+      uniqueRooms.sort(
+        (a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()
+      );
+      set({ rooms: uniqueRooms, isRoomsLoading: false });
+    };
+
+    const unsubBuyer = onSnapshot(
+      qBuyer,
       (snapshot) => {
-        const roomsList = snapshot.docs.map((docSnap) => docSnap.data() as ChatRoom);
-        // Sort rooms client-side by lastMessageAt descending
-        roomsList.sort(
-          (a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()
-        );
-        set({ rooms: roomsList, isRoomsLoading: false });
+        buyerRooms = snapshot.docs.map((docSnap) => docSnap.data() as ChatRoom);
+        updateRooms();
       },
       (error) => {
-        console.error("Error subscribing to chat rooms:", error);
+        console.error("Error subscribing to buyer chat rooms:", error);
         set({ isRoomsLoading: false });
       }
     );
+
+    const unsubSeller = onSnapshot(
+      qSeller,
+      (snapshot) => {
+        sellerRooms = snapshot.docs.map((docSnap) => docSnap.data() as ChatRoom);
+        updateRooms();
+      },
+      (error) => {
+        console.error("Error subscribing to seller chat rooms:", error);
+        set({ isRoomsLoading: false });
+      }
+    );
+
+    return () => {
+      unsubBuyer();
+      unsubSeller();
+    };
   },
 
   subscribeToMessages: (roomId) => {
