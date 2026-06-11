@@ -22,7 +22,13 @@ export default function LoginPage() {
   const [mounted,      setMounted]      = useState(false);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setMounted(true), 0);
+    const timer = window.setTimeout(() => {
+      setMounted(true);
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("error") === "locked") {
+        setFormError("Tài khoản của bạn đã bị khóa do vi phạm chính sách của hệ thống. Vui lòng đăng nhập để xem lý do chi tiết hoặc liên hệ quản trị viên.");
+      }
+    }, 0);
     if (currentUser) {
       const params = new URLSearchParams(window.location.search);
       const redirectTo = params.get("redirect") || "/";

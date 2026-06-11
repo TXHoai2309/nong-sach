@@ -3,6 +3,7 @@
 import { use, useEffect, useState, useMemo, type FormEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   AlertCircle, Search, MessageSquare, Plus, Check, MoreHorizontal,
   Info, ShoppingCart, Star, MapPin, X, Pencil, Upload,
@@ -73,6 +74,7 @@ function buildShopFromUser(
 // ═══════════════════════════════════════════════════════════════════════════
 export default function ShopDetailPage({ params }: PageProps) {
   const { id } = use(params);
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>("products");
   const [isFollowed, setIsFollowed] = useState(false);
@@ -431,7 +433,18 @@ export default function ShopDetailPage({ params }: PageProps) {
     }
   };
 
-  const handleMessageClick = () => alert(`Chức năng nhắn tin với "${shop?.name}" đang phát triển ở Phase 2!`);
+  const handleMessageClick = () => {
+    if (!currentUser) {
+      alert("Vui lòng đăng nhập để nhắn tin!");
+      router.push(`/login?redirect=${encodeURIComponent(`/shop/${shop?.id}`)}`);
+      return;
+    }
+    if (currentUser.id === shop?.id) {
+      alert("Bạn không thể tự nhắn tin cho chính mình!");
+      return;
+    }
+    router.push(`/profile?tab=chats&sellerId=${shop?.id}`);
+  };
   const handleAddToCart = (product: Product) => {
     if (!currentUser) { alert("Vui lòng đăng nhập để thêm vào giỏ hàng!"); return; }
     const productWithShop = {

@@ -1,9 +1,9 @@
 # 🛡️ VIBE PROCESS VERIFICATION
 
-> **Tài liệu chứng minh quy trình phát triển và kiểm định chất lượng sản phẩm (Plan — Doc — Build — Test) trước khi xuất xưởng (Ship) phiên bản NôngSạch MVP v0.8.3.**
+> **Tài liệu chứng minh quy trình phát triển và kiểm định chất lượng sản phẩm (Plan — Doc — Build — Test) trước khi xuất xưởng (Ship) phiên bản NôngSạch MVP v0.8.7.**
 > 
 > * **Dự án**: NôngSạch — Nền tảng giao dịch nông sản sạch
-> * **Phiên bản**: v0.8.3
+> * **Phiên bản**: v0.8.7
 > * **Ngày xác nhận**: 11/06/2026
 > * **Quy trình áp dụng**: Vibe Coding Standard (Plan ➔ Doc ➔ Build ➔ Test)
 > * **Trạng thái**: ✅ **ĐÃ THÔNG QUA (PASSED) & SẴN SÀNG SHIP**
@@ -48,6 +48,8 @@ Trước khi thực hiện bất kỳ thay đổi nào trong mã nguồn, hệ t
   - **Hệ thống Yêu cầu Hoàn trả Đơn hàng (Sprint 5.9)**: Cho phép người mua gửi yêu cầu hoàn trả kèm lý do và ảnh minh chứng cho đơn hàng `delivered`. Tự động lưu vào collection `refundRequests` và thông báo cho Seller/Admin.
   - **Tích hợp Voucher tại Checkout & Lịch sử sử dụng (Sprint 6.0)**: Cho phép áp dụng voucher trực tiếp tại trang checkout, tính toán chiết khấu và khấu trừ trực tiếp vào tổng tiền của đơn hàng. Thiết kế cơ chế validation server-side với 4 lỗi (mã không tồn tại, mã hết hạn, mã hết lượt, mã đã dừng hoạt động). Tự động cập nhật `usedCount` +1 của voucher và ghi nhận lịch sử dùng voucher vào collection `voucherHistories` trong Firestore cho cả phương thức COD/Bank và thanh toán online VNPay.
   - **Báo cáo doanh thu seller (Sprint 6.1)**: Xây dựng tab báo cáo trực quan trong Kênh người bán. Vẽ biểu đồ xu hướng SVG Line/Bar có hover tooltip, lọc thời gian 7/30/90 ngày. Thống kê 4 KPI kinh doanh thực tế. Xếp hạng top 5 nông sản bán chạy. Tích hợp xuất file CSV UTF-8 BOM chuẩn tiếng Việt mở được bằng Excel.
+  - **Admin quản lý User & Khóa/Mở khóa (Sprint 6.2)**: Quản lý danh sách người dùng toàn diện tại `/admin` với tìm kiếm và bộ lọc vai trò/trạng thái. Hộp thoại xem chi tiết thông tin và sổ địa chỉ. Chức năng Khóa/Mở khóa tài khoản kèm lý do vi phạm. Tích hợp kiểm tra tài khoản bị khóa trong Zustand Auth Store và chặn truy cập bằng Next.js Edge Middleware (cookie `user-locked` -> redirect về `/login?error=locked`). Xử lý khóa/mở khóa dây chuyền đối với gian hàng và sản phẩm tự đăng của Người bán.
+  - **Trò chuyện trực tiếp Realtime (Sprint 6.3)**: Tích hợp nút "Nhắn tin" trên trang chi tiết Shop và banner sản phẩm. Giao diện trò chuyện split-pane 2 cột (danh sách phòng chat và khung hội thoại bong bóng) trong Trang cá nhân. Zustand `useChatStore` quản lý và đồng bộ tin nhắn/phòng chat realtime qua Firestore (`chats` collection và `messages` subcollection). Kích hoạt thông báo chuông loại `new_message` khi có tin nhắn mới.
 
 ---
 
@@ -56,7 +58,7 @@ Trước khi thực hiện bất kỳ thay đổi nào trong mã nguồn, hệ t
 Tất cả các thay đổi về logic, cấu trúc dữ liệu và giao diện đều được cập nhật vào hệ thống tài liệu chính thức của dự án:
 
 1. **Cập nhật Đặc tả tính năng ([SPEC.md](file:///d:/Download/BaiHoia/nong-sach/docs/SPEC.md))**:
-   - Ghi nhận đầy đủ mô tả chi tiết, tiêu chí nghiệm thu (Acceptance Criteria) cho các tính năng mới ở **Sprint 3.4 đến 6.1** (bao gồm Trang cá nhân, API Địa chỉ, Đổi mật khẩu, Mua lại đơn hàng, Đăng ký Người bán, Dashboard, CRUD Sản phẩm, Banner thông tin Shop, Trang chi tiết Shop, Admin Dashboard, Quy trình duyệt/từ chối/gửi lại hồ sơ người bán, Quy trình phê duyệt sản phẩm tự đăng, Tích hợp Voucher, và Báo cáo doanh thu Seller).
+   - Ghi nhận đầy đủ mô tả chi tiết, tiêu chí nghiệm thu (Acceptance Criteria) cho các tính năng mới ở **Sprint 3.4 đến 6.3** (bao gồm Trang cá nhân, API Địa chỉ, Đổi mật khẩu, Mua lại đơn hàng, Đăng ký Người bán, Dashboard, CRUD Sản phẩm, Banner thông tin Shop, Trang chi tiết Shop, Admin Dashboard, Quy trình duyệt/từ chối/gửi lại hồ sơ người bán, Quy trình phê duyệt sản phẩm tự đăng, Tích hợp Voucher, Báo cáo doanh thu Seller, Admin quản lý User & Khóa/Mở khóa tài khoản, và Trò chuyện trực tiếp realtime).
 2. **Cập nhật Kiến trúc hệ thống ([ARCHITECTURE.md](file:///d:/Download/BaiHoia/nong-sach/docs/ARCHITECTURE.md))**:
    - Làm rõ cấu trúc các store trạng thái Zustand (`cartStore` và `authStore`), cơ chế lọc ảnh `partialize` để tránh tràn bộ nhớ, giải thuật nén ảnh Hybrid, cách thức xử lý luồng dữ liệu khi người bán quản lý sản phẩm CRUD, luồng điều hướng/phân quyền cửa hàng và luồng phê duyệt/từ chối chất lượng từ Admin.
 3. **Cập nhật Lịch sử thay đổi ([CHANGELOG.md](file:///d:/Download/BaiHoia/nong-sach/docs/CHANGELOG.md))**:
@@ -206,12 +208,27 @@ Các ảnh chụp màn hình và video kiểm thử được lưu trữ trực t
 | **TC-62: Ghi nhận usedCount & Lịch sử sử dụng** | Tiến hành đặt hàng thành công (COD hoặc VNPay) có áp dụng voucher `VALID10`. | Trường `usedCount` của voucher tăng thêm 1, đồng thời 1 record mới được lưu vào collection `voucherHistories`. | ✅ Pass |
 | **TC-63: Báo cáo doanh thu seller** | Vào Kênh người bán -> Báo cáo doanh thu, chọn filter 7/30/90 ngày, đổi kiểu biểu đồ Line/Bar, hover xem tooltip, xuất CSV. | Biểu đồ SVG và các chỉ số thống kê, top 5 bán chạy cập nhật chính xác; file CSV tải xuống chứa định dạng UTF-8 BOM hiển thị chuẩn tiếng Việt trong Excel. | ✅ Pass |
 | **TC-64: Tương tác đánh giá đa chiều** | Người bán phản hồi đánh giá, sau đó người mua phản hồi lại tin nhắn của người bán. | Luồng trao đổi hiển thị dưới dạng bong bóng chat, đồng bộ realtime trên Firestore và hiển thị đầy đủ ở cả Profile, Thông báo và Trang chi tiết sản phẩm. | ✅ Pass |
+| **TC-65: Quản lý danh sách User** | Truy cập `/admin`, gõ tìm kiếm theo tên/email hoặc lọc theo vai trò (Seller/Buyer/Admin) và trạng thái (Đang hoạt động/Bị khóa). | Bảng danh sách người dùng được lọc chính xác và phản hồi tức thời. | ✅ Pass |
+| **TC-66: Xem chi tiết thông tin User** | Nhấn "Chi tiết" ở một tài khoản người dùng bất kỳ tại bảng danh sách. | Modal hiển thị đầy đủ thông tin cá nhân, ngày gia nhập, vai trò, trạng thái khóa, và toàn bộ Sổ địa chỉ giao hàng của người dùng. | ✅ Pass |
+| **TC-67: Khóa tài khoản kèm lý do** | Click nút "Khóa" ở một tài khoản hoạt động, nhập lý do khóa trong modal xác nhận. | Tài khoản được đánh dấu `isLocked = true` trong Firestore, shop đổi thành `blocked` và các sản phẩm của shop đổi thành `rejected` (nếu là Seller). | ✅ Pass |
+| **TC-68: Middleware chặn người dùng bị khóa** | Thử đăng nhập bằng tài khoản bị khóa. | Auth Store chặn đăng nhập, Middleware Edge xóa cookie và redirect ngay về `/login?error=locked` kèm hiển thị thông báo lỗi. | ✅ Pass |
+| **TC-69: Mở khóa tài khoản & Phục hồi** | Nhấn nút "Mở khóa" ở tài khoản đang bị khóa, xác nhận hành động. | Tài khoản khôi phục hoạt động bình thường, shop và sản phẩm liên quan của Seller tự động kích hoạt lại, ghi log audit đầy đủ. | ✅ Pass |
+| **TC-70: Khởi tạo phòng chat từ Storefront** | Nhấp vào nút "Nhắn tin" tại trang chi tiết Shop hoặc trang chi tiết sản phẩm (khi đã đăng nhập). | Chuyển hướng thành công về `/profile?tab=chats` và tự động tìm/tạo phòng chat duy nhất với cửa hàng đó. | ✅ Pass |
+| **TC-71: Nhắn tin Realtime** | Đăng nhập Buyer gửi tin nhắn, đồng thời mở tab Trò chuyện ở tài khoản Seller. | Tin nhắn hiển thị tức thời ở cả 2 bên mà không cần tải lại trang. | ✅ Pass |
+| **TC-72: Trạng thái unread & chấm xanh** | Gửi tin nhắn từ tài khoản Buyer sang Seller khi Seller đang tắt tab chat. | Phòng chat bên phía Seller hiển thị tin nhắn mới in đậm kèm chấm xanh thông báo. | ✅ Pass |
+| **TC-73: Thông báo tin nhắn mới & điều hướng** | Gửi tin nhắn sang tài khoản khác khi tài khoản đó đang ở trang chủ/sản phẩm. | Hiển thị thông báo chuông loại `new_message`, click vào thông báo sẽ tự động nhảy về tab Trò chuyện và mở đúng phòng chat đó. | ✅ Pass |
+| **TC-74: Kích hoạt chế độ tồn kho hàng loạt** | Đăng nhập tài khoản Seller, chọn tab Sản phẩm của tôi, click "Cập nhật kho hàng loạt". | Bảng danh sách sản phẩm chuyển sang chế độ chỉnh sửa: cột tồn kho hiển thị ô nhập số; các nút Đăng sản phẩm mới, Xem, Sửa, Xóa bị vô hiệu hóa; nút Hủy và Lưu tất cả hiển thị rõ ràng. | ✅ Pass |
+| **TC-75: Cập nhật tồn kho hàng loạt và Lưu** | Sửa đổi giá trị tồn kho của các sản phẩm, click "Lưu tất cả". | Ẩn chế độ sửa, hiển thị thông báo lưu thành công, số lượng tồn kho mới được ghi nhận vào Firestore qua writeBatch và cập nhật tức thì trên giao diện cửa hàng và public store. | ✅ Pass |
+| **TC-76: Hủy cập nhật tồn kho hàng loạt** | Trong chế độ sửa, thay đổi giá trị tồn kho, click "Hủy". | Bảng thoát khỏi chế độ sửa, khôi phục lại các giá trị cũ của sản phẩm, không ghi nhận thay đổi nào lên Firestore. | ✅ Pass |
+| **TC-77: Ẩn gợi ý khi chưa đăng nhập** | Truy cập trang chủ khi chưa đăng nhập tài khoản. | Section "Dành cho bạn" hoàn toàn ẩn đi trên trang chủ. | ✅ Pass |
+| **TC-78: Gợi ý mặc định khi đăng nhập mới (chưa mua hàng)** | Đăng nhập tài khoản mới chưa có đơn hàng, truy cập trang chủ. | Section "Dành cho bạn" hiển thị đầy đủ 8 sản phẩm hoạt động bình thường (mặc định lấy từ danh sách sản phẩm). | ✅ Pass |
+| **TC-79: Gợi ý theo danh mục đã mua** | Đăng nhập tài khoản có đơn hàng, truy cập trang chủ. | Section "Dành cho bạn" ưu tiên các sản phẩm thuộc danh mục đã đặt mua nhiều nhất ở các vị trí đầu tiên để khuyến khích khám phá và mua lại. | ✅ Pass |
 
 ---
 
 ## 5. Kết luận nghiệm thu
 
-Mọi hoạt động phát triển của phiên bản MVP v0.7.0 đều tuân thủ chặt chẽ quy trình **PLAN - DOC - BUILD - TEST**. Các tệp tin tài liệu được đồng bộ hóa hoàn toàn, mã nguồn được build thành công không lỗi, và các tính năng tương tác được kiểm thử trực quan trên trình duyệt trước khi giao.
+Mọi hoạt động phát triển của phiên bản MVP v0.8.7 đều tuân thủ chặt chẽ quy trình **PLAN - DOC - BUILD - TEST**. Các tệp tin tài liệu được đồng bộ hóa hoàn toàn, mã nguồn được build thành công không lỗi, và các tính năng tương tác được kiểm thử trực quan trên trình duyệt trước khi giao.
 
 Dự án đã sẵn sàng triển khai chính thức!
 

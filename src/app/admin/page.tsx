@@ -21,7 +21,7 @@ interface AdminLog {
   adminName: string;
   adminEmail: string;
   action: "ignore" | "warn" | "block" | "delete" | "unblock";
-  targetType: "product" | "shop";
+  targetType: "product" | "shop" | "user";
   targetId: string;
   targetName: string;
   reportId: string;
@@ -33,6 +33,15 @@ export default function AdminDashboardPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  // User Management State
+  const [userSearchQuery, setUserSearchQuery] = useState("");
+  const [userRoleFilter, setUserRoleFilter] = useState("all");
+  const [userStatusFilter, setUserStatusFilter] = useState("all");
+  const [selectedUserDetail, setSelectedUserDetail] = useState<User | null>(null);
+  const [userToLock, setUserToLock] = useState<User | null>(null);
+  const [lockReason, setLockReason] = useState("");
+  const [isLockModalOpen, setIsLockModalOpen] = useState(false);
 
   const [selectedSeller, setSelectedSeller] = useState<User | null>(null);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
@@ -271,7 +280,7 @@ export default function AdminDashboardPage() {
 
   const logAdminAction = async (
     action: "ignore" | "warn" | "block" | "delete" | "unblock",
-    targetType: "product" | "shop",
+    targetType: "product" | "shop" | "user",
     targetId: string,
     targetName: string,
     reportId: string,
@@ -333,6 +342,92 @@ export default function AdminDashboardPage() {
       await fetchData();
     } catch (error) {
       console.error("Error unblocking seller:", error);
+      alert("Thao tác thất bại!");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleLockUser = async () => {
+    if (!userToLock) return;
+    setActionLoading(userToLock.id + "-lock");
+    try {
+      const userRef = doc(db, "users", userToLock.id);
+      await updateDoc(userRef, {
+        isLocked: true,
+        lockReason: lockReason.trim() || "Vi phạm điều khoản dịch vụ",
+      });
+
+      // If user is a seller, block their shop and products as well
+      if (userToLock.role === "seller") {
+        await updateDoc(userRef, {
+          sellerStatus: "blocked"
+        });
+        const sellerProducts = products.filter((p) => p.sellerId === userToLock.id);
+        for (const prod of sellerProducts) {
+          const prodRef = doc(db, "products", prod.id);
+          await updateDoc(prodRef, { status: "rejected" });
+        }
+      }
+
+      await logAdminAction(
+        "block",
+        userToLock.role === "seller" ? "shop" : "user",
+        userToLock.id,
+        userToLock.role === "seller" ? (userToLock.sellerInfo?.shopName || userToLock.name) : userToLock.name,
+        "SYSTEM",
+        `Khóa tài khoản: ${lockReason.trim() || "Vi phạm điều khoản dịch vụ"}`
+      );
+
+      setIsLockModalOpen(false);
+      setUserToLock(null);
+      setLockReason("");
+      alert("Đã khóa tài khoản thành công!");
+      await fetchData();
+    } catch (error) {
+      console.error("Error locking user:", error);
+      alert("Thao tác thất bại!");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleUnlockUser = async (userId: string) => {
+    const userObj = users.find((u) => u.id === userId);
+    if (!userObj) return;
+
+    setActionLoading(userId + "-unlock");
+    try {
+      const userRef = doc(db, "users", userId);
+      const updateData: any = {
+        isLocked: false,
+        lockReason: "",
+      };
+
+      if (userObj.role === "seller" && userObj.sellerStatus === "blocked") {
+        updateData.sellerStatus = "approved";
+        const sellerProducts = products.filter((p) => p.sellerId === userId);
+        for (const prod of sellerProducts) {
+          const prodRef = doc(db, "products", prod.id);
+          await updateDoc(prodRef, { status: "active" });
+        }
+      }
+
+      await updateDoc(userRef, updateData);
+
+      await logAdminAction(
+        "unblock",
+        userObj.role === "seller" ? "shop" : "user",
+        userId,
+        userObj.role === "seller" ? (userObj.sellerInfo?.shopName || userObj.name) : userObj.name,
+        "SYSTEM",
+        "Mở khóa tài khoản người dùng"
+      );
+
+      alert("Đã mở khóa tài khoản thành công!");
+      await fetchData();
+    } catch (error) {
+      console.error("Error unlocking user:", error);
       alert("Thao tác thất bại!");
     } finally {
       setActionLoading(null);
@@ -597,6 +692,24 @@ export default function AdminDashboardPage() {
     const hoursSince = (Date.now() - new Date(r.createdAt).getTime()) / (1000 * 60 * 60);
     return hoursSince > 48;
   }).length;
+
+  const filteredUsers = users.filter((u) => {
+    const matchesSearch =
+      (u.name || "").toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+      (u.email || "").toLowerCase().includes(userSearchQuery.toLowerCase());
+    
+    const matchesRole =
+      userRoleFilter === "all" ||
+      (userRoleFilter === "buyer" && (!u.role || u.role === "buyer")) ||
+      u.role === userRoleFilter;
+
+    const matchesStatus =
+      userStatusFilter === "all" ||
+      (userStatusFilter === "locked" && u.isLocked) ||
+      (userStatusFilter === "active" && !u.isLocked);
+
+    return matchesSearch && matchesRole && matchesStatus;
+  });
 
   return (
     <>
@@ -867,13 +980,50 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* User Management */}
-        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col">
           <div className="mb-4">
             <h3 className="text-lg font-bold text-slate-800">Danh sách Người dùng</h3>
             <p className="text-slate-500 text-xs mt-0.5">Danh sách các tài khoản và phân quyền tương ứng trên hệ thống.</p>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Search & Filter Controls */}
+          <div className="flex flex-col sm:flex-row gap-3 mb-6">
+            <div className="flex-grow relative">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
+              <input
+                type="text"
+                placeholder="Tìm kiếm theo email hoặc tên..."
+                value={userSearchQuery}
+                onChange={(e) => setUserSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#006c49]/20 focus:border-[#006c49]"
+              />
+            </div>
+            <div className="w-full sm:w-40">
+              <select
+                value={userRoleFilter}
+                onChange={(e) => setUserRoleFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#006c49]/20 focus:border-[#006c49] text-slate-700 bg-white"
+              >
+                <option value="all">Tất cả vai trò</option>
+                <option value="admin">Quản trị (Admin)</option>
+                <option value="seller">Người bán (Seller)</option>
+                <option value="buyer">Người mua (Buyer)</option>
+              </select>
+            </div>
+            <div className="w-full sm:w-40">
+              <select
+                value={userStatusFilter}
+                onChange={(e) => setUserStatusFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#006c49]/20 focus:border-[#006c49] text-slate-700 bg-white"
+              >
+                <option value="all">Tất cả trạng thái</option>
+                <option value="active">Đang hoạt động</option>
+                <option value="locked">Bị khóa</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto flex-grow max-h-[480px]">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-100 text-slate-400 text-xs uppercase tracking-wider font-bold">
@@ -884,74 +1034,123 @@ export default function AdminDashboardPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
-                {users.map((user) => (
-                  <tr key={user.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="py-3">
-                      <div className="font-semibold text-slate-800">{user.name}</div>
-                      <div className="text-slate-400 text-xs">{user.email}</div>
-                    </td>
-                    <td className="py-3">
-                      <div className="flex flex-col gap-1 items-start">
-                        <span
-                          className={[
-                            "px-2 py-0.5 rounded-full text-xs font-bold",
-                            user.role === "admin"
-                              ? "bg-purple-100 text-purple-800"
-                              : user.role === "seller"
-                              ? "bg-emerald-100 text-emerald-800"
-                              : "bg-blue-100 text-blue-800",
-                          ].join(" ")}
-                        >
-                          {user.role || "buyer"}
-                        </span>
-                        {user.role === "seller" && user.sellerStatus === "blocked" && (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">
-                            Đang bị khóa
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="py-3 text-slate-500 text-xs">{user.memberSince || "N/A"}</td>
-                    <td className="py-3 text-right font-sans">
-                      {user.email !== "admin@nongsach.vn" ? (
-                        <div className="flex justify-end gap-1.5 items-center">
-                          {user.role === "seller" ? (
-                            <>
-                              {user.sellerStatus === "blocked" ? (
-                                <button
-                                  onClick={() => handleUnblockSeller(user.id)}
-                                  disabled={actionLoading === user.id + "-unblock"}
-                                  className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-[11px] font-bold border-none cursor-pointer transition-all flex items-center gap-0.5"
-                                >
-                                  <span className="material-symbols-outlined text-[12px]">lock_open</span>
-                                  Mở khóa Shop
-                                </button>
-                              ) : (
-                                <button
-                                  onClick={() => handleChangeRole(user.id, "buyer")}
-                                  disabled={actionLoading === user.id + "-role"}
-                                  className="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-md text-[11px] font-bold border border-blue-100 cursor-pointer transition-all"
-                                >
-                                  Bỏ Shop (Buyer)
-                                </button>
-                              )}
-                            </>
-                          ) : (
-                            <button
-                              onClick={() => handleChangeRole(user.id, "seller")}
-                              disabled={actionLoading === user.id + "-role"}
-                              className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-md text-[11px] font-bold border border-emerald-100 cursor-pointer transition-all"
-                            >
-                              Lên Shop (Seller)
-                            </button>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-slate-400 text-xs italic">Không được chỉnh sửa</span>
-                      )}
+                {filteredUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="py-8 text-center text-slate-400 font-semibold italic">
+                      Không tìm thấy người dùng phù hợp.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredUsers.map((user) => (
+                    <tr key={user.id} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="py-3">
+                        <div className="font-semibold text-slate-800">{user.name}</div>
+                        <div className="text-slate-400 text-xs">{user.email}</div>
+                      </td>
+                      <td className="py-3">
+                        <div className="flex flex-col gap-1 items-start">
+                          <span
+                            className={[
+                              "px-2 py-0.5 rounded-full text-xs font-bold",
+                              user.role === "admin"
+                                ? "bg-purple-100 text-purple-800"
+                                : user.role === "seller"
+                                ? "bg-emerald-100 text-emerald-800"
+                                : "bg-blue-100 text-blue-800",
+                            ].join(" ")}
+                          >
+                            {user.role || "buyer"}
+                          </span>
+                          {user.isLocked && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 flex items-center gap-0.5">
+                              <span className="material-symbols-outlined text-[10px]">lock</span>
+                              Tài khoản bị khóa
+                            </span>
+                          )}
+                          {user.role === "seller" && user.sellerStatus === "blocked" && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 flex items-center gap-0.5">
+                              <span className="material-symbols-outlined text-[10px]">store</span>
+                              Shop bị khóa
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-3 text-slate-500 text-xs">{user.memberSince || "N/A"}</td>
+                      <td className="py-3 text-right font-sans">
+                        {user.email !== "admin@nongsach.vn" ? (
+                          <div className="flex justify-end gap-1.5 items-center flex-wrap">
+                            <button
+                              onClick={() => setSelectedUserDetail(user)}
+                              className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-[11px] font-bold border-none cursor-pointer transition-all flex items-center gap-0.5"
+                            >
+                              <span className="material-symbols-outlined text-[12px]">visibility</span>
+                              Chi tiết
+                            </button>
+                            
+                            {user.isLocked ? (
+                              <button
+                                onClick={() => {
+                                  console.log("Click Mở khóa button, user ID:", user.id);
+                                  handleUnlockUser(user.id);
+                                }}
+                                disabled={actionLoading === user.id + "-unlock"}
+                                className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-[11px] font-bold border-none cursor-pointer transition-all flex items-center gap-0.5"
+                              >
+                                <span className="material-symbols-outlined text-[12px]">lock_open</span>
+                                Mở khóa
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  console.log("Click Khóa button, user object:", user);
+                                  setUserToLock(user);
+                                  setIsLockModalOpen(true);
+                                }}
+                                disabled={actionLoading === user.id + "-lock"}
+                                className="px-2 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-md text-[11px] font-bold border-none cursor-pointer transition-all flex items-center gap-0.5"
+                              >
+                                <span className="material-symbols-outlined text-[12px]">lock</span>
+                                Khóa
+                              </button>
+                            )}
+
+                            {user.role === "seller" ? (
+                              <>
+                                {user.sellerStatus === "blocked" ? (
+                                  <button
+                                    onClick={() => handleUnblockSeller(user.id)}
+                                    disabled={actionLoading === user.id + "-unblock"}
+                                    className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-md text-[11px] font-bold border border-emerald-100 cursor-pointer transition-all flex items-center gap-0.5"
+                                  >
+                                    Mở Shop
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => handleChangeRole(user.id, "buyer")}
+                                    disabled={actionLoading === user.id + "-role"}
+                                    className="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-md text-[11px] font-bold border border-blue-100 cursor-pointer transition-all"
+                                  >
+                                    Bỏ Shop
+                                  </button>
+                                )}
+                              </>
+                            ) : (
+                              <button
+                                onClick={() => handleChangeRole(user.id, "seller")}
+                                disabled={actionLoading === user.id + "-role"}
+                                className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-md text-[11px] font-bold border border-emerald-100 cursor-pointer transition-all"
+                              >
+                                Lên Shop
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 text-xs italic">Không được chỉnh sửa</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -1010,7 +1209,7 @@ export default function AdminDashboardPage() {
                     </td>
                     <td className="py-2.5">
                       <div className="font-bold text-slate-700">
-                        {log.targetType === "product" ? "Sản phẩm" : "Cửa hàng"}
+                        {log.targetType === "product" ? "Sản phẩm" : log.targetType === "user" ? "Người dùng" : "Cửa hàng"}
                       </div>
                       <div className="text-slate-500 text-[10px]">{log.targetName} (ID: {log.targetId})</div>
                     </td>
@@ -1914,6 +2113,293 @@ export default function AdminDashboardPage() {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* User Details Modal */}
+      {selectedUserDetail && (
+        <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,width:'100vw',height:'100vh',zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',backgroundColor:'rgba(0,0,0,0.6)',padding:'1rem'}}>
+          <div style={{width:'100%',maxWidth:'768px',backgroundColor:'white',borderRadius:'1.5rem',boxShadow:'0 25px 50px -12px rgba(0,0,0,0.25)',display:'flex',flexDirection:'column',maxHeight:'90vh',overflow:'hidden',border:'1px solid #e2e8f0'}}>
+            {/* Modal Header */}
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 font-sans">
+              <div>
+                <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-emerald-600">person</span>
+                  Chi tiết tài khoản người dùng
+                </h3>
+                <p className="text-slate-500 text-xs mt-0.5">Thông tin cá nhân, địa chỉ và hoạt động của người dùng.</p>
+              </div>
+              <button
+                onClick={() => setSelectedUserDetail(null)}
+                className="h-8 w-8 rounded-full hover:bg-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-all border-none cursor-pointer"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 overflow-y-auto space-y-8 flex-1 font-sans">
+              {/* Account Status and Role */}
+              <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                <div className="flex items-center gap-3">
+                  <div className="h-12 w-12 rounded-full bg-emerald-100 text-[#006c49] flex items-center justify-center font-bold text-lg">
+                    {selectedUserDetail.name ? selectedUserDetail.name.charAt(0).toUpperCase() : "U"}
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-800 text-base">{selectedUserDetail.name}</h4>
+                    <p className="text-slate-500 text-xs">{selectedUserDetail.email}</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                    selectedUserDetail.role === "admin"
+                      ? "bg-purple-100 text-purple-800"
+                      : selectedUserDetail.role === "seller"
+                      ? "bg-emerald-100 text-emerald-800"
+                      : "bg-blue-100 text-blue-800"
+                  }`}>
+                    {selectedUserDetail.role === "admin" ? "Quản trị viên" : selectedUserDetail.role === "seller" ? "Người bán" : "Người mua"}
+                  </span>
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                    selectedUserDetail.isLocked ? "bg-rose-100 text-rose-800" : "bg-emerald-100 text-emerald-800"
+                  }`}>
+                    {selectedUserDetail.isLocked ? "Đã khóa" : "Hoạt động"}
+                  </span>
+                </div>
+              </div>
+
+              {selectedUserDetail.isLocked && (
+                <div className="bg-rose-50 border border-rose-100 rounded-2xl p-4 text-xs">
+                  <div className="flex gap-2 text-rose-800 font-bold mb-1 items-center">
+                    <span className="material-symbols-outlined text-sm">info</span>
+                    Lý do khóa tài khoản
+                  </div>
+                  <p className="text-rose-700 font-medium italic">&quot;{selectedUserDetail.lockReason || "Không có lý do cụ thể"}&quot;</p>
+                </div>
+              )}
+
+              {/* Personal Info */}
+              <div className="space-y-4">
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Thông tin cá nhân</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <p className="flex justify-between border-b border-slate-100 pb-1.5">
+                    <span className="text-slate-500">Giới tính:</span>
+                    <span className="font-semibold text-slate-800">{selectedUserDetail.gender || "Chưa cập nhật"}</span>
+                  </p>
+                  <p className="flex justify-between border-b border-slate-100 pb-1.5">
+                    <span className="text-slate-500">Ngày sinh:</span>
+                    <span className="font-semibold text-slate-800">{selectedUserDetail.dob || "Chưa cập nhật"}</span>
+                  </p>
+                  <p className="flex justify-between border-b border-slate-100 pb-1.5">
+                    <span className="text-slate-500">Số điện thoại:</span>
+                    <span className="font-semibold text-slate-800">{selectedUserDetail.phone || "Chưa cập nhật"}</span>
+                  </p>
+                  <p className="flex justify-between border-b border-slate-100 pb-1.5">
+                    <span className="text-slate-500">Ngày gia nhập:</span>
+                    <span className="font-semibold text-slate-800">{selectedUserDetail.memberSince || "N/A"}</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Shipping Addresses */}
+              <div className="space-y-4">
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Sổ địa chỉ ({selectedUserDetail.addresses?.length || 0})</h4>
+                {selectedUserDetail.addresses && selectedUserDetail.addresses.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {selectedUserDetail.addresses.map((addr) => (
+                      <div key={addr.id} className={`p-4 rounded-xl border text-xs space-y-1.5 ${addr.isDefault ? 'border-[#006c49] bg-emerald-50/20' : 'border-slate-200 bg-white'}`}>
+                        <div className="flex justify-between items-center">
+                          <span className="font-bold text-slate-800">{addr.fullName}</span>
+                          {addr.isDefault && (
+                            <span className="px-1.5 py-0.5 rounded bg-[#006c49] text-white text-[9px] font-bold">Mặc định</span>
+                          )}
+                        </div>
+                        <p className="text-slate-500 font-medium">{addr.phone}</p>
+                        <p className="text-slate-600 leading-normal">{addr.streetAddress}, {addr.districtName}, {addr.provinceName}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-400 italic">Người dùng chưa thêm địa chỉ nào.</p>
+                )}
+              </div>
+
+              {/* Seller Profile Info (Only if seller) */}
+              {(selectedUserDetail.role === "seller" || selectedUserDetail.sellerInfo) && (
+                <div className="border-t border-slate-100 pt-6 space-y-6">
+                  <h4 className="text-xs font-bold text-[#006c49] uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-sm">storefront</span>
+                    Thông tin nhà bán hàng
+                  </h4>
+
+                  {/* Banner and Logo */}
+                  <div className="relative mb-8">
+                    <div className="w-full h-28 rounded-2xl bg-slate-100 overflow-hidden relative border border-slate-200">
+                      {selectedUserDetail.sellerInfo?.coverImage ? (
+                        <img
+                          src={selectedUserDetail.sellerInfo.coverImage}
+                          alt="Banner shop"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center h-full text-slate-300 bg-slate-50">
+                          <span className="material-symbols-outlined text-4xl">storefront</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="absolute left-6 -bottom-6 h-14 w-14 rounded-2xl bg-white border border-slate-200 overflow-hidden shadow-md flex items-center justify-center">
+                      {selectedUserDetail.sellerInfo?.shopLogo ? (
+                        <img
+                          src={selectedUserDetail.sellerInfo.shopLogo}
+                          alt="Logo shop"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <span className="material-symbols-outlined text-slate-300 text-2xl">image</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                    <div>
+                      <h5 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Thông tin shop</h5>
+                      <div className="space-y-2 text-xs">
+                        <p className="flex justify-between border-b border-slate-100 pb-1">
+                          <span className="text-slate-500">Tên cửa hàng:</span>
+                          <span className="font-bold text-slate-800">{selectedUserDetail.sellerInfo?.shopName || "N/A"}</span>
+                        </p>
+                        <p className="flex justify-between border-b border-slate-100 pb-1">
+                          <span className="text-slate-500">Slogan:</span>
+                          <span className="font-semibold text-slate-700">{selectedUserDetail.sellerInfo?.slogan || "N/A"}</span>
+                        </p>
+                        <p className="flex justify-between border-b border-slate-100 pb-1">
+                          <span className="text-slate-500">Tiêu chuẩn:</span>
+                          <span className="font-bold text-emerald-700">{selectedUserDetail.sellerInfo?.farmingStandards?.join(", ") || "N/A"}</span>
+                        </p>
+                      </div>
+                    </div>
+                    <div>
+                      <h5 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Nhận thanh toán & CCCD</h5>
+                      <div className="space-y-2 text-xs">
+                        <p className="flex justify-between border-b border-slate-100 pb-1">
+                          <span className="text-slate-500">CCCD/CMND:</span>
+                          <span className="font-mono font-bold text-slate-700">{selectedUserDetail.sellerInfo?.idCardNumber || "N/A"}</span>
+                        </p>
+                        <p className="flex justify-between border-b border-slate-100 pb-1">
+                          <span className="text-slate-500">Ngân hàng:</span>
+                          <span className="font-bold text-slate-800">{selectedUserDetail.sellerInfo?.bankName || "N/A"}</span>
+                        </p>
+                        <p className="flex justify-between border-b border-slate-100 pb-1">
+                          <span className="text-slate-500">Tài khoản:</span>
+                          <span className="font-mono font-bold text-slate-800">{selectedUserDetail.sellerInfo?.bankAccountNumber || "N/A"}</span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex gap-3 justify-end font-sans">
+              <button
+                onClick={() => setSelectedUserDetail(null)}
+                className="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl text-xs font-bold transition-all cursor-pointer bg-white"
+              >
+                Đóng
+              </button>
+              {selectedUserDetail.email !== "admin@nongsach.vn" && (
+                <>
+                  {selectedUserDetail.isLocked ? (
+                    <button
+                      onClick={() => {
+                        handleUnlockUser(selectedUserDetail.id);
+                        setSelectedUserDetail(null);
+                      }}
+                      className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 border-none"
+                    >
+                      <span className="material-symbols-outlined text-sm">lock_open</span>
+                      Mở khóa tài khoản
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setUserToLock(selectedUserDetail);
+                        setIsLockModalOpen(true);
+                        setSelectedUserDetail(null);
+                      }}
+                      className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 border-none"
+                    >
+                      <span className="material-symbols-outlined text-sm">lock</span>
+                      Khóa tài khoản
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lock User Confirmation Modal */}
+      {isLockModalOpen && userToLock && (
+        <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,width:'100vw',height:'100vh',zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',backgroundColor:'rgba(0,0,0,0.6)',padding:'1rem'}}>
+          <div style={{width:'100%',maxWidth:'448px',backgroundColor:'white',borderRadius:'1.5rem',boxShadow:'0 25px 50px -12px rgba(0,0,0,0.25)',display:'flex',flexDirection:'column',overflow:'hidden',border:'1px solid #e2e8f0'}}>
+            <div className="p-6 border-b border-slate-100 flex items-center gap-3 bg-rose-50 font-sans">
+              <span className="material-symbols-outlined text-rose-600 text-2xl">warning</span>
+              <div>
+                <h3 className="text-base font-bold text-rose-900">
+                  Xác nhận khóa tài khoản
+                </h3>
+                <p className="text-rose-700 text-xs mt-0.5">Tài khoản này sẽ bị chặn đăng nhập ngay lập tức.</p>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4 font-sans">
+              <p className="text-slate-600 text-xs font-medium leading-relaxed">
+                Bạn đang thực hiện khóa tài khoản của người dùng <strong className="text-slate-800">{userToLock.name}</strong> ({userToLock.email}). Vui lòng nhập lý do khóa dưới đây:
+              </p>
+              
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                  Lý do khóa *
+                </label>
+                <textarea
+                  value={lockReason}
+                  onChange={(e) => setLockReason(e.target.value)}
+                  placeholder="Nhập lý do chi tiết (ví dụ: Spam đánh giá tiêu cực, gian lận thanh toán...)"
+                  rows={3}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs outline-none focus:border-rose-500 transition-all resize-none bg-slate-50 text-slate-800 leading-normal"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex gap-2.5 justify-end font-sans">
+              <button
+                onClick={() => {
+                  setIsLockModalOpen(false);
+                  setUserToLock(null);
+                  setLockReason("");
+                }}
+                className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl text-xs font-bold transition-all cursor-pointer bg-white"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleLockUser}
+                disabled={!lockReason.trim() || actionLoading === userToLock.id + "-lock"}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold transition-all border-none cursor-pointer flex items-center gap-1 shadow-md shadow-rose-200"
+              >
+                {actionLoading === userToLock.id + "-lock" ? (
+                  <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <span className="material-symbols-outlined text-[14px]">lock</span>
+                )}
+                Xác nhận Khóa
+              </button>
+            </div>
           </div>
         </div>
       )}

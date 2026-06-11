@@ -23,6 +23,8 @@ export interface User {
   sellerStatus?: "pending" | "approved" | "rejected" | "blocked";
   sellerRejectionReason?: string;
   sellerInfo?: SellerInfo;
+  isLocked?: boolean;
+  lockReason?: string;
 }
 
 export interface SellerInfo {

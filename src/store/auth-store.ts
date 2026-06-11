@@ -124,9 +124,18 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
           const userSnap = await getDoc(userRef);
           if (userSnap.exists()) {
             const userData = userSnap.data() as User;
+            if (userData.isLocked) {
+              await signOut(auth);
+              set({ currentUser: null, isAuthLoading: false });
+              deleteCookie("user-role");
+              deleteCookie("user-id");
+              setCookie("user-locked", "true");
+              return;
+            }
             set({ currentUser: userData, isAuthLoading: false });
             setCookie("user-role", userData.role || "buyer");
             setCookie("user-id", userData.id);
+            setCookie("user-locked", "false");
           } else {
             // Profile doc doesn't exist, create a new profile doc
             const newUser: User = {
@@ -144,6 +153,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
             set({ currentUser: newUser, isAuthLoading: false });
             setCookie("user-role", newUser.role || "buyer");
             setCookie("user-id", newUser.id);
+            setCookie("user-locked", "false");
           }
         } catch (err) {
           console.error("Firestore user fetch error:", err);
@@ -153,6 +163,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         set({ currentUser: null, isAuthLoading: false });
         deleteCookie("user-role");
         deleteCookie("user-id");
+        deleteCookie("user-locked");
       }
     });
   },
@@ -168,6 +179,13 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         let userProfile: User;
         if (userSnap.exists()) {
           userProfile = userSnap.data() as User;
+          if (userProfile.isLocked) {
+            await signOut(auth);
+            deleteCookie("user-role");
+            deleteCookie("user-id");
+            setCookie("user-locked", "true");
+            return { success: false, message: `Tài khoản của bạn đã bị khóa. Lý do: ${userProfile.lockReason || "Không có lý do cụ thể"}` };
+          }
           if (userProfile.role !== "admin") {
             userProfile.role = "admin";
             await updateDoc(userRef, { role: "admin" });
@@ -189,6 +207,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         set({ currentUser: userProfile });
         setCookie("user-role", "admin");
         setCookie("user-id", uid);
+        setCookie("user-locked", "false");
         return { success: true, message: "Đăng nhập thành công với tài khoản Demo Admin!" };
       } catch (err: unknown) {
         const errCode = getFirebaseErrorCode(err);
@@ -212,6 +231,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
             set({ currentUser: defaultAdmin });
             setCookie("user-role", "admin");
             setCookie("user-id", uid);
+            setCookie("user-locked", "false");
             return { success: true, message: "Đăng nhập thành công với tài khoản Demo Admin!" };
           } catch (regErr: unknown) {
             console.warn("Auto-registration of Demo Admin failed:", regErr);
@@ -230,6 +250,13 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         let userProfile: User;
         if (userSnap.exists()) {
           userProfile = userSnap.data() as User;
+          if (userProfile.isLocked) {
+            await signOut(auth);
+            deleteCookie("user-role");
+            deleteCookie("user-id");
+            setCookie("user-locked", "true");
+            return { success: false, message: `Tài khoản của bạn đã bị khóa. Lý do: ${userProfile.lockReason || "Không có lý do cụ thể"}` };
+          }
         } else {
           userProfile = {
             id: uid,
@@ -259,6 +286,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         set({ currentUser: userProfile });
         setCookie("user-role", userProfile.role || "buyer");
         setCookie("user-id", uid);
+        setCookie("user-locked", "false");
         return { success: true, message: "Đăng nhập thành công với tài khoản Demo!" };
       } catch (err: unknown) {
         const errCode = getFirebaseErrorCode(err);
@@ -294,6 +322,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
             set({ currentUser: defaultUser });
             setCookie("user-role", defaultUser.role || "buyer");
             setCookie("user-id", uid);
+            setCookie("user-locked", "false");
             return { success: true, message: "Đăng nhập thành công với tài khoản Demo!" };
           } catch (regErr: unknown) {
             console.warn("Auto-registration of Demo user failed:", regErr);
@@ -310,9 +339,17 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       const userSnap = await getDoc(userRef);
       if (userSnap.exists()) {
         const userData = userSnap.data() as User;
+        if (userData.isLocked) {
+          await signOut(auth);
+          deleteCookie("user-role");
+          deleteCookie("user-id");
+          setCookie("user-locked", "true");
+          return { success: false, message: `Tài khoản của bạn đã bị khóa. Lý do: ${userData.lockReason || "Không có lý do cụ thể"}` };
+        }
         set({ currentUser: userData });
         setCookie("user-role", userData.role || "buyer");
         setCookie("user-id", uid);
+        setCookie("user-locked", "false");
         return { success: true, message: "Đăng nhập thành công!" };
       } else {
         const newUser: User = {
@@ -330,6 +367,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         set({ currentUser: newUser });
         setCookie("user-role", newUser.role || "buyer");
         setCookie("user-id", uid);
+        setCookie("user-locked", "false");
         return { success: true, message: "Đăng nhập thành công!" };
       }
     } catch (error: unknown) {

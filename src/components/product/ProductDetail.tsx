@@ -248,6 +248,19 @@ export default function ProductDetail({ product, relatedProducts }: ProductDetai
     setIsMenuOpen(false);
   };
 
+  const handleMessageClick = () => {
+    if (!currentUser) {
+      alert("Vui lòng đăng nhập để nhắn tin!");
+      router.push(`/login?redirect=${encodeURIComponent(`/products/${product.id}`)}`);
+      return;
+    }
+    if (currentUser.id === (shop?.id || product.sellerId)) {
+      alert("Bạn không thể tự nhắn tin cho chính mình!");
+      return;
+    }
+    router.push(`/profile?tab=chats&sellerId=${shop?.id || product.sellerId}`);
+  };
+
   const handleReport = () => {
     setIsReportModalOpen(true);
     setIsMenuOpen(false);
@@ -614,7 +627,15 @@ export default function ProductDetail({ product, relatedProducts }: ProductDetai
             </div>
           </div>
           
-          <div className="shrink-0 flex items-center">
+          <div className="shrink-0 flex items-center gap-2">
+            <button
+              onClick={handleMessageClick}
+              className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl border border-outline-variant px-4 py-2.5 text-xs font-bold text-on-surface hover:bg-slate-100 transition-all active:scale-[0.98] bg-white gap-1.5"
+              type="button"
+            >
+              <span className="material-symbols-outlined text-[16px] text-primary">chat_bubble</span>
+              Nhắn tin
+            </button>
             <Link
               href={`/shop/${shop.id}`}
               className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl border border-primary px-5 py-2.5 text-xs font-bold text-primary transition-all hover:bg-primary/5 active:scale-[0.98]"

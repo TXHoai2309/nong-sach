@@ -4,6 +4,54 @@ All notable changes to the **NôngSạch** project will be documented in this fi
 
 The format is based on **Keep a Changelog** and this project adheres to **Semantic Versioning**.
 
+## [0.8.8] - 2026-06-11
+
+### Tồn kho hàng loạt & Gợi ý sản phẩm (Batch Stock Update & Product Recommendations)
+
+### Added
+* **Cập nhật tồn kho hàng loạt**:
+  - Tích hợp nút **"Cập nhật kho hàng loạt"** trong tab Sản phẩm của tôi ở Kênh người bán.
+  - Hỗ trợ chế độ chỉnh sửa inline: Cột tồn kho chuyển đổi thành ô nhập số (`<input type="number">`) và tự động kiểm tra điều kiện không âm.
+  - Sử dụng Firestore `writeBatch` để cập nhật đồng thời tồn kho của nhiều sản phẩm một cách an toàn và tối ưu tài nguyên mạng.
+  - Tự động khóa các thao tác Xem, Chỉnh sửa đơn lẻ, Xóa và Đăng sản phẩm mới trong suốt thời gian chỉnh sửa hàng loạt để tránh xung đột dữ liệu.
+* **Gợi ý sản phẩm cá nhân hóa ("Dành cho bạn")**:
+  - Xây dựng component gợi ý cá nhân hóa `<UserRecommendations />` ở trang chủ.
+  - Tải lịch sử đơn hàng của người dùng từ Firestore (`orders` collection) để phân tích tần suất mua hàng theo từng danh mục (category).
+  - Thuật toán sắp xếp và ưu tiên các sản phẩm thuộc danh mục đã mua nhiều nhất (ưu tiên sản phẩm chưa mua trước, sau đó là sản phẩm đã mua để mua lại).
+  - Tích hợp Skeleton Loading mượt mà khi đang tải dữ liệu từ Firestore.
+  - Ẩn hoàn toàn section gợi ý đối với người dùng chưa đăng nhập.
+
+## [0.8.7] - 2026-06-11
+
+### Trò chuyện trực tiếp Buyer-Seller Realtime (Realtime Buyer-Seller Chat)
+
+### Added
+* **Nút liên kết Trò chuyện**: Tích hợp nút "Nhắn tin" trên trang chi tiết cửa hàng (`/shop/[id]`) và banner thông tin cửa hàng ở trang chi tiết sản phẩm (`/products/[id]`). Tự động chuyển hướng về Trang cá nhân và mở phòng chat.
+* **Giao diện Trò chuyện Split-pane**: Thiết kế layout 2 cột hiện đại trong Tab "Trò chuyện" tại `/profile`: Cột trái là danh sách phòng chat hiển thị avatar, tên đối tác, tin nhắn cuối và chấm xanh unread; Cột phải hiển thị bong bóng chat căn chỉnh tự động, thông tin đối tác và ô nhập liệu thông minh.
+* **Zustand Chat Store & Firestore**: Tích hợp `useChatStore` kết nối trực tiếp với Firestore qua collection `chats` và subcollection `messages`. Cơ chế tự động khởi tạo phòng chat duy nhất với id định dạng `chat_{buyerId}_{sellerId}`.
+* **Đăng ký lắng nghe Realtime**: Sử dụng `onSnapshot` để đồng bộ tin nhắn và phòng chat tức thời mà không cần tải lại trang, đi kèm cơ chế tự động cuộn xuống tin nhắn mới nhất.
+* **Thông báo tin nhắn mới**: Tự động kích hoạt thông báo chuông loại `new_message` gửi đến đối tác khi có tin nhắn mới. Cho phép người dùng bấm vào thông báo để di chuyển thẳng tới tab Trò chuyện và mở phòng chat tương ứng.
+* **Theo dõi trạng thái Chưa đọc (Unread)**: Tự động cập nhật thuộc tính `unreadByBuyer` và `unreadBySeller` khi có tin nhắn mới hoặc khi người dùng mở xem phòng chat.
+
+### Changed
+* **Mở rộng Loại thông báo**: Cập nhật `NotificationType` bổ sung loại `new_message` và bổ sung cấu hình màu sắc/icon hiển thị tin nhắn trong danh sách thông báo.
+
+## [0.8.6] - 2026-06-11
+
+### Admin quản lý người dùng (Admin User Management)
+
+### Added
+* **Tìm kiếm & Bộ lọc tài khoản**: Cho phép Admin tìm kiếm người dùng theo tên/email, lọc theo vai trò (Admin, Seller, Buyer) và trạng thái (Đang hoạt động, Bị khóa) trực tiếp từ ô điều khiển phía trên bảng.
+* **Chi tiết tài khoản**: Tích hợp modal xem chi tiết thông tin cá nhân của người dùng, bao gồm họ tên, giới tính, số điện thoại, ngày gia nhập, danh sách sổ địa chỉ nhận hàng và hồ sơ cửa hàng chi tiết (nếu là Người bán).
+* **Khóa/Mở khóa tài khoản với lý do**: Admin có thể khóa tài khoản vi phạm (yêu cầu nhập lý do chi tiết trong modal xác nhận). Mở khóa khôi phục tài khoản hoạt động bình thường.
+* **Tự động chặn người bán & sản phẩm**: Khi khóa tài khoản là Người bán, hệ thống tự động đổi trạng thái shop thành `blocked` và ẩn toàn bộ các sản phẩm của họ khỏi hệ thống. Khi mở khóa, tự động kích hoạt lại shop và sản phẩm tương ứng.
+* **Ghi nhận lịch sử hoạt động**: Mọi hành động khóa/mở khóa tài khoản đều được ghi lại tự động vào lịch sử hoạt động của Admin (`adminLogs`) hiển thị thời gian, tên admin, đối tượng bị ảnh hưởng và lý do chi tiết.
+
+### Changed
+* **Xác thực trạng thái Locked khi đăng nhập**: Cập nhật Auth Store (`useAuthStore`) để chặn đăng nhập ngay lập tức đối với tài khoản bị khóa trong cả 3 luồng đăng nhập (Demo Admin, Demo Buyer và đăng nhập chuẩn), trả về thông tin lý do khóa cụ thể từ Firestore.
+* **Middleware bảo mật ở Edge**: Cập nhật `src/middleware.ts` để kiểm tra cookie `user-locked`. Nếu tài khoản bị khóa, tự động xóa cookie phiên và chuyển hướng về trang đăng nhập `/login?error=locked`.
+* **Mở rộng bảo vệ Middleware**: Cấu hình cấu trúc so khớp của Middleware để bảo vệ thêm các tuyến đường `/profile` và `/checkout` bên cạnh `/admin`.
+
 ## [0.8.5] - 2026-06-11
 
 ### Tương tác đánh giá đa chiều (Threaded Review Interactions)
