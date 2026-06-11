@@ -5,12 +5,12 @@
 | Thông tin         | Chi tiết                                    |
 | ----------------- | ------------------------------------------- |
 | Tên dự án         | NôngSạch — Nền tảng giao dịch nông sản sạch |
-| Phiên bản         | MVP v0.8.2 (Sprint 6.0)                     |
+| Phiên bản         | MVP v0.8.3 (Sprint 6.1)                     |
 | Ngày tạo          | 03/06/2026                                  |
-| Cập nhật lần cuối | 10/06/2026                                  |
+| Cập nhật lần cuối | 11/06/2026                                  |
 | Nhóm              | NôngSạch Team                               |
 | Môn học           | Vibe Coding Thực Chiến — Buổi 3             |
-| Trạng thái        | ✅ Hoàn thành Sprint 1 đến Sprint 5.9 |
+| Trạng thái        | ✅ Hoàn thành Sprint 1 đến Sprint 6.1 |
 
 ---
 
@@ -720,6 +720,17 @@ interface ContactMessage {
 | T-90 | Tích hợp áp dụng voucher vào checkout page và lưu lịch sử | 2  | ✅      |
 | T-91 | Đồng bộ giảm giá & cập nhật lịch sử dùng voucher cho VNPay verify và IPN webhook | 2  | ✅      |
 | T-92 | Kiểm thử 4 case validation lỗi, khấu trừ và build pass | 1  | ✅      |
+
+## Sprint 6.1 — Báo cáo doanh thu Seller (✅ Hoàn thành)
+
+| ID   | Task                                           | SP | Status |
+| ---- | ---------------------------------------------- | -- | ------ |
+| T-93 | Thiết kế và phát triển subcomponent `RevenueReport` | 3  | ✅      |
+| T-94 | Thống kê chỉ số KPI realtime và Top 5 bán chạy | 2  | ✅      |
+| T-95 | Triển khai biểu đồ xu hướng SVG Line/Bar có hover tooltip | 3  | ✅      |
+| T-96 | Tích hợp xuất file CSV UTF-8 BOM chuẩn tiếng Việt | 2  | ✅      |
+| T-97 | Tích hợp subtab và query params điều hướng | 1  | ✅      |
+| T-98 | Kiểm thử linter/compile check và build pass | 1  | ✅      |
 
 ## Backlog Phase 2 (Tương lai)
 

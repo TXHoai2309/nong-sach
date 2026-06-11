@@ -29,6 +29,7 @@ import { subscribeToUserWishlist } from "@/lib/wishlist";
 import ProductCard from "@/components/product/ProductCard";
 import { Voucher } from "@/types/voucher";
 import { createVoucher, stopVoucher, subscribeToSellerVouchers } from "@/lib/vouchers";
+import { RevenueReport } from "@/components/seller/RevenueReport";
 
 const PROVINCES_API = "https://provinces.open-api.vn/api/v1/?depth=2";
 
@@ -175,7 +176,7 @@ function ProfileContent() {
     }
   }, [tabParam]);
 
-  const [sellerSubTab, setSellerSubTab] = useState<"products" | "orders" | "vouchers">("products");
+  const [sellerSubTab, setSellerSubTab] = useState<"products" | "orders" | "vouchers" | "reports">("products");
   const [focusedSellerOrderId, setFocusedSellerOrderId] = useState<string | null>(null);
   const [nowTime] = useState(() => Date.now());
 
@@ -191,6 +192,10 @@ function ProfileContent() {
     }
     if (sellerTabParam === "vouchers") {
       const timer = window.setTimeout(() => setSellerSubTab("vouchers"), 0);
+      return () => window.clearTimeout(timer);
+    }
+    if (sellerTabParam === "reports") {
+      const timer = window.setTimeout(() => setSellerSubTab("reports"), 0);
       return () => window.clearTimeout(timer);
     }
   }, [tabParam, sellerTabParam]);
@@ -3672,6 +3677,16 @@ function ProfileContent() {
                       >
                         Khuyến mãi & Vouchers
                       </button>
+                      <button
+                        onClick={() => setSellerSubTab("reports")}
+                        className={`pb-3 text-sm font-bold transition-all ${
+                          sellerSubTab === "reports"
+                            ? "border-b-2 border-[#006c49] text-[#006c49]"
+                            : "text-[#3c4a42]/50 hover:text-[#3c4a42]"
+                        }`}
+                      >
+                        Báo cáo doanh thu
+                      </button>
                     </div>
 
                     {sellerSubTab === "products" && (
@@ -4120,6 +4135,10 @@ function ProfileContent() {
                           </div>
                         )}
                       </div>
+                    )}
+
+                    {sellerSubTab === "reports" && (
+                      <RevenueReport sellerOrders={sellerOrders} />
                     )}
 
                     {/* Add Product Modal Dialog */}

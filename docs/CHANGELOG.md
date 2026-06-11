@@ -4,6 +4,19 @@ All notable changes to the **NôngSạch** project will be documented in this fi
 
 The format is based on **Keep a Changelog** and this project adheres to **Semantic Versioning**.
 
+## [0.8.3] - 2026-06-11
+
+### Báo cáo Doanh thu Người Bán (Seller Revenue Report)
+
+### Added
+* **Biểu đồ doanh thu SVG tương tác (Line/Bar Charts)**: Thiết kế biểu đồ SVG tùy biến hỗ trợ vẽ đường xu hướng (Line Chart) hoặc dạng cột (Bar Chart) với các bộ lọc 7 ngày, 30 ngày, và 90 ngày. Tích hợp thanh định vị hover và Tooltip HTML động hiển thị ngày, doanh thu VND và số lượng đơn hàng tương ứng.
+* **Thống kê chỉ số KPI bán hàng**: Triển khai 4 thẻ chỉ số chính cập nhật realtime từ Firestore bao gồm Doanh thu tạm tính (trừ hủy), Doanh thu hoàn thành (đơn thành công), Số lượng đơn hàng, và Giá trị trung bình đơn.
+* **Top 5 Sản phẩm bán chạy nhất**: Tự động tính toán xếp hạng các mặt hàng nông sản bán chạy nhất trong kỳ, hiển thị tên, rank badge, ảnh thumbnail, khối lượng đã bán (kg), doanh thu đóng góp và thanh đo phần trăm trực quan.
+* **Xuất báo cáo Excel CSV (UTF-8 BOM)**: Tích hợp nút xuất báo cáo chi tiết đơn hàng trong khoảng thời gian đã lọc, mã hóa định dạng UTF-8 BOM (`\uFEFF`) để đảm bảo hiển thị chuẩn tiếng Việt không bị lỗi font khi mở trực tiếp trong Microsoft Excel.
+
+### Changed
+* Cấu trúc menu phụ kênh người bán trong `src/app/profile/page.tsx` được cập nhật thêm subtab **Báo cáo doanh thu** và xử lý query parameter điều hướng `sellerTab=reports`.
+
 ## [0.8.2] - 2026-06-10
 
 ### Tích hợp Voucher tại Checkout & Lưu Lịch sử sử dụng (Voucher Checkout & History Logging)
