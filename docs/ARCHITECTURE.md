@@ -304,6 +304,37 @@ interface VoucherHistory {
 }
 ```
 
+## Review & Interaction
+
+```ts
+interface ReviewMessage {
+  id: string;
+  senderId: string;
+  senderName: string;
+  senderRole: "buyer" | "seller";
+  text: string;
+  createdAt: string;
+}
+
+interface Review {
+  id: string;
+  productId: string;
+  productName: string;
+  productImage?: string;
+  userId: string;
+  userName: string;
+  rating: number;
+  comment: string;
+  images?: string[];
+  orderId: string;
+  createdAt: string;
+  sellerId?: string;
+  replyComment?: string; // Fallback cũ
+  replyCreatedAt?: string;
+  messages?: ReviewMessage[]; // Luồng trao đổi mới
+}
+```
+
 ---
 
 # 7. State Management

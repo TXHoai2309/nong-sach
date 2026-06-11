@@ -4,6 +4,45 @@ All notable changes to the **NôngSạch** project will be documented in this fi
 
 The format is based on **Keep a Changelog** and this project adheres to **Semantic Versioning**.
 
+## [0.8.5] - 2026-06-11
+
+### Tương tác đánh giá đa chiều (Threaded Review Interactions)
+
+### Added
+* **Luồng trao đổi tin nhắn (Review Threads)**: Nâng cấp hệ thống đánh giá một chiều thành cuộc hội thoại đa chiều. Mỗi đánh giá giờ đây có thể chứa một chuỗi các tin nhắn trao đổi (`ReviewMessage`) giữa người mua và người bán.
+* **Tab Quản lý đánh giá cho Người bán**: Bổ sung subtab **"Đánh giá của khách"** trong Kênh người bán tại trang Hồ sơ. Cho phép người bán xem toàn bộ đánh giá, xem ảnh chi tiết, phản hồi mới hoặc tiếp tục trao đổi với khách hàng.
+* **Tương tác từ phía Người mua**: Người mua có thể xem các phản hồi của shop và gửi tin nhắn phản hồi lại ngay trong chi tiết đơn hàng đã mua hoặc từ thông báo đánh giá.
+* **Hiển thị luồng trao đổi công khai**: Toàn bộ nội dung trao đổi giữa người mua và người bán được hiển thị công khai trên **Trang chi tiết sản phẩm** và **Trang cửa hàng** để tăng tính minh bạch và độ tin cậy.
+
+### Changed
+* **Cấu trúc dữ liệu Firestore**: Mở rộng tài liệu `reviews` để lưu trữ mảng `messages` và triển khai cơ chế cập nhật nguyên tử bằng `arrayUnion`.
+* **Giao diện thông báo đánh giá**: Cập nhật bảng xem chi tiết đánh giá từ thông báo để hỗ trợ gửi và nhận tin nhắn trực tiếp cho cả hai vai trò.
+
+## [0.8.4] - 2026-06-11
+
+### Đồng nhất trạng thái đơn hàng tách & Lọc đơn hàng Dashboard người bán (Unified Split Orders Status & Seller Dashboard Order Filtering)
+
+### Added
+* **Theo dõi hành trình theo cửa hàng (Tabbed Order Tracking)**: Bổ sung bộ chọn tab cho từng cửa hàng tại trang hoàn tất đặt hàng (`checkout/success`). Cho phép người mua xem và theo dõi hành trình (timeline) cùng mã vận đơn thực tế của riêng từng cửa hàng trong đơn hàng bị tách.
+* **Nhãn trạng thái chi tiết từng sản phẩm**: Cạnh mỗi mặt hàng ở danh sách sản phẩm bên phải trang success hiển thị rõ tên shop quản lý và nhãn trạng thái thực tế tương ứng (ví dụ: `Đã giao`, `Chờ xác nhận`).
+* **Đồng nhất trạng thái tổng quan**: Trạng thái và biểu tượng chung của trang success được tính toán động dựa trên trạng thái của tất cả các đơn hàng con thay vì chỉ lấy đơn hàng con đầu tiên.
+
+### Changed
+* **Cập nhật bộ lọc đơn hàng Dashboard người bán**: Bộ lọc `sellerOrders` ở tab Kênh người bán tại trang cá nhân (`src/app/profile/page.tsx`) được cập nhật để hiển thị đầy đủ các đơn hàng con thuộc về các shop demo tĩnh (`"admin"`, `"vuon-sach-da-lat"`, `"nong-trai-xanh"`, etc.) nhằm đồng bộ với dữ liệu đăng ký lắng nghe thời gian thực.
+
+## [0.8.3] - 2026-06-11
+
+### Báo cáo Doanh thu Người Bán (Seller Revenue Report)
+
+### Added
+* **Biểu đồ doanh thu SVG tương tác (Line/Bar Charts)**: Thiết kế biểu đồ SVG tùy biến hỗ trợ vẽ đường xu hướng (Line Chart) hoặc dạng cột (Bar Chart) với các bộ lọc 7 ngày, 30 ngày, và 90 ngày. Tích hợp thanh định vị hover và Tooltip HTML động hiển thị ngày, doanh thu VND và số lượng đơn hàng tương ứng.
+* **Thống kê chỉ số KPI bán hàng**: Triển khai 4 thẻ chỉ số chính cập nhật realtime từ Firestore bao gồm Doanh thu tạm tính (trừ hủy), Doanh thu hoàn thành (đơn thành công), Số lượng đơn hàng, và Giá trị trung bình đơn.
+* **Top 5 Sản phẩm bán chạy nhất**: Tự động tính toán xếp hạng các mặt hàng nông sản bán chạy nhất trong kỳ, hiển thị tên, rank badge, ảnh thumbnail, khối lượng đã bán (kg), doanh thu đóng góp và thanh đo phần trăm trực quan.
+* **Xuất báo cáo Excel CSV (UTF-8 BOM)**: Tích hợp nút xuất báo cáo chi tiết đơn hàng trong khoảng thời gian đã lọc, mã hóa định dạng UTF-8 BOM (`\uFEFF`) để đảm bảo hiển thị chuẩn tiếng Việt không bị lỗi font khi mở trực tiếp trong Microsoft Excel.
+
+### Changed
+* Cấu trúc menu phụ kênh người bán trong `src/app/profile/page.tsx` được cập nhật thêm subtab **Báo cáo doanh thu** và xử lý query parameter điều hướng `sellerTab=reports`.
+
 ## [0.8.2] - 2026-06-10
 
 ### Tích hợp Voucher tại Checkout & Lưu Lịch sử sử dụng (Voucher Checkout & History Logging)

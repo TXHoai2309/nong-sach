@@ -470,6 +470,29 @@ Chức năng Mã giảm giá cho phép người bán tự thiết lập các chi
 1. Thêm các sản phẩm của shop đó vào giỏ hàng.
 2. Tại trang **Giỏ hàng** hoặc trang **Thanh toán**, nhập mã giảm giá vào ô **"Mã giảm giá / Quà tặng"** và bấm **"Áp dụng"**.
 3. Hệ thống sẽ xác thực mã giảm giá trên máy chủ:
-   - **Áp dụng thành công**: Hiển thị thông báo thành công và khấu trừ trực tiếp số tiền chiết khấu vào phần tính tổng tiền của đơn hàng (chỉ áp dụng đối với tổng giá trị các sản phẩm của chính shop phát hành mã).
-   - **Lỗi áp dụng**: Hiển thị thông báo lỗi chi tiết nếu mã đã hết hạn, hết lượt sử dụng, bị dừng sớm hoặc giỏ hàng không chứa sản phẩm của shop phát hành mã.
-4. Chọn phương thức thanh toán (COD, Chuyển khoản hoặc VNPay) và hoàn tất đặt hàng. Số tiền giảm giá và mã voucher được ghi nhận trực tiếp vào hóa đơn của từng shop cụ thể sau khi đơn hàng được tách. Đồng thời, hệ thống sẽ tự động cập nhật số lượt đã dùng của voucher (`usedCount` +1) và lưu lại bản ghi lịch sử sử dụng vào bộ sưu tập `voucherHistories` trên Firestore để tiện theo dõi và kiểm toán.
+   4. **Áp dụng thành công**: Hiển thị thông báo thành công và khấu trừ trực tiếp số tiền chiết khấu vào phần tính tổng tiền của đơn hàng (chỉ áp dụng đối với tổng giá trị các sản phẩm của chính shop phát hành mã).
+     - **Lỗi áp dụng**: Hiển thị thông báo lỗi chi tiết nếu mã đã hết hạn, hết lượt sử dụng, bị dừng sớm hoặc giỏ hàng không chứa sản phẩm của shop phát hành mã.
+   4. Chọn phương thức thanh toán (COD, Chuyển khoản hoặc VNPay) và hoàn tất đặt hàng. Số tiền giảm giá và mã voucher được ghi nhận trực tiếp vào hóa đơn của từng shop cụ thể sau khi đơn hàng được tách. Đồng thời, hệ thống sẽ tự động cập nhật số lượt đã dùng của voucher (`usedCount` +1) và lưu lại bản ghi lịch sử sử dụng vào bộ sưu tập `voucherHistories` trên Firestore để tiện theo dõi và kiểm toán.
+
+   ## 23. Tương tác đánh giá đa chiều (Review Conversations)
+
+   Hệ thống đánh giá của NôngSạch cho phép người mua và người bán trao đổi trực tiếp với nhau thông qua từng đánh giá sản phẩm.
+
+   ### 23.1. Đối với Người bán (Seller)
+
+   1. Truy cập **Kênh người bán** > **Đánh giá của khách**.
+   2. Tại đây, bạn có thể xem tất cả đánh giá từ khách hàng cho các sản phẩm của shop mình.
+   3. Bấm **"Viết phản hồi"** để trả lời đánh giá mới, hoặc **"Tiếp tục trao đổi"** để nhắn tin thêm cho khách hàng.
+   4. Bạn cũng có thể thực hiện việc này nhanh chóng bằng cách bấm **"Xem đánh giá"** trực tiếp từ thông báo chuông khi có khách hàng vừa đánh giá sản phẩm.
+
+   ### 23.2. Đối với Người mua (Buyer)
+
+   1. Sau khi gửi đánh giá, bạn có thể xem phản hồi của shop tại **Trang cá nhân** > **Đơn hàng của tôi**.
+   2. Nếu shop đã phản hồi, bạn sẽ thấy nội dung tin nhắn của shop ngay dưới thông tin sản phẩm đã đánh giá.
+   3. Bấm **"Tiếp tục trao đổi"** để gửi thêm tin nhắn cho shop (ví dụ: giải thích rõ hơn về khiếu nại hoặc cảm ơn sự hỗ trợ của shop).
+   4. Các cuộc hội thoại này cũng có thể được tiếp cận qua chi tiết thông báo khi shop phản hồi đánh giá của bạn.
+
+   ### 23.3. Hiển thị Công khai
+
+   Toàn bộ luồng trao đổi giữa bạn và khách hàng (hoặc shop) sẽ được hiển thị công khai trên **Trang chi tiết sản phẩm** và **Trang cửa hàng**. Điều này giúp các khách hàng khác có cái nhìn khách quan về chất lượng phục vụ và sự tận tâm của shop.
+
