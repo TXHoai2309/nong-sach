@@ -131,3 +131,49 @@ export async function checkReviewedItems(orderId: string): Promise<Record<string
     return {};
   }
 }
+
+/**
+ * Lấy danh sách đánh giá cho một shop (bán hàng).
+ * Kết quả bao gồm đánh giá trực tiếp có sellerId khớp hoặc có productId thuộc danh sách sản phẩm của shop.
+ */
+export async function getReviewsByShopId(shopId: string, shopProductIds: string[]): Promise<Review[]> {
+  try {
+    const q = query(collection(db, "reviews"));
+    const querySnapshot = await getDocs(q);
+    const list: Review[] = [];
+    querySnapshot.forEach((docSnap) => {
+      const data = docSnap.data() as Review;
+      if (
+        data.sellerId === shopId ||
+        (data.productId && shopProductIds.includes(data.productId))
+      ) {
+        list.push({
+          ...data,
+          id: docSnap.id || data.id,
+        });
+      }
+    });
+    list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return list;
+  } catch (error) {
+    console.error(`Lỗi khi lấy đánh giá cho shop ${shopId}:`, error);
+    return [];
+  }
+}
+
+/**
+ * Cập nhật phản hồi của người bán cho một đánh giá.
+ */
+export async function updateReviewReply(reviewId: string, replyComment: string): Promise<void> {
+  try {
+    const docRef = doc(db, "reviews", reviewId);
+    await setDoc(docRef, {
+      replyComment,
+      replyCreatedAt: new Date().toISOString()
+    }, { merge: true });
+  } catch (error) {
+    console.error(`Lỗi khi cập nhật phản hồi cho đánh giá ${reviewId}:`, error);
+    throw error;
+  }
+}
+

@@ -10,4 +10,7 @@ export interface Review {
   images?: string[];
   orderId: string;
   createdAt: string;
+  sellerId?: string;
+  replyComment?: string;
+  replyCreatedAt?: string;
 }

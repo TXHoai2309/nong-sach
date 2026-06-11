@@ -9,8 +9,8 @@ import { getOrderStatusMeta } from "@/lib/order-status";
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import { getAllProducts } from "@/lib/products";
 import { db } from "@/lib/firebase";
-import { doc, onSnapshot } from "firebase/firestore";
-import { Order } from "@/types/order";
+import { doc, onSnapshot, collection, query, where } from "firebase/firestore";
+import { Order, OrderStatus } from "@/types/order";
 import { Product } from "@/types/product";
 import { OrderTrackingTimeline } from "@/components/order/OrderTrackingTimeline";
 
@@ -26,6 +26,8 @@ function SuccessContent() {
   const [copied, setCopied] = useState(false);
   const [notificationStatus, setNotificationStatus] = useState<"idle" | "enabled" | "dismissed">("idle");
   const [order, setOrder] = useState<Order | null>(null);
+  const [subOrders, setSubOrders] = useState<Order[]>([]);
+  const [activeSubOrderId, setActiveSubOrderId] = useState<string>("");
   const [recommendedProducts, setRecommendedProducts] = useState<Product[]>([]);
   
   const vnpTransactionNo = searchParams.get("vnp_TransactionNo") || order?.vnp_TransactionNo || "";
@@ -38,13 +40,55 @@ function SuccessContent() {
       try {
         const products = await getAllProducts();
         if (!active) return;
+
+        const q = query(
+          collection(db, "orders"),
+          where("id", ">=", orderId),
+          where("id", "<=", orderId + "\uf8ff")
+        );
+
         unsubscribeOrder = onSnapshot(
-          doc(db, "orders", orderId),
-          (orderSnap) => {
-            const loadedOrder = orderSnap.exists() ? (orderSnap.data() as Order) : null;
-            setOrder(loadedOrder);
-            const purchasedIds = new Set(loadedOrder?.items.map((item) => item.productId) ?? []);
-            setRecommendedProducts(products.filter((p) => !purchasedIds.has(p.id)).slice(0, 4));
+          q,
+          (querySnap) => {
+            const loadedOrders: Order[] = [];
+            querySnap.forEach((docSnap) => {
+              loadedOrders.push({ id: docSnap.id, ...docSnap.data() } as Order);
+            });
+
+            if (loadedOrders.length > 0) {
+              // Sort loadedOrders by ID (usually -1, -2, etc.)
+              loadedOrders.sort((a, b) => a.id.localeCompare(b.id));
+              setSubOrders(loadedOrders);
+
+              // Merge all sub-orders
+              const firstOrder = loadedOrders[0];
+              const combinedItems = loadedOrders.flatMap((o) => o.items);
+              const combinedTotal = loadedOrders.reduce((sum, o) => sum + o.totalAmount, 0);
+
+              const combinedOrder: Order = {
+                ...firstOrder,
+                id: orderId, // use the base orderId
+                items: combinedItems,
+                totalAmount: combinedTotal,
+              };
+
+              setOrder(combinedOrder);
+
+              // Set default active sub-order ID if not already set to a valid one
+              setActiveSubOrderId((prevActiveId) => {
+                if (loadedOrders.some((o) => o.id === prevActiveId)) {
+                  return prevActiveId;
+                }
+                return loadedOrders[0].id;
+              });
+
+              const purchasedIds = new Set(combinedItems.map((item) => item.productId));
+              setRecommendedProducts(products.filter((p) => !purchasedIds.has(p.id)).slice(0, 4));
+            } else {
+              setOrder(null);
+              setSubOrders([]);
+              setRecommendedProducts(products.slice(0, 4));
+            }
           },
           (error) => {
             console.error("Error listening to order details from Firestore", error);
@@ -96,7 +140,21 @@ function SuccessContent() {
   // Get items list to display
   const displayItems = order?.items || [];
   const displayTotal = order?.totalAmount ?? totalParam;
-  const statusMeta = getOrderStatusMeta(order?.status ?? "pending");
+
+  const getSummarizedStatus = (ordersList: Order[]): OrderStatus => {
+    if (ordersList.length === 0) return "pending";
+    if (ordersList.every((o) => o.status === "delivered")) return "delivered";
+    if (ordersList.every((o) => o.status === "cancelled")) return "cancelled";
+    if (ordersList.some((o) => o.status === "shipping")) return "shipping";
+    if (ordersList.some((o) => o.status === "confirmed")) return "confirmed";
+    if (ordersList.some((o) => o.status === "refunding")) return "refunding";
+    if (ordersList.some((o) => o.status === "refunded")) return "refunded";
+    return "pending";
+  };
+
+  const overallStatus = subOrders.length > 0 ? getSummarizedStatus(subOrders) : (order?.status ?? "pending");
+  const statusMeta = getOrderStatusMeta(overallStatus);
+  const selectedTrackingOrder = subOrders.find((so) => so.id === activeSubOrderId) || order;
 
   return (
     <div className="max-w-[860px] mx-auto space-y-8 pb-12">
@@ -192,7 +250,37 @@ function SuccessContent() {
 
             {/* Real-time Order Tracking Timeline */}
             <div className="mt-8 pt-6 border-t border-outline-variant/20">
-              <OrderTrackingTimeline order={order || ({ id: orderId, status: "pending" } as Order)} />
+              {subOrders.length > 1 && (
+                <div className="mb-6 space-y-2">
+                  <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">
+                    Theo dõi hành trình theo cửa hàng:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {subOrders.map((so) => {
+                      const isSelected = so.id === activeSubOrderId;
+                      return (
+                        <button
+                          key={so.id}
+                          onClick={() => setActiveSubOrderId(so.id)}
+                          className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border flex items-center gap-1.5 cursor-pointer ${
+                            isSelected
+                              ? "bg-[#006c49] border-[#006c49] text-white shadow-sm"
+                              : "bg-white border-[#bbcabf]/30 text-[#3c4a42] hover:bg-[#f9f9ff]"
+                          }`}
+                        >
+                          <span>{so.shopName}</span>
+                          <span className={`h-1.5 w-1.5 rounded-full ${
+                            so.status === "delivered" ? "bg-emerald-500" :
+                            so.status === "cancelled" ? "bg-red-500" : "bg-amber-500"
+                          }`}></span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <OrderTrackingTimeline order={selectedTrackingOrder || ({ id: orderId, status: "pending" } as Order)} />
             </div>
           </div>
 
@@ -226,9 +314,20 @@ function SuccessContent() {
                         <h4 className="text-sm font-bold text-on-surface truncate">
                           {item.name}
                         </h4>
-                        <p className="text-xs text-on-surface-variant font-medium">
-                          x{item.quantity}
-                        </p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-[10px] font-semibold text-on-surface-variant bg-slate-100 px-1.5 py-0.5 rounded-md">
+                            {item.shopName || "NôngSạch"}
+                          </span>
+                          {subOrders.length > 1 && (() => {
+                            const status = subOrders.find((so) => so.sellerId === item.sellerId)?.status || "pending";
+                            const meta = getOrderStatusMeta(status);
+                            return (
+                              <span className={`text-[9px] font-extrabold uppercase tracking-wide px-1.5 py-0.5 rounded-full ${meta.tone}`}>
+                                {meta.label}
+                              </span>
+                            );
+                          })()}
+                        </div>
                       </div>
                       <p className="text-sm font-bold text-on-surface">
                         {formatCurrency(item.price * item.quantity)}

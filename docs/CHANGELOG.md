@@ -4,6 +4,18 @@ All notable changes to the **NôngSạch** project will be documented in this fi
 
 The format is based on **Keep a Changelog** and this project adheres to **Semantic Versioning**.
 
+## [0.8.4] - 2026-06-11
+
+### Đồng nhất trạng thái đơn hàng tách & Lọc đơn hàng Dashboard người bán (Unified Split Orders Status & Seller Dashboard Order Filtering)
+
+### Added
+* **Theo dõi hành trình theo cửa hàng (Tabbed Order Tracking)**: Bổ sung bộ chọn tab cho từng cửa hàng tại trang hoàn tất đặt hàng (`checkout/success`). Cho phép người mua xem và theo dõi hành trình (timeline) cùng mã vận đơn thực tế của riêng từng cửa hàng trong đơn hàng bị tách.
+* **Nhãn trạng thái chi tiết từng sản phẩm**: Cạnh mỗi mặt hàng ở danh sách sản phẩm bên phải trang success hiển thị rõ tên shop quản lý và nhãn trạng thái thực tế tương ứng (ví dụ: `Đã giao`, `Chờ xác nhận`).
+* **Đồng nhất trạng thái tổng quan**: Trạng thái và biểu tượng chung của trang success được tính toán động dựa trên trạng thái của tất cả các đơn hàng con thay vì chỉ lấy đơn hàng con đầu tiên.
+
+### Changed
+* **Cập nhật bộ lọc đơn hàng Dashboard người bán**: Bộ lọc `sellerOrders` ở tab Kênh người bán tại trang cá nhân (`src/app/profile/page.tsx`) được cập nhật để hiển thị đầy đủ các đơn hàng con thuộc về các shop demo tĩnh (`"admin"`, `"vuon-sach-da-lat"`, `"nong-trai-xanh"`, etc.) nhằm đồng bộ với dữ liệu đăng ký lắng nghe thời gian thực.
+
 ## [0.8.3] - 2026-06-11
 
 ### Báo cáo Doanh thu Người Bán (Seller Revenue Report)

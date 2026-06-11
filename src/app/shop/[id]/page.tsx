@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState, type FormEvent } from "react";
+import { use, useEffect, useState, useMemo, type FormEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -10,6 +10,8 @@ import {
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import { getShopById, getAllShops, Shop } from "@/lib/shops";
 import { getAllProducts } from "@/lib/products";
+import { getReviewsByShopId, updateReviewReply } from "@/lib/reviews";
+import { Review } from "@/types/review";
 import { toggleFollow, subscribeToFollowStatus, subscribeToShopFollowers } from "@/lib/follows";
 import { useCartStore } from "@/store/cart-store";
 import { useAuthStore } from "@/store/auth-store";
@@ -109,6 +111,13 @@ export default function ShopDetailPage({ params }: PageProps) {
   const [reportDetails, setReportDetails] = useState("");
   const [reportSubmitting, setReportSubmitting] = useState(false);
   const addReport = useReportStore((state) => state.addReport);
+
+  // ── Reviews and Reply states ─────────────────────────────────────────
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [replyingReviewId, setReplyingReviewId] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
+  const [submittingReply, setSubmittingReply] = useState(false);
 
   const [isTopMenuOpen, setIsTopMenuOpen] = useState(false);
 
@@ -237,8 +246,7 @@ export default function ShopDetailPage({ params }: PageProps) {
 
   const isOwner = mounted && currentUser?.id === id && !!currentUser?.sellerInfo;
 
-  // ── Shop products ─────────────────────────────────────────────────────────
-  const shopProducts = (() => {
+  const shopProducts = useMemo(() => {
     if (!mounted || !shop) return [];
     return allProducts.filter((p) => {
       if (p.sellerId) return p.sellerId === shop.id;
@@ -248,7 +256,7 @@ export default function ShopDetailPage({ params }: PageProps) {
       if (shop.id === "moc-farm-da-lat") return ["10"].includes(p.id);
       return false;
     });
-  })();
+  }, [mounted, shop, allProducts]);
 
   const shopCategories = Array.from(new Set(shopProducts.map((p) => p.category)));
 
@@ -286,6 +294,65 @@ export default function ShopDetailPage({ params }: PageProps) {
       active = false;
     };
   }, [mounted, id]);
+
+  // ── Load reviews for the shop ───────────────────────────────────────────
+  useEffect(() => {
+    if (!mounted || !shop) return;
+    const shopId = shop.id;
+    let active = true;
+    async function loadReviews() {
+      try {
+        setReviewsLoading(true);
+        const productIds = shopProducts.map((p) => p.id);
+        const data = await getReviewsByShopId(shopId, productIds);
+        if (active) {
+          setReviews(data);
+        }
+      } catch (err) {
+        console.error("Lỗi khi load reviews của shop:", err);
+      } finally {
+        if (active) {
+          setReviewsLoading(false);
+        }
+      }
+    }
+    loadReviews();
+    return () => {
+      active = false;
+    };
+  }, [mounted, shop, shopProducts]);
+
+  const handleSaveReply = async (reviewId: string) => {
+    if (!replyText.trim()) {
+      alert("Vui lòng nhập nội dung phản hồi!");
+      return;
+    }
+
+    setSubmittingReply(true);
+    try {
+      await updateReviewReply(reviewId, replyText.trim());
+
+      setReviews((prev) =>
+        prev.map((r) =>
+          r.id === reviewId
+            ? {
+                ...r,
+                replyComment: replyText.trim(),
+                replyCreatedAt: new Date().toISOString(),
+              }
+            : r
+        )
+      );
+
+      setReplyingReviewId(null);
+      setReplyText("");
+    } catch (error) {
+      console.error(error);
+      alert("Đã xảy ra lỗi khi gửi phản hồi. Vui lòng thử lại!");
+    } finally {
+      setSubmittingReply(false);
+    }
+  };
 
   // ── Follower Count Logic (Realtime) ──────────────────────────────────────────────────
   const [displayFollowers, setDisplayFollowers] = useState<string | number>(0);
@@ -568,7 +635,7 @@ export default function ShopDetailPage({ params }: PageProps) {
             <div className="text-center flex-1 px-1 sm:px-2">
               <div className="text-lg font-bold text-on-surface flex items-center justify-center gap-0.5 whitespace-nowrap">
                 <Star className="w-4 h-4 fill-[#FFB800] stroke-[#FFB800] shrink-0" />
-                {shop.rating}
+                {reviews.length > 0 ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1) : shop.rating.toFixed(1)}
               </div>
               <div className="text-[10px] font-bold text-on-surface-variant uppercase mt-0.5 whitespace-nowrap">Đánh giá</div>
             </div>
@@ -626,7 +693,7 @@ export default function ShopDetailPage({ params }: PageProps) {
         <div className="mb-7 flex gap-8 overflow-x-auto border-b border-outline-variant/30">
           {[
             ["products", `Sản phẩm (${shopProducts.length})`],
-            ["reviews", `Đánh giá (${shop.reviewCount})`],
+            ["reviews", `Đánh giá (${reviews.length})`],
             ["about", "Giới thiệu"],
           ].map(([key, label]) => (
             <button
@@ -746,29 +813,139 @@ export default function ShopDetailPage({ params }: PageProps) {
         {/* Tab: Reviews */}
         {activeTab === "reviews" && (
           <div className="max-w-[720px] space-y-6">
-            {[
-              { name: "Phạm Minh Hoàng", rating: 5, date: "28/05/2026", comment: "Rau cải và cà chua từ vườn này siêu tươi luôn, đóng gói cẩn thận. Nhà mình mua ở đây nhiều lần rồi, cực kỳ an tâm về chất lượng VietGAP." },
-              { name: "Nguyễn Thị Mai", rating: 5, date: "15/05/2026", comment: "Bưởi da xanh mọng nước, ngọt thanh rất ngon. Giao hàng nhanh ngay trong ngày, cám ơn vườn đã hỗ trợ nhiệt tình." },
-              { name: "Lê Văn Đức", rating: 4, date: "02/05/2026", comment: "Sản phẩm chất lượng tốt, đúng mô tả. Ủng hộ nhà vườn tiếp tục canh tác hữu cơ chất lượng cao nhé." },
-            ].map((review, i) => (
-              <div key={i} className="p-5 border border-outline-variant/20 rounded-2xl bg-white shadow-sm space-y-2">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs">{review.name.charAt(0)}</div>
-                    <div>
-                      <h4 className="font-bold text-on-surface text-sm">{review.name}</h4>
-                      <div className="flex items-center text-[#FFB800] mt-0.5">
-                        {Array.from({ length: 5 }).map((_, idx) => (
-                          <span key={idx} className={`material-symbols-outlined text-[14px] ${idx < review.rating ? "[font-variation-settings:'FILL'_1]" : ""}`}>star</span>
-                        ))}
+            {reviewsLoading ? (
+              <div className="py-8 text-center text-on-surface-variant/65">
+                <p className="text-sm font-semibold animate-pulse">Đang tải đánh giá...</p>
+              </div>
+            ) : reviews.length === 0 ? (
+              <div className="py-12 text-center text-[#3c4a42]/60 bg-white rounded-3xl border border-outline-variant/20 shadow-sm max-w-[720px]">
+                <span className="material-symbols-outlined mb-2 text-[40px] text-[#3c4a42]/20">
+                  rate_review
+                </span>
+                <p className="text-sm font-semibold">Chưa có đánh giá nào cho shop.</p>
+              </div>
+            ) : (
+              reviews.map((rev) => {
+                const getInitials = (name: string) => {
+                  const parts = name.trim().split(/\s+/);
+                  if (parts.length === 0) return "NS";
+                  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+                  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+                };
+                const formatReviewTime = (createdAt: string) => {
+                  const date = new Date(createdAt);
+                  if (isNaN(date.getTime())) return "Gần đây";
+                  return date.toLocaleDateString("vi-VN", { day: "numeric", month: "numeric", year: "numeric" });
+                };
+
+                return (
+                  <div key={rev.id} className="p-5 border border-outline-variant/20 rounded-2xl bg-white shadow-sm space-y-3">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs">
+                          {getInitials(rev.userName)}
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-on-surface text-sm">{rev.userName}</h4>
+                          <div className="flex items-center text-[#FFB800] mt-0.5">
+                            {Array.from({ length: 5 }).map((_, idx) => (
+                              <span key={idx} className={`material-symbols-outlined text-[14px] ${idx < rev.rating ? "[font-variation-settings:'FILL'_1]" : ""}`}>
+                                star
+                              </span>
+                            ))}
+                          </div>
+                        </div>
                       </div>
+                      <span className="text-xs text-on-surface-variant">{formatReviewTime(rev.createdAt)}</span>
+                    </div>
+                    
+                    <div className="pl-10 space-y-2">
+                      <p className="text-xs leading-5.5 text-on-surface-variant/90">{rev.comment}</p>
+                      
+                      {rev.productName && (
+                        <p className="text-[10px] text-on-surface-variant/50 font-medium">
+                          Sản phẩm: <span className="font-semibold text-primary">{rev.productName}</span>
+                        </p>
+                      )}
+
+                      {/* Display Shop Reply */}
+                      {rev.replyComment && (
+                        <div className="mt-3 p-3.5 rounded-xl bg-slate-50 border border-slate-100 space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-primary flex items-center gap-1">
+                              <span className="material-symbols-outlined text-[14px]">store</span>
+                              Phản hồi của shop
+                            </span>
+                            {rev.replyCreatedAt && (
+                              <span className="text-[10px] text-on-surface-variant/50 font-medium">
+                                {formatReviewTime(rev.replyCreatedAt)}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs leading-relaxed text-on-surface-variant/80 font-medium">
+                            {rev.replyComment}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Reply action for Shop Owner */}
+                      {isOwner && (
+                        <div className="pt-2">
+                          {replyingReviewId === rev.id ? (
+                            <div className="space-y-2.5">
+                              <textarea
+                                value={replyText}
+                                onChange={(e) => setReplyText(e.target.value)}
+                                placeholder="Nhập phản hồi của bạn..."
+                                rows={3}
+                                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs outline-none focus:border-primary transition-all resize-none bg-white text-on-surface font-medium"
+                              />
+                              <div className="flex gap-2 justify-end">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setReplyingReviewId(null);
+                                    setReplyText("");
+                                  }}
+                                  className="px-4 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-on-surface hover:bg-slate-50 transition-all"
+                                >
+                                  Hủy
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={submittingReply}
+                                  onClick={() => handleSaveReply(rev.id)}
+                                  className="px-4 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/95 transition-all disabled:opacity-60 flex items-center gap-1.5"
+                                >
+                                  {submittingReply ? (
+                                    <span className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                                  ) : (
+                                    <span className="material-symbols-outlined text-[14px]">send</span>
+                                  )}
+                                  Gửi phản hồi
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setReplyingReviewId(rev.id);
+                                setReplyText(rev.replyComment || "");
+                              }}
+                              className="inline-flex items-center gap-1 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white px-3 py-1.5 text-xs font-bold border border-primary/20 transition-all cursor-pointer active:scale-95"
+                            >
+                              <span className="material-symbols-outlined text-[14px]">reply</span>
+                              {rev.replyComment ? "Chỉnh sửa phản hồi" : "Phản hồi"}
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <span className="text-xs text-on-surface-variant">{review.date}</span>
-                </div>
-                <p className="text-xs leading-5.5 text-on-surface-variant/90 pl-10">{review.comment}</p>
-              </div>
-            ))}
+                );
+              })
+            )}
           </div>
         )}
 

@@ -385,7 +385,8 @@ function ProfileContent() {
 
   const sellerOrders = useMemo(() => {
     if (!currentUser || (currentUser.role !== "seller" && currentUser.sellerStatus !== "approved")) return [];
-    return orders.filter((o) => o.sellerId === currentUser.id);
+    const allowedSellerIds = [currentUser.id, "admin", "vuon-sach-da-lat", "nong-trai-xanh", "rau-sach-organic", "moc-farm-da-lat"];
+    return orders.filter((o) => o.sellerId && allowedSellerIds.includes(o.sellerId));
   }, [orders, currentUser]);
 
   const userNotifications = useMemo(() => {
@@ -1367,7 +1368,8 @@ function ProfileContent() {
         comment: reviewComment.trim(),
         images: reviewImages,
         orderId: reviewOrder.id,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        sellerId: reviewProduct.sellerId || "",
       };
 
       const savedReview = await addReview(reviewData);
